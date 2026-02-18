@@ -1,82 +1,116 @@
-# Guia de Contribuição
+# 🤝 Guia de Contribuição
 
-Obrigado por considerar contribuir com o Sistema de Checklist Veicular! 🚀
+Obrigado por considerar contribuir com o projeto! Este documento contém diretrizes para ajudá-lo a contribuir de forma eficaz.
 
-## Como Contribuir
+## 🐛 Como Reportar Bugs
 
-### Reportar Bugs 🐛
+Antes de reportar um bug, verifique se ele já não foi reportado nas [Issues](https://github.com/Maralmhz/dev/issues).
 
-Antes de criar um issue:
-1. Verifique se o bug já não foi reportado
-2. Teste na versão mais recente
-3. Colete informações do ambiente (navegador, versão, SO)
+### Template para Bug Report
 
-**Ao reportar, inclua:**
-- Descrição clara do problema
-- Passos para reproduzir
-- Comportamento esperado vs atual
-- Screenshots (se aplicável)
-- Console do navegador (F12)
+```markdown
+**Descrição do Bug**
+Uma descrição clara e concisa do bug.
 
-### Sugerir Funcionalidades ✨
+**Passos para Reproduzir**
+1. Vá para '...'
+2. Clique em '...'
+3. Role até '...'
+4. Veja o erro
 
-1. Abra um issue com tag `enhancement`
-2. Descreva a funcionalidade em detalhes
-3. Explique o caso de uso
-4. Considere impactos em performance/UX
+**Comportamento Esperado**
+O que deveria acontecer.
 
-### Enviar Pull Requests 🔧
+**Screenshots**
+Se aplicável, adicione screenshots.
 
-#### Preparação
+**Ambiente**
+- Navegador: [ex: Chrome 120]
+- Sistema Operacional: [ex: Windows 11]
+- Versão do Sistema: [ex: 3.1]
+
+**Informações Adicionais**
+Qualquer outra informação relevante.
+```
+
+## ✨ Como Sugerir Melhorias
+
+Sugestões são sempre bem-vindas! Abra uma Issue com o label `enhancement`.
+
+### Template para Feature Request
+
+```markdown
+**Problema que a Feature Resolve**
+Descreva o problema que você está tentando resolver.
+
+**Solução Proposta**
+Descreva a solução que você gostaria.
+
+**Alternativas Consideradas**
+Alternativas que você já considerou.
+
+**Contexto Adicional**
+Qualquer outro contexto ou screenshots.
+```
+
+## 🛠️ Processo de Desenvolvimento
+
+### 1. Fork e Clone
 
 ```bash
-# 1. Fork o repositório
-# 2. Clone seu fork
+# Fork o repositório no GitHub
+# Clone seu fork
 git clone https://github.com/SEU_USUARIO/dev.git
 cd dev
 
-# 3. Crie uma branch
+# Adicione o repositório original como upstream
+git remote add upstream https://github.com/Maralmhz/dev.git
+```
+
+### 2. Crie uma Branch
+
+```bash
+# Atualize sua main
+git checkout main
+git pull upstream main
+
+# Crie uma branch para sua feature
 git checkout -b feature/minha-feature
-# OU
+# ou para bugfix
 git checkout -b fix/meu-bugfix
 ```
 
-#### Desenvolvimento
+### 3. Faça suas Alterações
 
-1. **Mantenha o código limpo e documentado**
-   - Comentários em português
-   - Funções com nomes descritivos
-   - Evite código duplicado
+- Escreva código limpo e bem documentado
+- Siga as convenções de estilo do projeto
+- Teste suas alterações em diferentes navegadores
+- Mantenha commits pequenos e focados
 
-2. **Siga o padrão existente**
-   - Indentação: 4 espaços
-   - Aspas: simples ('string')
-   - Ponto e vírgula: obrigatório
+### 4. Commit suas Alterações
 
-3. **Teste suas mudanças**
-   - Teste em Chrome, Firefox e Safari
-   - Teste no mobile (responsive)
-   - Teste modo offline
-
-4. **Não commite:**
-   - Arquivos de configuração local
-   - Tokens ou senhas
-   - Arquivos de IDE
-   - node_modules/
-
-#### Commit
+Usamos [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```bash
-# Commits claros e descritivos
-git add .
-git commit -m "Adiciona validação de CPF no formulário"
-
-# Use verbos no imperativo:
-# ✅ "Adiciona", "Corrige", "Atualiza", "Remove"
-# ❌ "Adicionado", "Corrigido", "Atualizado"
+# Exemplos de commits:
+git commit -m "feat: adicionar exportação para Excel"
+git commit -m "fix: corrigir cálculo de totais no orçamento"
+git commit -m "docs: atualizar README com novas instruções"
+git commit -m "style: formatar código com Prettier"
+git commit -m "refactor: reorganizar funções de fotos"
+git commit -m "test: adicionar testes para validação de placa"
 ```
 
-#### Push e Pull Request
+**Tipos de commit:**
+- `feat`: Nova funcionalidade
+- `fix`: Correção de bug
+- `docs`: Documentação
+- `style`: Formatação, ponto e vírgula, etc
+- `refactor`: Refatoração de código
+- `test`: Adição de testes
+- `chore`: Atualizações de build, configurações, etc
+
+### 5. Push e Pull Request
 
 ```bash
 # Push para seu fork
@@ -84,116 +118,110 @@ git push origin feature/minha-feature
 ```
 
 Depois:
-1. Abra um Pull Request no GitHub
-2. Preencha o template (se houver)
-3. Descreva as mudanças em detalhes
-4. Referencie issues relacionadas (#123)
-5. Aguarde revisão
+1. Vá para o repositório no GitHub
+2. Clique em "Compare & pull request"
+3. Preencha o template do PR
+4. Aguarde a revisão
 
-## Padrões de Código
+## 📝 Padrões de Código
 
 ### JavaScript
 
 ```javascript
-// ✅ BOM
-function calcularTotal(itens) {
+// Use nomes descritivos
+function calcularTotalOrcamento(itens) {
     return itens.reduce((total, item) => total + item.valor, 0);
 }
 
-// ❌ EVITE
-function calc(x) {
-    var t = 0;
-    for(var i=0;i<x.length;i++)t+=x[i].valor;
-    return t;
+// Comente código complexo
+// Calcula o total considerando descontos progressivos
+function calcularComDesconto(valor, quantidadeItens) {
+    const desconto = quantidadeItens > 10 ? 0.1 : 0;
+    return valor * (1 - desconto);
 }
+
+// Use const/let ao invés de var
+const LIMITE_FOTOS = 15;
+let fotosVeiculo = [];
 ```
 
 ### HTML
 
 ```html
-<!-- ✅ BOM: Semântico e acessível -->
-<button class="btn-primary" onclick="salvarChecklist()">
-    💾 Salvar
-</button>
+<!-- Use IDs descritivos -->
+<div id="secaoOrcamento" class="content">
+    <h2 class="section-title">Orçamento</h2>
+    <!-- Conteúdo -->
+</div>
 
-<!-- ❌ EVITE: Pouco semântico -->
-<div onclick="salvarChecklist()" class="btn">Salvar</div>
+<!-- Acessibilidade -->
+<label for="placaVeiculo">Placa do Veículo</label>
+<input type="text" id="placaVeiculo" name="placa" required>
 ```
 
 ### CSS
 
 ```css
-/* ✅ BOM: Classes descritivas */
-.checklist-item {
-    padding: 12px;
-    border-radius: 8px;
+/* Use variáveis CSS */
+:root {
+    --color-primary: #c32421;
+    --color-secondary: #333;
 }
 
-/* ❌ EVITE: Classes genéricas */
-.item {
-    padding: 12px;
+/* Organize por seções */
+/* =========================
+   Header Styles
+   ========================= */
+.header {
+    background: var(--color-primary);
 }
 ```
 
-## Estrutura de Branches
+## ✅ Checklist antes do Pull Request
 
-- `main`: Código em produção, estável
-- `feature/*`: Novas funcionalidades
-- `fix/*`: Correções de bugs
-- `docs/*`: Atualizações de documentação
-- `refactor/*`: Refatoração sem mudança de funcionalidade
+- [ ] O código funciona em Chrome, Firefox e Safari?
+- [ ] O código funciona em mobile?
+- [ ] Testei a funcionalidade offline?
+- [ ] Removi console.logs de debug?
+- [ ] Atualizei a documentação se necessário?
+- [ ] Segui as convenções de commit?
+- [ ] Não adicionei credenciais ou tokens?
 
-## Tipos de Contribuição
+## 💬 Comunicação
 
-### Fáceis para Iniciantes 🌱
+- Use as Issues para discussões técnicas
+- Seja respeitoso e construtivo
+- Se não tiver certeza, pergunte!
 
-- Corrigir erros de português
-- Melhorar documentação
-- Adicionar comentários no código
-- Corrigir bugs pequenos
-- Melhorar estilos CSS
+## 🎯 Prioridades do Projeto
 
-### Intermediárias 💪
+Características mais importantes:
+1. **Performance**: O sistema deve ser rápido
+2. **Usabilidade**: Interface intuitiva para mecânicos
+3. **Confiabilidade**: Dados não podem ser perdidos
+4. **Offline-first**: Funcionar sem internet
+5. **Mobile-friendly**: Funcionar bem em celulares
 
-- Adicionar validações de formulário
-- Implementar novas features pequenas
-- Otimizar performance
-- Melhorar responsividade
+## 🛡️ Segurança
 
-### Avançadas 🚀
+Se você descobrir uma vulnerabilidade de segurança:
 
-- Integração com Firebase
-- Sistema de autenticação
-- Refatoração de arquitetura
-- Testes automatizados
+1. **NÃO** abra uma issue pública
+2. Envie um email para: maralmhz@gmail.com
+3. Descreva a vulnerabilidade em detalhes
+4. Aguarde resposta antes de divulgar
 
-## Checklist do Pull Request
+## 📚 Recursos Úteis
 
-Antes de enviar, verifique:
+- [JavaScript MDN](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+- [PWA Guide](https://web.dev/progressive-web-apps/)
+- [Conventional Commits](https://www.conventionalcommits.org/)
+- [Git Flow](https://nvie.com/posts/a-successful-git-branching-model/)
 
-- [ ] Código testado localmente
-- [ ] Sem erros no console
-- [ ] Funciona em mobile
-- [ ] Funciona offline
-- [ ] Documentação atualizada (se necessário)
-- [ ] Sem tokens ou senhas expostas
-- [ ] Commits organizados e descritivos
-- [ ] README atualizado (se aplicável)
+## ❓ Dúvidas?
 
-## Código de Conduta
-
-- Seja respeitoso e profissional
-- Aceite críticas construtivas
-- Foque no que é melhor para o projeto
-- Seja paciente com iniciantes
-- Não tolere discriminação ou assédio
-
-## Dúvidas?
-
-- Abra uma [Discussion](https://github.com/Maralmhz/dev/discussions)
-- Entre em contato: maralmhz@gmail.com
-- WhatsApp: (31) 99676-6963
+Não hesite em abrir uma Issue com a tag `question` ou entrar em contato!
 
 ---
 
-**Obrigado por contribuir! 🚀❤️**
+**Obrigado por contribuir! 🚀**
