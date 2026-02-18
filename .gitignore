@@ -1,0 +1,30 @@
+# Arquivos de configuração sensíveis
+.env
+.env.local
+.env.production
+config.local.js
+
+# Dependências
+node_modules/
+package-lock.json
+yarn.lock
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+*.log
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build e cache
+dist/
+build/
+.cache/
+
+# Backups locais
+*.backup
+*.bak
