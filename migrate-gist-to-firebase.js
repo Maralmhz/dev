@@ -19,13 +19,14 @@
 // Obtenha estas informações em:
 // https://console.firebase.google.com/project/checklist-oficina-72c9e/settings/general
 
-const FIREBASE_CONFIG = {
-    apiKey: "COLE_SUA_API_KEY_AQUI",
-    authDomain: "checklist-oficina-72c9e.firebaseapp.com",
-    projectId: "checklist-oficina-72c9e",
-    storageBucket: "checklist-oficina-72c9e.appspot.com",
-    messagingSenderId: "COLE_SEU_SENDER_ID",
-    appId: "COLE_SEU_APP_ID"
+const firebaseConfig = {
+  apiKey: "AIzaSyCpCfotfXYNpQu5o0fFbBvwOnQgU9PuYqU",
+  authDomain: "checklist-oficina-72c9e.firebaseapp.com",
+  databaseURL: "https://checklist-oficina-72c9e-default-rtdb.firebaseio.com",
+  projectId: "checklist-oficina-72c9e",
+  storageBucket: "checklist-oficina-72c9e.firebasestorage.app",
+  messagingSenderId: "305423384809",
+  appId: "1:305423384809:web:b152970a419848a0147078"
 };
 
 // Nome da coleção no Firestore onde os checklists serão salvos
