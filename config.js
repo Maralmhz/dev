@@ -1,40 +1,46 @@
-// config.js - Fast Car Centro Automotivo
-// Configuração completa para Checklist Veicular
+// config.js - Configuração do Sistema de Checklist
+// ================================================
+
+// ============================================
+// CONFIGURAÇÃO DA OFICINA
+// ============================================
+// Preencha com os dados da sua oficina
 
 window.OFICINA_CONFIG = {
-    nome: "FAST CAR CENTRO AUTOMOTIVO",
+    oficina_id: "modelo",  // ← Identificador para oficina modelo/amostra
+    nome: "NOME DA SUA OFICINA",
     subtitulo: "CHECKLIST DE ENTRADA E INSPEÇÃO VEICULAR",
-    cnpj: "60.516.882/0001-74",
+    cnpj: "00.000.000/0001-00",
     logo: "logo.png",
-    corPrimaria: "#c32421",
-    endereco: "Av. Régulus, 248 - Jardim Riacho das Pedras, Contagem - MG, 32241-210",
-    telefone: "(31) 2342-1699",
-    whatsapp: "(31) 99457-9274"
+    corPrimaria: "#000000",
+    endereco: "Seu endereço completo aqui",
+    telefone: "(00) 0000-0000",
+    whatsapp: "(00) 00000-0000"
 };
 
-// Configuração Nuvem (GitHub Gist)
-// ⚠️ ATENÇÃO: NUNCA COLOQUE SEU TOKEN DIRETAMENTE AQUI!
-// 
-// INSTRUÇÕES DE SEGURANÇA:
-// 1. Crie um arquivo .env na raiz do projeto (ele está no .gitignore)
-// 2. Adicione seu token lá: GITHUB_TOKEN=ghp_seu_token_aqui
-// 3. Use um servidor local ou backend para ler o .env
-// 4. OU use variáveis de ambiente do servidor de hospedagem
-//
-// PARA DESENVOLVIMENTO LOCAL TEMPORÁRIO:
-// - Descomente as linhas abaixo APENAS para testes locais
-// - NUNCA faça commit com o token real
-// - Revogue o token imediatamente após uso público
+
+// ============================================
+// CONFIGURAÇÃO FIREBASE
+// ============================================
+
+window.FIREBASE_CONFIG = {
+    apiKey: "AIzaSyCpCfotfXYNpQu5o0fFbBvwOnQgU9PuYqU",
+    authDomain: "checklist-oficina-72c9e.firebaseapp.com",
+    databaseURL: "https://checklist-oficina-72c9e-default-rtdb.firebaseio.com",
+    projectId: "checklist-oficina-72c9e",
+    storageBucket: "checklist-oficina-72c9e.firebasestorage.app",
+    messagingSenderId: "305423384809",
+    appId: "1:305423384809:web:b152970a419848a0147078"
+};
+
+// ============================================
+// CONFIGURAÇÃO GITHUB GIST (LEGADO - NÃO USAR)
+// ============================================
+// ⚠️ Mantido apenas para compatibilidade durante migração
+// Após migrar para Firebase, esta seção pode ser removida
 
 window.CLOUD_CONFIG = {
-    // TOKEN: 'cole_seu_token_aqui_apenas_para_teste_local',
-    TOKEN: '', // DEIXE VAZIO! Use variáveis de ambiente
-    GIST_ID: '75e76a26d9b0c36f602ec356f525680a',
-    FILENAME: 'backup_fastcar.json'
+    TOKEN: '', // DEIXE VAZIO - Não usar mais!
+    GIST_ID: '', // Não necessário após migração
+    FILENAME: 'backup_checklist.json'
 };
-
-// Função para carregar token de forma segura (exemplo)
-// Se você estiver usando um backend, carregue o token de lá
-if (typeof process !== 'undefined' && process.env && process.env.GITHUB_TOKEN) {
-    window.CLOUD_CONFIG.TOKEN = process.env.GITHUB_TOKEN;
-}

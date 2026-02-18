@@ -197,11 +197,13 @@ async function salvarChecklist() {
         }
     }
 
-    const checklist = {
-        id: Date.now(),
-        data_criacao: new Date().toISOString(),
-        ...formData
-    };
+const checklist = {
+    id: Date.now(),
+    oficina_id: window.OFICINA_CONFIG.oficina_id || "sem_identificacao",
+    data_criacao: new Date().toISOString(),
+    ...formData
+};
+
     
     // Salva peças e serviços
     checklist.itensOrcamento = itensOrcamento || [];
