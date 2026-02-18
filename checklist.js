@@ -6,14 +6,15 @@ async function salvarComFirebase(checklistData) {
         const modulo = await import('./firebase_app.js');
         if (modulo && modulo.salvarNoFirebase) {
             await modulo.salvarNoFirebase(checklistData);
-            console.log("Salvo no Firebase!");
+            console.log("✅ Salvo no Firebase (estrutura organizada)!");
         }
     } catch (e) {
-        console.error("Erro ao carregar Firebase:", e);
-        throw e; // Propaga erro para tratamento no checklist.js
+        console.error("❌ Erro ao carregar Firebase:", e);
+        throw e;
     }
 }
 
+// FUNÇÃO OTIMIZADA - Busca apenas o mês atual (mais rápido e econômico)
 async function sincronizarChecklists() {
     const btn = document.getElementById('btnSync');
     const txtOriginal = btn.textContent;
@@ -22,8 +23,59 @@ async function sincronizarChecklists() {
 
     try {
         const modulo = await import('./firebase_app.js');
+        
+        // NOVO: Busca apenas o mês atual (economiza leituras!)
+        if (modulo && modulo.buscarChecklistsMesAtual) {
+            btn.textContent = '⏳ Baixando mês atual...';
+            const dadosNuvem = await modulo.buscarChecklistsMesAtual();
+            
+            if (dadosNuvem.length > 0) {
+                let local = JSON.parse(localStorage.getItem('checklists') || '[]');
+                const idsLocais = new Set(local.map(c => c.id));
+                
+                let novos = 0;
+                dadosNuvem.forEach(item => {
+                    if (!idsLocais.has(item.id)) {
+                        local.push(item);
+                        novos++;
+                    }
+                });
+
+                localStorage.setItem('checklists', JSON.stringify(local));
+                carregarHistorico();
+                
+                const hoje = new Date();
+                const mesNome = hoje.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+                alert(`✅ Sincronização concluída!\n\n${novos} novos checklists de ${mesNome}\nTotal na nuvem: ${dadosNuvem.length}`);
+            } else {
+                const mesAtual = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+                alert(`📭 Nenhum checklist encontrado em ${mesAtual}.`);
+            }
+        }
+    } catch (e) {
+        console.error("Erro sync:", e);
+        alert("❌ Erro ao sincronizar.\n\nDetalhe: " + (e.message || e) + "\n\nVerifique:\n1. Conexão com a Internet\n2. Configuração do Firebase no config.js");
+    } finally {
+        btn.textContent = txtOriginal;
+        btn.disabled = false;
+    }
+}
+
+// FUNÇÃO PARA SINCRONIZAR TODOS (opcional - usar raramente)
+async function sincronizarTodosChecklists() {
+    if (!confirm('⚠️ Sincronizar TODOS os checklists pode consumir muitas leituras do Firebase.\n\nDeseja continuar?')) {
+        return;
+    }
+    
+    const btn = document.getElementById('btnSync');
+    const txtOriginal = btn.textContent;
+    btn.textContent = '⏳ Baixando TUDO...';
+    btn.disabled = true;
+
+    try {
+        const modulo = await import('./firebase_app.js');
+        
         if (modulo && modulo.buscarChecklistsNuvem) {
-            btn.textContent = '⏳ Baixando...';
             const dadosNuvem = await modulo.buscarChecklistsNuvem();
             
             if (dadosNuvem.length > 0) {
@@ -40,14 +92,12 @@ async function sincronizarChecklists() {
 
                 localStorage.setItem('checklists', JSON.stringify(local));
                 carregarHistorico();
-                alert(`✅ Sincronização concluída! ${novos} novos checklists baixados.`);
-            } else {
-                alert("📭 Nenhum checklist encontrado na nuvem para esta oficina (ou erro de configuração).");
+                alert(`✅ Sincronização COMPLETA concluída!\n\n${novos} novos checklists baixados\nTotal: ${dadosNuvem.length}`);
             }
         }
     } catch (e) {
-        console.error("Erro sync:", e);
-        alert("❌ Erro ao sincronizar.\n\nDetalhe: " + (e.message || e) + "\n\nVerifique:\n1. Conexão com a Internet\n2. Token no arquivo config.js");
+        console.error("Erro sync completo:", e);
+        alert("❌ Erro ao sincronizar todos os dados: " + (e.message || e));
     } finally {
         btn.textContent = txtOriginal;
         btn.disabled = false;
@@ -222,11 +272,11 @@ const checklist = {
         btnSalvar.disabled = true;
     }
     
-    // 2. TENTAR SALVAR NA NUVEM
+    // 2. TENTAR SALVAR NA NUVEM (estrutura organizada)
     let msgExtra = "";
     try {
         await salvarComFirebase(checklist);
-        msgExtra = " e na Nuvem!";
+        msgExtra = " e na Nuvem (organizado por pasta)!";
     } catch (e) {
         console.warn("Falha nuvem:", e);
         msgExtra = ".\n\n⚠️ AVISO: Salvo APENAS LOCALMENTE.\nErro ao salvar na nuvem: " + (e.message || "Erro desconhecido");
