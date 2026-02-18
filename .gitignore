@@ -2,6 +2,7 @@
 .env
 .env.local
 .env.*.local
+config.js
 config.local.js
 
 # Credenciais e tokens
@@ -14,6 +15,8 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+package-lock.json
+yarn.lock
 
 # IDEs
 .vscode/
