@@ -174,7 +174,7 @@
   padding: 16px;
   transition: all 0.3s;
   position: relative;
-  overflow: hidden;
+  /* ⚠️ REMOVIDO overflow: hidden para não cortar dropdown */
 }
 
 .os-card::before {
@@ -185,6 +185,7 @@
   width: 5px;
   height: 100%;
   background: var(--color-primary, #0056b3);
+  border-radius: 12px 0 0 12px;
 }
 
 .os-card:hover {
@@ -285,10 +286,12 @@
   font-style: italic;
 }
 
-/* DROPDOWN DE ETAPAS */
+/* DROPDOWN DE ETAPAS - CORREÇÃO COMPLETA */
 .os-etapa-selector {
   position: relative;
   margin: 10px 0;
+  /* ✅ Z-index alto para ficar acima de tudo */
+  z-index: 10;
 }
 
 .btn-etapa {
@@ -306,6 +309,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  position: relative;
+  z-index: 1;
 }
 
 .btn-etapa:hover {
@@ -322,10 +327,17 @@
   border: 2px solid #667eea;
   border-radius: 8px;
   margin-top: 5px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-  z-index: 100;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  /* ✅ Z-index MUITO ALTO para sobrepor tudo */
+  z-index: 9999;
   max-height: 300px;
   overflow-y: auto;
+}
+
+/* ✅ Quando dropdown aberto, card fica com z-index maior */
+.os-card:has(.dropdown-etapas[style*="display: block"]) {
+  z-index: 100;
+  position: relative;
 }
 
 .dropdown-item {
@@ -335,6 +347,7 @@
   border-bottom: 1px solid #f0f0f0;
   font-size: 13px;
   font-weight: 600;
+  background: white;
 }
 
 .dropdown-item:last-child {
