@@ -944,6 +944,9 @@ function atualizarResumoOS() {
         });
     }
 
+    // NOVA FUNCIONALIDADE: Galeria de 5 fotos miniatura com zoom
+    renderizarGaleriaResumo();
+
     // Tabelas Orçamento
     const containerTabelas = document.getElementById('containerTabelasOrcamento');
     containerTabelas.innerHTML = '';
@@ -986,6 +989,89 @@ function atualizarResumoOS() {
     // Header Pág 2
     const headerPag2 = document.getElementById('header-pag2');
     if(headerPag2) headerPag2.innerHTML = document.getElementById('template-cabecalho').innerHTML;
+}
+
+// NOVA FUNÇÃO: Renderizar galeria de 5 fotos miniatura com zoom
+function renderizarGaleriaResumo() {
+    // Remove galeria existente se houver
+    let galeriaExistente = document.getElementById('galeriaFotosResumo');
+    if (galeriaExistente) {
+        galeriaExistente.remove();
+    }
+
+    // Se não houver fotos, não adiciona nada
+    if (!fotosVeiculo || fotosVeiculo.length === 0) {
+        return;
+    }
+
+    // Pegar as 5 primeiras fotos
+    const fotosParaResumo = fotosVeiculo.slice(0, 5);
+
+    // Criar container da galeria
+    const galeriaDiv = document.createElement('div');
+    galeriaDiv.id = 'galeriaFotosResumo';
+    galeriaDiv.className = 'os-box mt-10';
+    galeriaDiv.innerHTML = '<div class="os-box-title">📸 FOTOS DO VEÍCULO</div>';
+
+    // Grid de fotos
+    const gridFotos = document.createElement('div');
+    gridFotos.style.cssText = `
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 8px;
+        margin-top: 10px;
+        padding: 10px;
+    `;
+
+    fotosParaResumo.forEach((foto, index) => {
+        const fotoContainer = document.createElement('div');
+        fotoContainer.style.cssText = `
+            position: relative;
+            cursor: pointer;
+            border: 2px solid #e41616;
+            border-radius: 6px;
+            overflow: hidden;
+            aspect-ratio: 1;
+        `;
+
+        const img = document.createElement('img');
+        img.src = foto.dataURL;
+        img.alt = `Foto ${index + 1}`;
+        img.style.cssText = `
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        `;
+
+        // Adicionar evento de clique para zoom
+        fotoContainer.onclick = () => abrirFotoGrande(foto.dataURL);
+
+        // Ícone de zoom
+        const zoomIcon = document.createElement('div');
+        zoomIcon.innerHTML = '🔍';
+        zoomIcon.style.cssText = `
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 4px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+        `;
+
+        fotoContainer.appendChild(img);
+        fotoContainer.appendChild(zoomIcon);
+        gridFotos.appendChild(fotoContainer);
+    });
+
+    galeriaDiv.appendChild(gridFotos);
+
+    // Inserir a galeria antes das tabelas de orçamento (na primeira página)
+    const containerTabelas = document.getElementById('containerTabelasOrcamento');
+    if (containerTabelas && containerTabelas.parentNode) {
+        containerTabelas.parentNode.insertBefore(galeriaDiv, containerTabelas);
+    }
 }
 
 function gerarPDFResumo() {
