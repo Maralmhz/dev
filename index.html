@@ -6,6 +6,7 @@
     <meta name="theme-color" content="#ffffff">
     <meta name="description" content="Checklist de Oficina - App Offline com PDF">
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="gestao_oficina.css">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="logo.png">
     <link rel="icon" type="image/png" href="logo.png">
@@ -50,6 +51,7 @@
     <button class="tab-button" onclick="switchTab('resumo'); atualizarResumoOS()">📄 Resumo</button>
     <button class="tab-button" onclick="switchTab('historico')">📋 Histórico</button>
     <button class="tab-button" onclick="switchTab('relatorios')">📊 Relatórios</button>
+    <button class="tab-button" onclick="switchTab('gestao-oficina'); iniciarGestaoOficina()">🛠️ Gestão Oficina</button>
 </div>
         
         <!-- BARRA FIXA DE INFORMAÇÕES DA OS -->
@@ -213,7 +215,7 @@
         </div>
 
         <div class="equip-section">
-            <div class="equip-section-title">🛞 RODAS & PÁRA-BRISAS</div>
+            <div class="equip-section-title">🛹 RODAS & PÁRA-BRISAS</div>
             <div class="checkbox-group">
                 <div class="checkbox-item"><input type="checkbox" id="calotas" name="equipamentos" value="CALOTAS"><label for="calotas">CALOTAS</label></div>
                 <div class="checkbox-item"><input type="checkbox" id="rodas_liga" name="equipamentos" value="RODAS DE LIGA"><label for="rodas_liga">RODAS DE LIGA</label></div>
@@ -642,10 +644,36 @@
   </div>
 </div>
 
+<!-- ABA GESTÃO DA OFICINA -->
+<div id="gestao-oficina" class="tab-content">
+    <div class="page-header">
+        <h2>🛠️ Gestão da Oficina</h2>
+        <button class="btn-primary" onclick="abrirModalNovoOS()">➕ Nova OS</button>
+    </div>
+    
+    <div id="resumoTopo" class="resumo-cards"></div>
+    
+    <div class="kanban-container">
+        <div class="kanban-coluna">
+            <h3>📅 Agendados Hoje</h3>
+            <div class="cards-container" id="agendados"></div>
+        </div>
+        <div class="kanban-coluna">
+            <h3>🔧 Em Andamento</h3>
+            <div class="cards-container" id="em_andamento"></div>
+        </div>
+        <div class="kanban-coluna">
+            <h3>✅ Finalizados Hoje</h3>
+            <div class="cards-container" id="finalizados"></div>
+        </div>
+    </div>
+</div>
+
 <!-- CARREGA TODA A LÓGICA DO ARQUIVO EXTERNO -->
 <script src="config.js"></script>
 <script src="app.js"></script>
 <script src="checklist.js"></script>
+<script src="gestao_oficina.js"></script>
     
 <div class="os-footer" id="rRodape" style="position: fixed; bottom: 0; left: 0; right: 0; width: 100%; text-align: center; font-size: 10px; background: #f8f9fa; padding: 8px 12px; border-top: 2px solid var(--color-primary); z-index: 9999; box-sizing: border-box; font-family: Arial, sans-serif;">
     <span id="rodape-texto">Developed by Hallz Branding 3199676-6963</span>
