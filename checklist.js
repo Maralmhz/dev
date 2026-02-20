@@ -944,7 +944,7 @@ function atualizarResumoOS() {
         });
     }
 
-    // NOVA FUNCIONALIDADE: Galeria de 5 fotos miniatura com zoom
+    // NOVA FUNCIONALIDADE: Galeria de 5 fotos miniatura com zoom - PRIMEIRA PÁGINA
     renderizarGaleriaResumo();
 
     // Tabelas Orçamento
@@ -991,7 +991,7 @@ function atualizarResumoOS() {
     if(headerPag2) headerPag2.innerHTML = document.getElementById('template-cabecalho').innerHTML;
 }
 
-// NOVA FUNÇÃO: Renderizar galeria de 5 fotos miniatura com zoom
+// NOVA FUNÇÃO: Renderizar galeria de 5 fotos miniatura com zoom - MENOR (metade)
 function renderizarGaleriaResumo() {
     // Remove galeria existente se houver
     let galeriaExistente = document.getElementById('galeriaFotosResumo');
@@ -1011,16 +1011,16 @@ function renderizarGaleriaResumo() {
     const galeriaDiv = document.createElement('div');
     galeriaDiv.id = 'galeriaFotosResumo';
     galeriaDiv.className = 'os-box mt-10';
-    galeriaDiv.innerHTML = '<div class="os-box-title">📸 FOTOS DO VEÍCULO</div>';
+    galeriaDiv.innerHTML = '<div class="os-box-title" style="font-size: 10px; padding: 4px 8px;">📸 FOTOS DO VEÍCULO</div>';
 
-    // Grid de fotos
+    // Grid de fotos - MENOR (metade do tamanho)
     const gridFotos = document.createElement('div');
     gridFotos.style.cssText = `
         display: grid;
         grid-template-columns: repeat(5, 1fr);
-        gap: 8px;
-        margin-top: 10px;
-        padding: 10px;
+        gap: 4px;
+        margin-top: 6px;
+        padding: 6px;
     `;
 
     fotosParaResumo.forEach((foto, index) => {
@@ -1028,8 +1028,8 @@ function renderizarGaleriaResumo() {
         fotoContainer.style.cssText = `
             position: relative;
             cursor: pointer;
-            border: 2px solid #e41616;
-            border-radius: 6px;
+            border: 1px solid #e41616;
+            border-radius: 4px;
             overflow: hidden;
             aspect-ratio: 1;
         `;
@@ -1046,18 +1046,18 @@ function renderizarGaleriaResumo() {
         // Adicionar evento de clique para zoom
         fotoContainer.onclick = () => abrirFotoGrande(foto.dataURL);
 
-        // Ícone de zoom
+        // Ícone de zoom - MENOR
         const zoomIcon = document.createElement('div');
         zoomIcon.innerHTML = '🔍';
         zoomIcon.style.cssText = `
             position: absolute;
-            bottom: 5px;
-            right: 5px;
+            bottom: 2px;
+            right: 2px;
             background: rgba(0,0,0,0.7);
             color: white;
-            padding: 4px 6px;
-            border-radius: 4px;
-            font-size: 12px;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-size: 8px;
         `;
 
         fotoContainer.appendChild(img);
@@ -1067,10 +1067,10 @@ function renderizarGaleriaResumo() {
 
     galeriaDiv.appendChild(gridFotos);
 
-    // Inserir a galeria antes das tabelas de orçamento (na primeira página)
-    const containerTabelas = document.getElementById('containerTabelasOrcamento');
-    if (containerTabelas && containerTabelas.parentNode) {
-        containerTabelas.parentNode.insertBefore(galeriaDiv, containerTabelas);
+    // Inserir a galeria ANTES das assinaturas (na PRIMEIRA página)
+    const assinaturas = document.getElementById('template-assinaturas');
+    if (assinaturas && assinaturas.parentNode) {
+        assinaturas.parentNode.insertBefore(galeriaDiv, assinaturas);
     }
 }
 
