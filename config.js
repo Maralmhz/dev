@@ -7,7 +7,7 @@
 
 window.OFICINA_CONFIG = {
     oficina_id: "modelo",  // ← ID único para sua oficina principal
-    nome: "Hallz Oficina",
+    nome: "Nossa Oficina",
     subtitulo: "CHECKLIST DE ENTRADA E INSPEÇÃO VEICULAR",
     cnpj: "00.000.000/0001-00",  // ← Seu CNPJ real
     logo: "logo.png",
