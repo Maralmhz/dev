@@ -45,13 +45,13 @@
             <div class="header-badge">v3.1 PRO</div>
         </div>
 <div class="tabs">
-    <button class="tab-button active" onclick="switchTab('novo-checklist')">➕ Novo Checklist</button>
-    <button class="tab-button" onclick="switchTab('orcamento')">💰 Peças & Serviços</button>
-    <button class="tab-button" onclick="switchTab('fotos')">📸 Fotos</button>
-    <button class="tab-button" onclick="switchTab('resumo'); atualizarResumoOS()">📄 Resumo</button>
-    <button class="tab-button" onclick="switchTab('historico')">📋 Histórico</button>
-    <button class="tab-button" onclick="switchTab('relatorios')">📊 Relatórios</button>
-    <button class="tab-button" onclick="switchTab('gestao-oficina'); iniciarGestaoOficina()">🛠️ Gestão Oficina</button>
+    <button class="tab-button active" onclick="switchTab('novo-checklist')"><span>➕ Novo Checklist</span></button>
+    <button class="tab-button" onclick="switchTab('orcamento')"><span>💰 Peças & Serviços</span></button>
+    <button class="tab-button" onclick="switchTab('fotos')"><span>📸 Fotos</span></button>
+    <button class="tab-button" onclick="switchTab('resumo'); atualizarResumoOS()"><span>📄 Resumo</span></button>
+    <button class="tab-button" onclick="switchTab('historico')"><span>📋 Histórico</span></button>
+    <button class="tab-button" onclick="switchTab('relatorios')"><span>📊 Relatórios</span></button>
+    <button class="tab-button" onclick="switchTab('gestao-oficina'); iniciarGestaoOficina()"><span>🛠️ Gestão Oficina</span></button>
 </div>
         
         <!-- BARRA FIXA DE INFORMAÇÕES DA OS -->
@@ -646,25 +646,32 @@
 
 <!-- ABA GESTÃO DA OFICINA -->
 <div id="gestao-oficina" class="tab-content">
-    <div class="page-header">
-        <h2>🛠️ Gestão da Oficina</h2>
-        <button class="btn-primary" onclick="abrirModalNovoOS()">➕ Nova OS</button>
-    </div>
-    
-    <div id="resumoTopo" class="resumo-cards"></div>
-    
-    <div class="kanban-container">
-        <div class="kanban-coluna">
-            <h3>📅 Agendados Hoje</h3>
-            <div class="cards-container" id="agendados"></div>
+    <div class="content">
+        <div class="page-header">
+            <h2>🛠️ Gestão da Oficina</h2>
+            <button class="btn-primary" onclick="abrirModalNovoOS()">➕ Nova OS</button>
         </div>
-        <div class="kanban-coluna">
-            <h3>🔧 Em Andamento</h3>
-            <div class="cards-container" id="em_andamento"></div>
-        </div>
-        <div class="kanban-coluna">
-            <h3>✅ Finalizados Hoje</h3>
-            <div class="cards-container" id="finalizados"></div>
+        
+        <!-- PAINEL DE CONTROLE -->
+        <div id="painel-controle"></div>
+        
+        <!-- RESUMO TOPO -->
+        <div id="resumoTopo" class="resumo-cards"></div>
+        
+        <!-- KANBAN VIEW (HOJE) -->
+        <div id="kanban-view" class="kanban-container">
+            <div class="kanban-coluna">
+                <h3>📅 Agendados Hoje</h3>
+                <div class="cards-container" id="agendados"></div>
+            </div>
+            <div class="kanban-coluna">
+                <h3>🔧 Em Andamento</h3>
+                <div class="cards-container" id="em_andamento"></div>
+            </div>
+            <div class="kanban-coluna">
+                <h3>✅ Finalizados Hoje</h3>
+                <div class="cards-container" id="finalizados"></div>
+            </div>
         </div>
     </div>
 </div>
