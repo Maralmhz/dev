@@ -1,16 +1,56 @@
 // ==========================================
+// VARIÁVEIS GLOBAIS
+// ==========================================
+let checklistEditando = null; // ✅ FIX #1: Controla modo edição
+let itensOrcamento = [];
+let streamCamera = null;
+let fotosVeiculo = JSON.parse(localStorage.getItem('fotosVeiculo') || '[]');
+
+// ==========================================
+// FUNÇÕES AUXILIARES
+// ==========================================
+
+// ✅ FIX #3: Wrapper para localStorage com tratamento de QuotaExceeded
+function salvarLocalStorage(chave, valor) {
+    try {
+        localStorage.setItem(chave, JSON.stringify(valor));
+        return true;
+    } catch (e) {
+        if (e.name === 'QuotaExceededError' || e.code === 22) {
+            alert(
+                '⚠️ ESPAÇO ESGOTADO!\n\n' +
+                'O armazenamento local está cheio.\n' +
+                'Ações:\n' +
+                '1. Exporte seus dados (botão "Exportar")\n' +
+                '2. Limpe dados antigos\n' +
+                '3. Sincronize com a nuvem'
+            );
+            console.error('localStorage cheio:', e);
+        } else {
+            console.error('Erro ao salvar:', e);
+            alert('Erro ao salvar dados: ' + e.message);
+        }
+        return false;
+    }
+}
+
+// ==========================================
 // MÓDULO FIREBASE E SINCRONIZAÇÃO
 // ==========================================
+
+// ✅ FIX #2: Firebase com tratamento robusto de erro
 async function salvarComFirebase(checklistData) {
     try {
         const modulo = await import('./firebase_app.js');
         if (modulo && modulo.salvarNoFirebase) {
             await modulo.salvarNoFirebase(checklistData);
             console.log("✅ Salvo no Firebase (estrutura organizada)!");
+        } else {
+            throw new Error('Função salvarNoFirebase não disponível');
         }
     } catch (e) {
-        console.error("❌ Erro ao carregar Firebase:", e);
-        throw e;
+        console.warn('⚠️ Firebase desabilitado:', e.message);
+        throw new Error(`Nuvem indisponível: ${e.message}`);
     }
 }
 
@@ -24,7 +64,6 @@ async function sincronizarChecklists() {
     try {
         const modulo = await import('./firebase_app.js');
         
-        // NOVO: Busca apenas o mês atual (economiza leituras!)
         if (modulo && modulo.buscarChecklistsMesAtual) {
             btn.textContent = '⏳ Baixando mês atual...';
             const dadosNuvem = await modulo.buscarChecklistsMesAtual();
@@ -41,7 +80,7 @@ async function sincronizarChecklists() {
                     }
                 });
 
-                localStorage.setItem('checklists', JSON.stringify(local));
+                salvarLocalStorage('checklists', local); // ✅ Usando wrapper
                 carregarHistorico();
                 
                 const hoje = new Date();
@@ -90,7 +129,7 @@ async function sincronizarTodosChecklists() {
                     }
                 });
 
-                localStorage.setItem('checklists', JSON.stringify(local));
+                salvarLocalStorage('checklists', local); // ✅ Usando wrapper
                 carregarHistorico();
                 alert(`✅ Sincronização COMPLETA concluída!\n\n${novos} novos checklists baixados\nTotal: ${dadosNuvem.length}`);
             }
@@ -107,7 +146,6 @@ async function sincronizarTodosChecklists() {
 // ==========================================
 // ORÇAMENTO - PEÇAS & SERVIÇOS
 // ==========================================
-let itensOrcamento = [];
 
 function adicionarItemManual() {
   const descricaoInput = document.getElementById("descricaoItem");
@@ -223,6 +261,7 @@ function switchTab(tabId) {
     if (tabId === 'orcamento') atualizarResumoVeiculo();
 }
 
+// ✅ FIX #1: Salvar com detecção de modo edição
 async function salvarChecklist() {
     const placa = document.getElementById('placa').value;
     if (!placa) {
@@ -247,22 +286,39 @@ async function salvarChecklist() {
         }
     }
 
-const checklist = {
-    id: Date.now(),
-    oficina_id: window.OFICINA_CONFIG.oficina_id || "sem_identificacao",
-    data_criacao: new Date().toISOString(),
-    ...formData
-};
-
+    let checklist;
     
-    // Salva peças e serviços
+    // ✅ FIX #1: Detecta se está editando ou criando novo
+    if (checklistEditando) {
+        checklist = checklistEditando;
+        checklist.data_modificacao = new Date().toISOString();
+        Object.assign(checklist, formData);
+    } else {
+        checklist = {
+            id: Date.now(),
+            oficina_id: window.OFICINA_CONFIG?.oficina_id || "sem_identificacao",
+            data_criacao: new Date().toISOString(),
+            ...formData
+        };
+    }
+    
     checklist.itensOrcamento = itensOrcamento || [];
     checklist.complexidade = document.getElementById('complexidade')?.value || '';
     
     // 1. SALVAR LOCALMENTE (SEMPRE)
     let checklists = JSON.parse(localStorage.getItem('checklists') || '[]');
-    checklists.push(checklist);
-    localStorage.setItem('checklists', JSON.stringify(checklists));
+    const idx = checklists.findIndex(c => c.id === checklist.id);
+    
+    if (idx > -1) {
+        checklists[idx] = checklist; // Substitui se já existe
+    } else {
+        checklists.push(checklist); // Adiciona se novo
+    }
+    
+    const sucesso = salvarLocalStorage('checklists', checklists); // ✅ Usando wrapper
+    if (!sucesso) {
+        return; // Para execução se falhou
+    }
 
     // Feedback Visual
     const btnSalvar = document.querySelector('button[onclick="salvarChecklist()"]');
@@ -289,9 +345,11 @@ const checklist = {
 
     // Limpeza e reset
     itensOrcamento = [];
+    checklistEditando = null; // ✅ Limpa modo edição
     renderizarTabela();
 
-    alert("✅ Checklist salvo com sucesso no Histórico" + msgExtra);
+    const msg = checklistEditando ? "atualizado" : "salvo";
+    alert(`✅ Checklist ${msg} com sucesso no Histórico` + msgExtra);
     document.getElementById('checklistForm').reset();
     atualizarResumoVeiculo();
     switchTab('historico');
@@ -331,12 +389,14 @@ function carregarHistorico() {
     });
 }
 
+// ✅ FIX #1: Carrega checklist com flag de edição
 function carregarChecklist(id) {
     const checklists = JSON.parse(localStorage.getItem('checklists') || '[]');
     const item = checklists.find(c => c.id === id);
 
     if (!item) return;
 
+    checklistEditando = item; // ✅ Marca como editando
     switchTab('novo-checklist');
 
     if (item.nome_cliente && !item.nomecliente) item.nomecliente = item.nome_cliente;
@@ -378,7 +438,7 @@ function excluirChecklist(id) {
     if (confirm("Tem certeza que deseja excluir este checklist?")) {
         let checklists = JSON.parse(localStorage.getItem('checklists') || '[]');
         checklists = checklists.filter(c => c.id !== id);
-        localStorage.setItem('checklists', JSON.stringify(checklists));
+        salvarLocalStorage('checklists', checklists); // ✅ Usando wrapper
         carregarHistorico();
     }
 }
@@ -432,12 +492,13 @@ function ordenarChecklists() {
         if (placaA > placaB) return 1;
         return 0;
     });
-    localStorage.setItem('checklists', JSON.stringify(checklists));
+    salvarLocalStorage('checklists', checklists); // ✅ Usando wrapper
     carregarHistorico();
 }
 
 function limparFormulario() {
     if (confirm("Limpar todos os campos do formulário?")) {
+        checklistEditando = null; // ✅ Limpa modo edição
         document.getElementById('checklistForm').reset();
         atualizarResumoVeiculo();
     }
@@ -544,9 +605,8 @@ function atualizarResumoVeiculo() {
 // ==========================================
 // FOTOS - CÂMERA OTIMIZADA
 // ==========================================
-let streamCamera = null;
-let fotosVeiculo = JSON.parse(localStorage.getItem('fotosVeiculo') || '[]');
 
+// ✅ FIX #5: Aumentar timeout de GPS de 800ms para 3000ms
 function iniciarCamera() {
   const video = document.getElementById('cameraPreview');
   const btnTirar = document.getElementById('btnTirarFoto');
@@ -557,7 +617,13 @@ function iniciarCamera() {
   btnTirar.disabled = true;
 
   if (navigator.geolocation) {
-    try { navigator.geolocation.getCurrentPosition(() => {}, () => {}, { timeout: 800 }); } catch(e) {}
+    try { 
+        navigator.geolocation.getCurrentPosition(
+            () => {}, 
+            () => {}, 
+            { timeout: 3000 } // ✅ FIX: Era 800ms, agora 3000ms
+        ); 
+    } catch(e) {}
   }
 
   navigator.mediaDevices.getUserMedia({
@@ -582,7 +648,7 @@ function iniciarCamera() {
     };
 
     video.oncanplay = () => habilitar();
-    setTimeout(habilitar, 600); // fallback
+    setTimeout(habilitar, 600);
   }).catch(err => {
     container.style.display = 'none';
     btnTirar.style.display = 'none';
@@ -590,6 +656,7 @@ function iniciarCamera() {
   });
 }
 
+// ✅ FIX #4: Avisar antes de apagar fotos antigas
 function tirarFoto(tentativa = 0) {
   const video = document.getElementById('cameraPreview');
 
@@ -617,15 +684,33 @@ function tirarFoto(tentativa = 0) {
       legenda: ''
     };
 
+    // ✅ FIX #4: Avisar se atingir limite
+    if (fotosVeiculo.length >= 15) {
+        if (!confirm(
+            '⚠️ LIMITE DE FOTOS ATINGIDO!\n\n' +
+            'Você já tem 15 fotos.\n' +
+            'Adicionar esta foto vai REMOVER a mais antiga.\n\n' +
+            'Continuar?'
+        )) {
+            pararCamera();
+            return;
+        }
+    }
+
     fotosVeiculo.unshift(foto);
-    if (fotosVeiculo.length > 15) fotosVeiculo = fotosVeiculo.slice(0, 15);
-    localStorage.setItem('fotosVeiculo', JSON.stringify(fotosVeiculo));
+    if (fotosVeiculo.length > 15) {
+        const removida = fotosVeiculo.pop();
+        console.log('📸 Foto mais antiga removida automaticamente');
+    }
+    
+    salvarLocalStorage('fotosVeiculo', fotosVeiculo); // ✅ Usando wrapper
     renderizarGaleria();
     pararCamera();
   });
 }
 
-function obterTextoMarcaDagua(timeoutMs = 1500) {
+// ✅ FIX #5: Aumentar timeout de 1500ms para 3000ms
+function obterTextoMarcaDagua(timeoutMs = 3000) {
   const dataHora = new Date().toLocaleString('pt-BR');
 
   if (!navigator.geolocation) return Promise.resolve(dataHora);
@@ -663,7 +748,7 @@ function obterTextoMarcaDagua(timeoutMs = 1500) {
 
 function adicionarMarcaDagua(canvas, callback) {
   const ctx = canvas.getContext('2d');
-  obterTextoMarcaDagua(1500).then((texto) => {
+  obterTextoMarcaDagua(3000).then((texto) => {
     desenharTexto(ctx, canvas.width, canvas.height, texto);
     callback();
   });
@@ -705,8 +790,24 @@ function pararCamera() {
     document.getElementById('btnTirarFoto').style.display = 'none';
 }
 
+// ✅ FIX #4: Avisar ao adicionar fotos da galeria também
 function adicionarFotos(event) {
     const files = Array.from(event.target.files);
+    
+    // ✅ Verificar limite ANTES de processar
+    if (fotosVeiculo.length + files.length > 15) {
+        const aRemover = (fotosVeiculo.length + files.length) - 15;
+        if (!confirm(
+            `⚠️ LIMITE DE FOTOS!\n\n` +
+            `Você está adicionando ${files.length} foto(s).\n` +
+            `Isso vai REMOVER ${aRemover} foto(s) antiga(s).\n\n` +
+            `Continuar?`
+        )) {
+            event.target.value = '';
+            return;
+        }
+    }
+    
     const processarArquivo = (index) => {
         if (index >= files.length) return;
         
@@ -729,7 +830,7 @@ function adicionarFotos(event) {
                         legenda: ''
                     });
                     if (fotosVeiculo.length > 15) fotosVeiculo = fotosVeiculo.slice(0, 15);
-                    localStorage.setItem('fotosVeiculo', JSON.stringify(fotosVeiculo));
+                    salvarLocalStorage('fotosVeiculo', fotosVeiculo); // ✅ Usando wrapper
                     renderizarGaleria();
                     processarArquivo(index + 1);
                 });
@@ -779,13 +880,13 @@ function salvarLegenda(id, texto) {
     const foto = fotosVeiculo.find(f => f.id === id);
     if (foto) {
         foto.legenda = texto;
-        localStorage.setItem('fotosVeiculo', JSON.stringify(fotosVeiculo));
+        salvarLocalStorage('fotosVeiculo', fotosVeiculo); // ✅ Usando wrapper
     }
 }
 
 function removerFoto(id) {
     fotosVeiculo = fotosVeiculo.filter(f => f.id !== id);
-    localStorage.setItem('fotosVeiculo', JSON.stringify(fotosVeiculo));
+    salvarLocalStorage('fotosVeiculo', fotosVeiculo); // ✅ Usando wrapper
     renderizarGaleria();
 }
 
@@ -890,7 +991,6 @@ function atualizarBarraOS() {
 }
 
 function atualizarResumoOS() {
-    // Cabeçalho
     const logoSrc = document.getElementById('logo-oficina')?.src;
     if (logoSrc) document.getElementById('logoResumo').src = logoSrc;
     
@@ -900,7 +1000,6 @@ function atualizarResumoOS() {
     document.getElementById('cnpjOficinaResumo').textContent = document.getElementById('cnpj-oficina')?.textContent || '';
     document.getElementById('osNumero').textContent = gerarNumeroOS();
 
-    // Dados Cliente/Veículo
     document.getElementById('rNomeCliente').textContent = document.getElementById('nome_cliente')?.value || '-';
     document.getElementById('rCpfCnpj').textContent = document.getElementById('cpf_cnpj')?.value || '-';
     document.getElementById('rCelular').textContent = document.getElementById('celular_cliente')?.value || '-';
@@ -921,7 +1020,6 @@ function atualizarResumoOS() {
     document.getElementById('rServicos').textContent = document.getElementById('servicos')?.value || '-';
     document.getElementById('rObsInspecao').textContent = document.getElementById('obsInspecao')?.value || '-';
 
-    // Checklist
     const areaBadges = document.getElementById('rChecklistBadges');
     areaBadges.innerHTML = ''; 
     const checkboxesMarcados = document.querySelectorAll('#checklistForm input[type="checkbox"]:checked');
@@ -944,10 +1042,8 @@ function atualizarResumoOS() {
         });
     }
 
-    // NOVA FUNCIONALIDADE: Galeria de 5 fotos miniatura com zoom - PRIMEIRA PÁGINA
     renderizarGaleriaResumo();
 
-    // Tabelas Orçamento
     const containerTabelas = document.getElementById('containerTabelasOrcamento');
     containerTabelas.innerHTML = '';
     
@@ -979,86 +1075,46 @@ function atualizarResumoOS() {
     divGrid.appendChild(divServicos);
     containerTabelas.appendChild(divGrid);
 
-    // Rodapé
     const textoRodape = `Checklist gerado por ${document.getElementById('nome-oficina')?.textContent || 'Oficina'} CNPJ ${document.getElementById('cnpj-oficina')?.textContent || ''} - ${new Date().toLocaleString('pt-BR')}`;
     const rod1 = document.getElementById('rodape-texto-1');
     const rod2 = document.getElementById('rodape-texto-2');
     if (rod1) rod1.textContent = textoRodape;
     if (rod2) rod2.textContent = textoRodape;
     
-    // Header Pág 2
     const headerPag2 = document.getElementById('header-pag2');
     if(headerPag2) headerPag2.innerHTML = document.getElementById('template-cabecalho').innerHTML;
 }
 
-// NOVA FUNÇÃO: Renderizar galeria de 5 fotos miniatura com zoom - MENOR (metade)
 function renderizarGaleriaResumo() {
-    // Remove galeria existente se houver
     let galeriaExistente = document.getElementById('galeriaFotosResumo');
-    if (galeriaExistente) {
-        galeriaExistente.remove();
-    }
+    if (galeriaExistente) galeriaExistente.remove();
 
-    // Se não houver fotos, não adiciona nada
-    if (!fotosVeiculo || fotosVeiculo.length === 0) {
-        return;
-    }
+    if (!fotosVeiculo || fotosVeiculo.length === 0) return;
 
-    // Pegar as 5 primeiras fotos
     const fotosParaResumo = fotosVeiculo.slice(0, 5);
 
-    // Criar container da galeria
     const galeriaDiv = document.createElement('div');
     galeriaDiv.id = 'galeriaFotosResumo';
     galeriaDiv.className = 'os-box mt-10';
     galeriaDiv.innerHTML = '<div class="os-box-title" style="font-size: 10px; padding: 4px 8px;">📸 FOTOS DO VEÍCULO</div>';
 
-    // Grid de fotos - MENOR (metade do tamanho)
     const gridFotos = document.createElement('div');
-    gridFotos.style.cssText = `
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 4px;
-        margin-top: 6px;
-        padding: 6px;
-    `;
+    gridFotos.style.cssText = `display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-top: 6px; padding: 6px;`;
 
     fotosParaResumo.forEach((foto, index) => {
         const fotoContainer = document.createElement('div');
-        fotoContainer.style.cssText = `
-            position: relative;
-            cursor: pointer;
-            border: 1px solid #e41616;
-            border-radius: 4px;
-            overflow: hidden;
-            aspect-ratio: 1;
-        `;
+        fotoContainer.style.cssText = `position: relative; cursor: pointer; border: 1px solid #e41616; border-radius: 4px; overflow: hidden; aspect-ratio: 1;`;
 
         const img = document.createElement('img');
         img.src = foto.dataURL;
         img.alt = `Foto ${index + 1}`;
-        img.style.cssText = `
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        `;
+        img.style.cssText = `width: 100%; height: 100%; object-fit: cover;`;
 
-        // Adicionar evento de clique para zoom
         fotoContainer.onclick = () => abrirFotoGrande(foto.dataURL);
 
-        // Ícone de zoom - MENOR
         const zoomIcon = document.createElement('div');
         zoomIcon.innerHTML = '🔍';
-        zoomIcon.style.cssText = `
-            position: absolute;
-            bottom: 2px;
-            right: 2px;
-            background: rgba(0,0,0,0.7);
-            color: white;
-            padding: 2px 4px;
-            border-radius: 3px;
-            font-size: 8px;
-        `;
+        zoomIcon.style.cssText = `position: absolute; bottom: 2px; right: 2px; background: rgba(0,0,0,0.7); color: white; padding: 2px 4px; border-radius: 3px; font-size: 8px;`;
 
         fotoContainer.appendChild(img);
         fotoContainer.appendChild(zoomIcon);
@@ -1067,7 +1123,6 @@ function renderizarGaleriaResumo() {
 
     galeriaDiv.appendChild(gridFotos);
 
-    // Inserir a galeria ANTES das assinaturas (na PRIMEIRA página)
     const assinaturas = document.getElementById('template-assinaturas');
     if (assinaturas && assinaturas.parentNode) {
         assinaturas.parentNode.insertBefore(galeriaDiv, assinaturas);
