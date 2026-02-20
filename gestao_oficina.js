@@ -281,7 +281,14 @@ function renderizarKanban() {
 }
 
 function renderizarCardOS(os) {
-  const prioridade = PRIORIDADES[os.prioridade];
+  // ✅ FIX: Validação robusta da prioridade
+  const prioridadeKey = os.prioridade || 'normal';
+  const prioridade = PRIORIDADES[prioridadeKey] || PRIORIDADES['normal'];
+  
+  if (!prioridade) {
+    console.error(`❌ Prioridade inválida: ${os.prioridade}`, os);
+    return '<div class="os-card error">❌ Erro ao renderizar OS</div>';
+  }
   
   return `
     <div class="os-card ${os.atrasado ? 'atrasado' : ''} ${os.nao_compareceu ? 'nao-chegou' : ''} ${prioridade.class}" data-id="${os.id}">
