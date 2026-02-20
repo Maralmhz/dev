@@ -45,7 +45,7 @@
             <div class="header-badge">v3.1 PRO</div>
         </div>
 <div class="tabs">
-    <button class="tab-button active" onclick="switchTab('novo-checklist')"><span>➕ Novo Checklist</span></button>
+    <button class="tab-button active" onclick="switchTab('novo-checklist')"><span>➞ Novo Checklist</span></button>
     <button class="tab-button" onclick="switchTab('orcamento')"><span>💰 Peças & Serviços</span></button>
     <button class="tab-button" onclick="switchTab('fotos')"><span>📸 Fotos</span></button>
     <button class="tab-button" onclick="switchTab('resumo'); atualizarResumoOS()"><span>📄 Resumo</span></button>
@@ -433,7 +433,7 @@
 <div class="form-row">
     <div class="form-group">
 <button type="button" class="btn-primary" id="btnAdicionarItem" onclick="adicionarItemManual()">
-    ➕ Adicionar
+    ➞ Adicionar
 </button>
 
     </div>
@@ -649,7 +649,7 @@
     <div class="content">
         <div class="page-header">
             <h2>🛠️ Gestão da Oficina</h2>
-            <button class="btn-primary" onclick="abrirModalNovoOS()">➕ Nova OS</button>
+            <button class="btn-primary" onclick="abrirModalNovoOS()">➞ Nova OS</button>
         </div>
         
         <!-- PAINEL DE CONTROLE -->
@@ -681,6 +681,8 @@
 <script src="app.js"></script>
 <script src="checklist.js"></script>
 <script src="gestao_oficina.js"></script>
+<!-- 🔥 SYNC FIREBASE GESTÃO OFICINA -->
+<script type="module" src="gestao_oficina_firebase.js"></script>
     
 <div class="os-footer" id="rRodape" style="position: fixed; bottom: 0; left: 0; right: 0; width: 100%; text-align: center; font-size: 10px; background: #f8f9fa; padding: 8px 12px; border-top: 2px solid var(--color-primary); z-index: 9999; box-sizing: border-box; font-family: Arial, sans-serif;">
     <span id="rodape-texto">Developed by Hallz Branding 3199676-6963</span>
