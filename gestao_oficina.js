@@ -734,14 +734,28 @@ function fecharModal() {
 // ==========================================
 
 function acaoOS(id, acao) {
-  const os = carregarOS().find(o => o.id === id);
-  if (!os) return;
+  const listaOS = carregarOS();
+  const os = listaOS.find(o => o.id === id);
+  if (!os) {
+    console.error('OS não encontrada:', id);
+    return;
+  }
+  
+  console.log('Ação:', acao, 'OS antes:', os.status_geral);
   
   switch (acao) {
     case 'entrada':
       os.data_entrada_real = new Date().toISOString();
       os.status_geral = 'em_andamento';
-      mostrarNotificacao(`🚗 Entrada: ${os.placa}`, 'success');
+      os.historico_etapas.push({
+        acao: 'entrada',
+        data: new Date().toISOString(),
+        status_anterior: 'agendado',
+        status_novo: 'em_andamento'
+      });
+      console.log('OS depois da entrada:', os.status_geral);
+      salvarOS(os);
+      mostrarNotificacao(`🚗 Entrada registrada: ${os.placa}`, 'success');
       break;
       
     case 'finalizar':
@@ -755,6 +769,13 @@ function acaoOS(id, acao) {
           os.tempo_real_min = Math.round(diff / (1000 * 60));
         }
         
+        os.historico_etapas.push({
+          acao: 'finalizacao',
+          data: new Date().toISOString(),
+          tempo_total_min: os.tempo_real_min
+        });
+        
+        salvarOS(os);
         mostrarNotificacao(`✅ ${os.placa} finalizado!`, 'success');
       } else {
         return;
@@ -762,8 +783,11 @@ function acaoOS(id, acao) {
       break;
   }
   
-  salvarOS(os);
-  renderizarVisao();
+  // Forçar re-renderização completa
+  setTimeout(() => {
+    console.log('Re-renderizando visão...');
+    renderizarVisao();
+  }, 100);
 }
 
 // ==========================================
