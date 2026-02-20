@@ -18,17 +18,23 @@ window.OFICINA_CONFIG = {
 };
 
 // ============================================
-// CONFIGURAÇÃO FIREBASE - NOVO PROJETO oficina-hallz
+// CONFIGURAÇÃO FIREBASE - COMPLETA COM REALTIME DATABASE
 // ============================================
 
 window.FIREBASE_CONFIG = {
     apiKey: "AIzaSyB6b4waUVzjwxWRCqxDGdtnMuQ8dPLnLRc",
     authDomain: "oficina-hallz.firebaseapp.com",
+    databaseURL: "https://oficina-hallz-default-rtdb.firebaseio.com/",  // ✅ ADICIONADO para Realtime Database
     projectId: "oficina-hallz",
     storageBucket: "oficina-hallz.firebasestorage.app",
     messagingSenderId: "597523417628",
     appId: "1:597523417628:web:c928794dec224c0d29edd9"
 };
+
+// Variáveis de compatibilidade para firebase_app_real.js
+window.FIREBASE_API_KEY = "AIzaSyB6b4waUVzjwxWRCqxDGdtnMuQ8dPLnLRc";
+window.FIREBASE_SENDER_ID = "597523417628";
+window.FIREBASE_APP_ID = "1:597523417628:web:c928794dec224c0d29edd9";
 
 // ============================================
 // CONFIG GITHUB GIST (DESABILITADO)
@@ -38,3 +44,6 @@ window.CLOUD_CONFIG = {
     GIST_ID: '',
     FILENAME: 'backup_checklist.json'
 };
+
+console.log('✅ Config carregado:', window.OFICINA_CONFIG.nome);
+console.log('🔥 Firebase Config:', window.FIREBASE_CONFIG.projectId);
