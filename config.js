@@ -18,23 +18,22 @@ window.OFICINA_CONFIG = {
 };
 
 // ============================================
-// CONFIGURAÇÃO FIREBASE - COMPLETA COM REALTIME DATABASE
+// CONFIGURAÇÃO FIREBASE - NOVO PROJETO DEV ISOLADO
 // ============================================
 
 window.FIREBASE_CONFIG = {
-    apiKey: "AIzaSyB6b4waUVzjwxWRCqxDGdtnMuQ8dPLnLRc",
-    authDomain: "oficina-hallz.firebaseapp.com",
-    databaseURL: "https://oficina-hallz-default-rtdb.firebaseio.com/",  // ✅ ADICIONADO para Realtime Database
-    projectId: "oficina-hallz",
-    storageBucket: "oficina-hallz.firebasestorage.app",
-    messagingSenderId: "597523417628",
-    appId: "1:597523417628:web:c928794dec224c0d29edd9"
+    apiKey: "AIzaSyAZkatw4xvO3MLoZM465YQJso_-PFuLZxo",
+    authDomain: "oficina-dev-hallz.firebaseapp.com",
+    projectId: "oficina-dev-hallz",
+    storageBucket: "oficina-dev-hallz.firebasestorage.app",
+    messagingSenderId: "458466237755",
+    appId: "1:458466237755:web:589d6b233a3c338c466b1e"
 };
 
 // Variáveis de compatibilidade para firebase_app_real.js
-window.FIREBASE_API_KEY = "AIzaSyB6b4waUVzjwxWRCqxDGdtnMuQ8dPLnLRc";
-window.FIREBASE_SENDER_ID = "597523417628";
-window.FIREBASE_APP_ID = "1:597523417628:web:c928794dec224c0d29edd9";
+window.FIREBASE_API_KEY = "AIzaSyAZkatw4xvO3MLoZM465YQJso_-PFuLZxo";
+window.FIREBASE_SENDER_ID = "458466237755";
+window.FIREBASE_APP_ID = "1:458466237755:web:589d6b233a3c338c466b1e";
 
 // ============================================
 // CONFIG GITHUB GIST (DESABILITADO)
