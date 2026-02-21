@@ -13,7 +13,7 @@
    <title id="titulo-pagina">Checklist de Entrada – Oficina</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
-    <!-- ✅ FIREBASE CDN OFICIAL (COMPAT) -->
+    <!-- ✅ FIREBASE CDN OFICIAL (COMPAT v9+) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 </head>
@@ -678,17 +678,27 @@
     </div>
 </div>
 
-<!-- ✅ ORDEM CORRETA FIREBASE + APP SCRIPTS -->
+<!-- ✅ 1. PRIMEIRO: CONFIGS -->
 <script src="config.js"></script>
+
+<!-- ✅ 2. FIX INICIALIZAÇÃO FIREBASE RTDB GLOBAL -->
+<script>
+    if (window.FIREBASE_CONFIG && !window.firebase?.apps?.length) {
+        window.firebase.initializeApp(window.FIREBASE_CONFIG);
+        console.log("🔥 Firebase App GLOBAL inicializado!");
+    }
+</script>
+
+<!-- ✅ 3. SCRIPTS LOCAIS -->
 <script src="firebase_app_real.js"></script>
 <script src="app.js"></script>
 <script src="checklist.js"></script>
 <script src="gestao_oficina.js"></script>
 
-<!-- 🔥 SYNC FIREBASE GESTÃO OFICINA (DEPOIS DE TUDO) -->
+<!-- ✅ 4. SYNC FIREBASE GESTÃO OFICINA -->
 <script type="module" src="gestao_oficina_firebase.js"></script>
 
-<!-- ✅ CACHE & SYNC MANAGERS (MÓDULOS ES6) -->
+<!-- ✅ 5. CACHE E SYNC MANAGERS -->
 <script type="module" src="cache_manager.js"></script>
 <script type="module" src="sync_manager.js"></script>
 
