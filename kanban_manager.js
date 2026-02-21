@@ -63,8 +63,9 @@ function iniciarKanban() {
       console.error('❌ Erro listener Kanban FINALIZADO:', error);
     });
   
-  // Criar modal de ações (se não existir)
+  // Criar modals
   criarModalAcoes();
+  criarModalDetalhes();
   
   console.log('✅ Kanban iniciado com sucesso!');
 }
@@ -250,14 +251,21 @@ function criarModalAcoes() {
   document.getElementById('modal-fechar').addEventListener('click', fecharModalAcoes);
   
   // Animação CSS
-  const style = document.createElement('style');
-  style.textContent = `
-    @keyframes slideUp {
-      from { transform: translateY(100%); }
-      to { transform: translateY(0); }
-    }
-  `;
-  document.head.appendChild(style);
+  if (!document.getElementById('kanban-animations')) {
+    const style = document.createElement('style');
+    style.id = 'kanban-animations';
+    style.textContent = `
+      @keyframes slideUp {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
 }
 
 function abrirModalAcoes(osId, osData, statusAtual) {
@@ -334,7 +342,7 @@ function abrirModalAcoes(osId, osData, statusAtual) {
     cursor: pointer;
   `;
   btnDetalhes.innerHTML = '👁️ Ver Detalhes Completos';
-  btnDetalhes.onclick = () => verDetalhesOS(osId);
+  btnDetalhes.onclick = () => verDetalhesOS(osId, osData);
   listaAcoes.appendChild(btnDetalhes);
   
   // Mostrar modal
@@ -345,6 +353,275 @@ function fecharModalAcoes() {
   const modal = document.getElementById('kanban-modal-acoes');
   modal.style.display = 'none';
   kanbanState.modalAberto = false;
+}
+
+// ==========================================
+// MODAL DE DETALHES COMPLETOS
+// ==========================================
+
+function criarModalDetalhes() {
+  if (document.getElementById('kanban-modal-detalhes')) return;
+  
+  const modal = document.createElement('div');
+  modal.id = 'kanban-modal-detalhes';
+  modal.style.cssText = `
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    z-index: 10000;
+    overflow-y: auto;
+    animation: fadeIn 0.3s ease;
+  `;
+  
+  modal.innerHTML = `
+    <div id="modal-detalhes-content" style="
+      background: #fff;
+      width: 100%;
+      max-width: 700px;
+      margin: 20px auto;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      overflow: hidden;
+    ">
+      <!-- Conteúdo será inserido aqui -->
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Fechar ao clicar fora
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      fecharModalDetalhes();
+    }
+  });
+}
+
+function verDetalhesOS(osId, osData) {
+  fecharModalAcoes();
+  
+  const modal = document.getElementById('kanban-modal-detalhes');
+  const content = document.getElementById('modal-detalhes-content');
+  
+  const numeroOS = osData.numero_os || osId.substring(0, 8).toUpperCase();
+  const placa = osData.veiculo?.placa || 'SEM PLACA';
+  const modelo = osData.veiculo?.modelo || '-';
+  const chassi = osData.veiculo?.chassi || '-';
+  const kmEntrada = osData.veiculo?.km_entrada || '-';
+  const kmSaida = osData.veiculo?.km_saida || '-';
+  const combustivel = osData.veiculo?.combustivel || '-';
+  
+  const clienteNome = osData.cliente?.nome || '-';
+  const clienteTel = osData.cliente?.telefone || '-';
+  const clienteCPF = osData.cliente?.cpf_cnpj || '-';
+  const clienteEndereco = osData.cliente?.endereco || '-';
+  
+  const dataEntrada = formatarDataCompletaKanban(osData.data_entrada);
+  const dataAtualizacao = formatarDataCompletaKanban(osData.ultima_atualizacao || osData.data_entrada);
+  
+  const totalPecas = osData.financeiro?.total_pecas || 0;
+  const totalServicos = osData.financeiro?.total_servicos || 0;
+  const totalGeral = osData.financeiro?.total || 0;
+  
+  const servicosSolicitados = osData.servicos_solicitados || '-';
+  const observacoes = osData.observacoes_inspecao || '-';
+  
+  const historico = osData.historico || [];
+  const statusAtual = osData.status || 'RECEBIDO';
+  
+  content.innerHTML = `
+    <!-- HEADER -->
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 24px; color: #fff;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h2 style="margin: 0; font-size: 22px;">📄 OS #${numeroOS}</h2>
+        <button onclick="fecharModalDetalhes()" style="
+          background: rgba(255,255,255,0.2);
+          border: none;
+          color: #fff;
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          font-size: 20px;
+          cursor: pointer;
+        ">×</button>
+      </div>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <div style="background: rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 600;">
+          ${placa}
+        </div>
+        <div style="background: rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 8px; font-size: 14px;">
+          ${traduzirStatusKanban(statusAtual)}
+        </div>
+      </div>
+    </div>
+    
+    <!-- CONTEÚDO SCROLL -->
+    <div style="padding: 20px; max-height: 70vh; overflow-y: auto;">
+      
+      <!-- VEÍCULO -->
+      <div style="margin-bottom: 24px;">
+        <h3 style="color: #333; font-size: 16px; margin: 0 0 12px; padding-bottom: 8px; border-bottom: 2px solid #667eea;">
+          🚗 VEÍCULO
+        </h3>
+        <div style="display: grid; gap: 8px; font-size: 14px;">
+          <div><strong>Placa:</strong> ${placa}</div>
+          <div><strong>Modelo:</strong> ${modelo}</div>
+          <div><strong>Chassi:</strong> ${chassi}</div>
+          <div><strong>KM Entrada:</strong> ${kmEntrada}</div>
+          <div><strong>KM Saída:</strong> ${kmSaida}</div>
+          <div><strong>Combustível:</strong> ${combustivel}</div>
+        </div>
+      </div>
+      
+      <!-- CLIENTE -->
+      <div style="margin-bottom: 24px;">
+        <h3 style="color: #333; font-size: 16px; margin: 0 0 12px; padding-bottom: 8px; border-bottom: 2px solid #667eea;">
+          👤 CLIENTE
+        </h3>
+        <div style="display: grid; gap: 8px; font-size: 14px;">
+          <div><strong>Nome:</strong> ${clienteNome}</div>
+          <div><strong>Telefone:</strong> ${clienteTel}</div>
+          <div><strong>CPF/CNPJ:</strong> ${clienteCPF}</div>
+          <div><strong>Endereço:</strong> ${clienteEndereco}</div>
+        </div>
+      </div>
+      
+      <!-- DATAS -->
+      <div style="margin-bottom: 24px;">
+        <h3 style="color: #333; font-size: 16px; margin: 0 0 12px; padding-bottom: 8px; border-bottom: 2px solid #667eea;">
+          📅 DATAS
+        </h3>
+        <div style="display: grid; gap: 8px; font-size: 14px;">
+          <div><strong>Entrada:</strong> ${dataEntrada}</div>
+          <div><strong>Última atualização:</strong> ${dataAtualizacao}</div>
+        </div>
+      </div>
+      
+      <!-- ORÇAMENTO -->
+      <div style="margin-bottom: 24px;">
+        <h3 style="color: #333; font-size: 16px; margin: 0 0 12px; padding-bottom: 8px; border-bottom: 2px solid #667eea;">
+          💰 ORÇAMENTO
+        </h3>
+        <div style="background: #f8fafc; padding: 16px; border-radius: 12px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span>Peças:</span>
+            <strong style="color: #0056b3;">R$ ${totalPecas.toFixed(2)}</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+            <span>Serviços:</span>
+            <strong style="color: #e41616;">R$ ${totalServicos.toFixed(2)}</strong>
+          </div>
+          <div style="border-top: 2px solid #ddd; padding-top: 12px; display: flex; justify-content: space-between; font-size: 18px;">
+            <strong>TOTAL:</strong>
+            <strong style="color: #16a34a;">R$ ${totalGeral.toFixed(2)}</strong>
+          </div>
+        </div>
+      </div>
+      
+      <!-- SERVIÇOS SOLICITADOS -->
+      <div style="margin-bottom: 24px;">
+        <h3 style="color: #333; font-size: 16px; margin: 0 0 12px; padding-bottom: 8px; border-bottom: 2px solid #667eea;">
+          🔧 SERVIÇOS SOLICITADOS
+        </h3>
+        <div style="background: #f8fafc; padding: 12px; border-radius: 8px; font-size: 14px; line-height: 1.6;">
+          ${servicosSolicitados}
+        </div>
+      </div>
+      
+      <!-- OBSERVAÇÕES -->
+      <div style="margin-bottom: 24px;">
+        <h3 style="color: #333; font-size: 16px; margin: 0 0 12px; padding-bottom: 8px; border-bottom: 2px solid #667eea;">
+          📝 OBSERVAÇÕES DA INSPEÇÃO
+        </h3>
+        <div style="background: #f8fafc; padding: 12px; border-radius: 8px; font-size: 14px; line-height: 1.6;">
+          ${observacoes}
+        </div>
+      </div>
+      
+      <!-- HISTÓRICO -->
+      <div style="margin-bottom: 24px;">
+        <h3 style="color: #333; font-size: 16px; margin: 0 0 12px; padding-bottom: 8px; border-bottom: 2px solid #667eea;">
+          📊 HISTÓRICO (${historico.length} eventos)
+        </h3>
+        ${historico.length > 0 ? `
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            ${historico.slice(0, 5).reverse().map(h => `
+              <div style="background: #f8fafc; padding: 10px; border-radius: 6px; font-size: 13px; border-left: 3px solid #667eea;">
+                <div style="font-weight: 600; color: #555; margin-bottom: 4px;">
+                  ${formatarDataCompletaKanban(h.timestamp)}
+                </div>
+                <div style="color: #777;">${h.descricao || h.tipo}</div>
+              </div>
+            `).join('')}
+            ${historico.length > 5 ? `<div style="text-align: center; color: #999; font-size: 12px; margin-top: 8px;">+ ${historico.length - 5} eventos anteriores</div>` : ''}
+          </div>
+        ` : '<div style="text-align: center; color: #999; padding: 20px;">Nenhum histórico registrado</div>'}
+      </div>
+      
+    </div>
+    
+    <!-- FOOTER COM AÇÕES -->
+    <div style="padding: 20px; border-top: 1px solid #e5e7eb; display: flex; flex-direction: column; gap: 10px;">
+      <button onclick="editarOS('${osId}')" style="
+        width: 100%;
+        padding: 14px;
+        background: #3b82f6;
+        border: none;
+        border-radius: 10px;
+        color: #fff;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+      ">✏️ Editar OS</button>
+      
+      <button onclick="gerarPDFOS('${osId}')" style="
+        width: 100%;
+        padding: 14px;
+        background: #10b981;
+        border: none;
+        border-radius: 10px;
+        color: #fff;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+      ">📄 Gerar PDF</button>
+      
+      <button onclick="enviarWhatsAppOS('${numeroOS}', '${clienteNome}', '${clienteTel}')" style="
+        width: 100%;
+        padding: 14px;
+        background: #25d366;
+        border: none;
+        border-radius: 10px;
+        color: #fff;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+      ">📱 Enviar WhatsApp</button>
+      
+      <button onclick="fecharModalDetalhes()" style="
+        width: 100%;
+        padding: 14px;
+        background: #f1f5f9;
+        border: none;
+        border-radius: 10px;
+        color: #64748b;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+      ">❌ Fechar</button>
+    </div>
+  `;
+  
+  modal.style.display = 'block';
+}
+
+function fecharModalDetalhes() {
+  const modal = document.getElementById('kanban-modal-detalhes');
+  modal.style.display = 'none';
   kanbanState.osAtual = null;
 }
 
@@ -398,14 +675,31 @@ async function moverOSParaStatus(osId, novoStatus, statusAnterior, numeroOS) {
   }
 }
 
-function verDetalhesOS(osId) {
-  fecharModalAcoes();
-  console.log('👁️ Ver detalhes da OS:', osId);
+function editarOS(osId) {
+  console.log('✏️ Editar OS:', osId);
+  fecharModalDetalhes();
   
-  // TODO: Implementar modal de detalhes completo
   if (window.mostrarNotificacao) {
-    window.mostrarNotificacao('🚧 Detalhes completos em desenvolvimento', 'info');
+    window.mostrarNotificacao('🚧 Função Editar OS em desenvolvimento', 'info');
   }
+}
+
+function gerarPDFOS(osId) {
+  console.log('📄 Gerar PDF da OS:', osId);
+  
+  if (window.mostrarNotificacao) {
+    window.mostrarNotificacao('🚧 Geração de PDF em desenvolvimento', 'info');
+  }
+}
+
+function enviarWhatsAppOS(numeroOS, clienteNome, clienteTel) {
+  console.log('📱 Enviar WhatsApp:', numeroOS);
+  
+  const telefone = clienteTel.replace(/\D/g, '');
+  const mensagem = `Olá ${clienteNome}! Sua OS #${numeroOS} foi atualizada. Qualquer dúvida, estamos à disposição!`;
+  const url = `https://wa.me/55${telefone}?text=${encodeURIComponent(mensagem)}`;
+  
+  window.open(url, '_blank');
 }
 
 // ==========================================
@@ -420,6 +714,23 @@ function formatarDataKanban(timestamp) {
     return data.toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch (e) {
+    return '-';
+  }
+}
+
+function formatarDataCompletaKanban(timestamp) {
+  if (!timestamp) return '-';
+  
+  try {
+    const data = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return data.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
     });
@@ -445,6 +756,10 @@ function traduzirStatusKanban(status) {
 if (typeof window !== 'undefined') {
   window.iniciarKanban = iniciarKanban;
   window.pararKanban = pararKanban;
+  window.fecharModalDetalhes = fecharModalDetalhes;
+  window.editarOS = editarOS;
+  window.gerarPDFOS = gerarPDFOS;
+  window.enviarWhatsAppOS = enviarWhatsAppOS;
 }
 
-console.log('✅ kanban_manager.js v3.0 MOBILE-FIRST carregado');
+console.log('✅ kanban_manager.js v3.1 MOBILE-FIRST + DETALHES carregado');
