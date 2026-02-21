@@ -20,7 +20,7 @@ async function initFirebaseOS() {
     }
 
     // Reutiliza a inicialização existente do checklist
-    const { initializeApp } = await import(
+    const { initializeApp, getApps, getApp } = await import(
       'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js'
     );
     const { getFirestore } = await import(
@@ -36,7 +36,7 @@ async function initFirebaseOS() {
       appId: window.FIREBASE_APP_ID
     };
 
-    const app = initializeApp(config);
+    const app = getApps().length ? getApp() : initializeApp(config);
     const db = getFirestore(app);
 
     console.log('🔥 Firebase OS inicializado:', window.OFICINA_CONFIG.oficina_id);
@@ -85,11 +85,6 @@ function normalizarOS(os) {
 // ==========================================
 
 export async function salvarOSFirebase(os) {
-  if (!firebaseSyncAtivo) {
-    console.log('📴 Sincronização Firebase desabilitada');
-    return false;
-  }
-
   try {
     const db = await initFirebaseOS();
     if (!db) return false;
@@ -166,11 +161,6 @@ async function atualizarIndiceVeiculoOS(db, os) {
 // ==========================================
 
 export async function buscarOSFirebaseMes(ano, mes, limite = 100) {
-  if (!firebaseSyncAtivo) {
-    console.log('📴 Sincronização Firebase desabilitada');
-    return [];
-  }
-
   try {
     const db = await initFirebaseOS();
     if (!db) return [];
@@ -214,12 +204,14 @@ export async function buscarOSFirebaseMesAtual(limite = 100) {
 // ==========================================
 
 export async function sincronizarOSFirebase() {
-  if (!firebaseSyncAtivo) {
-    mostrarNotificacao('⚠️ Sincronização Firebase não configurada', 'warning');
-    return { sucesso: false, mensagem: 'Firebase não configurado' };
-  }
-
   try {
+    if (!firebaseSyncAtivo) {
+      const db = await initFirebaseOS();
+      if (!db) {
+        mostrarNotificacao('⚠️ Sincronização Firebase não configurada', 'warning');
+        return { sucesso: false, mensagem: 'Firebase não configurado' };
+      }
+    }
     mostrarNotificacao('🔄 Sincronizando com Firebase...', 'info');
 
     // 1. Buscar OS da nuvem (mês atual)

@@ -113,12 +113,17 @@ function buscarChecklistRecentePorCampo(campo, valor) {
 // ==========================================
 
 async function persistirOS(os) {
-  const resultado = salvarOS(os);
-  if (resultado && typeof resultado.then === 'function') {
-    await resultado;
+  try {
+    const resultado = salvarOS(os);
+    if (resultado && typeof resultado.then === 'function') {
+      await resultado;
+    }
+    return { ok: true };
+  } catch (error) {
+    console.error('Erro ao persistir OS:', error);
+    return { ok: false, erro: error };
   }
 }
-
 
 function salvarOS(os) {
   let lista = JSON.parse(localStorage.getItem(OS_AGENDA_KEY) || '[]');
@@ -292,10 +297,10 @@ if (typeof window !== 'undefined') {
     const os = buscarOSPorPlaca(placa);
     if (os) {
       const vincular = confirm(
-        `🔗 Encontramos uma OS para esta placa:\n\n` +
-        `Cliente: ${os.nome_cliente}\n` +
-        `Status: ${os.status_geral}\n` +
-        `Etapa: ${formatarEtapa(os.etapa_atual)}\n\n` +
+        `🔗 Encontramos uma OS para esta placa:\\n\\n` +
+        `Cliente: ${os.nome_cliente}\\n` +
+        `Status: ${os.status_geral}\\n` +
+        `Etapa: ${formatarEtapa(os.etapa_atual)}\\n\\n` +
         `Deseja vincular ao checklist?`
       );
       
@@ -547,7 +552,7 @@ function renderizarPainelSemana() {
     
     html += `
       <div class="dia-card ${isHoje ? 'dia-hoje' : ''}">
-        <div class="dia-header" ${isHoje ? 'style="cursor:pointer;" onclick="mudarVisualizacao(\'hoje\')"' : ''}>
+        <div class="dia-header" ${isHoje ? 'style="cursor:pointer;" onclick="mudarVisualizacao(\\'hoje\\')"' : ''}>
           <div class="dia-nome">${dia.toLocaleDateString('pt-BR', { weekday: 'short' })}</div>
           <div class="dia-data">${dia.getDate()}</div>
         </div>
@@ -920,12 +925,17 @@ async function salvarNovoOS() {
   os.data_prevista_saida = new Date(document.getElementById('modal_saida').value).toISOString();
   os.observacoes = document.getElementById('modal_obs').value.trim();
   
-  await persistirOS(os);
+  const resultadoPersistencia = await persistirOS(os);
 
   const modoEdicao = Boolean(osEditando);
   fecharModal();
   renderizarVisao();
-  mostrarNotificacao(modoEdicao ? '✅ OS atualizada e salva!' : '✅ OS criada e salva!', 'success');
+  
+  if (resultadoPersistencia && resultadoPersistencia.ok) {
+    mostrarNotificacao(modoEdicao ? '✅ OS atualizada e salva!' : '✅ OS criada e salva!', 'success');
+  } else {
+    mostrarNotificacao('⚠️ OS salva localmente. Verifique sincronização com Firebase.', 'warning');
+  }
 }
 
 function fecharModal() {
