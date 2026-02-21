@@ -58,6 +58,30 @@ async function initFirebase() {
     }
 }
 
+// ===== FIX COMPATÍVEL: Realtime Database + Firestore =====
+if (!window.firebase?.apps.length && window.FIREBASE_CONFIG) {
+  firebase.initializeApp(window.FIREBASE_CONFIG);
+  console.log('✅ Firebase COMPAT (v9+) inicializado para Realtime DB!');
+}
+
+// Teste conexão Realtime Database
+if (window.firebase && window.firebase.database) {
+  firebase.database().ref('.info/connected').on('value', (snap) => {
+    console.log(snap.val() ? '🟢 Realtime Database CONECTADO!' : '🔴 Realtime Database OFFLINE');
+  });
+  
+  // Teste de escrita
+  firebase.database().ref('oficinas/modelo/test_init').set({
+    status: 'ok',
+    time: Date.now(),
+    from: 'firebase_app_real.js'
+  }).then(() => {
+    console.log('✅ Realtime Database teste OK!');
+  }).catch(e => {
+    console.error('❌ Realtime DB erro:', e);
+  });
+}
+
 // ============================================
 // FUNÇÕES DE ACESSO AO FIRESTORE
 // ============================================
@@ -66,7 +90,7 @@ async function initFirebase() {
  * Busca todos os checklists da nuvem (Firestore)
  * @returns {Promise<Array>} Array de checklists
  */
-export async function buscarChecklistsNuvem() {
+window.buscarChecklistsNuvem = async function() {
     try {
         console.log('⏳ Buscando checklists do Firebase...');
         
@@ -105,7 +129,7 @@ export async function buscarChecklistsNuvem() {
  * Salva ou atualiza um checklist no Firebase
  * @param {Object} checklist - Objeto do checklist
  */
-export async function salvarNoFirebase(checklist) {
+window.salvarNoFirebase = async function(checklist) {
     try {
         console.log(`⏳ Salvando checklist ${checklist.id} no Firebase...`);
         
@@ -136,7 +160,7 @@ export async function salvarNoFirebase(checklist) {
  * @param {string|number} id - ID do checklist
  * @returns {Promise<Object|null>}
  */
-export async function buscarChecklistPorId(id) {
+window.buscarChecklistPorId = async function(id) {
     try {
         const { db } = await initFirebase();
         const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
@@ -163,7 +187,7 @@ export async function buscarChecklistPorId(id) {
  * Deleta um checklist do Firebase
  * @param {string|number} id - ID do checklist
  */
-export async function deletarChecklist(id) {
+window.deletarChecklist = async function(id) {
     try {
         const { db } = await initFirebase();
         const { doc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
@@ -184,7 +208,7 @@ export async function deletarChecklist(id) {
  * @param {Object} filtros - {placa, data_inicio, data_fim, oficina}
  * @returns {Promise<Array>}
  */
-export async function buscarChecklistsComFiltro(filtros = {}) {
+window.buscarChecklistsComFiltro = async function(filtros = {}) {
     try {
         const { db } = await initFirebase();
         const { collection, query, where, orderBy, getDocs } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
@@ -269,7 +293,7 @@ async function buscarDoGistFallback() {
 // STATUS E DIAGNÓSTICO
 // ============================================
 
-export async function verificarConexaoFirebase() {
+window.verificarConexaoFirebase = async function() {
     try {
         const { db } = await initFirebase();
         const { collection, getDocs, limit, query } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
@@ -294,6 +318,6 @@ export async function verificarConexaoFirebase() {
 
 // Exporta função de diagnóstico
 if (typeof window !== 'undefined') {
-    window.verificarFirebase = verificarConexaoFirebase;
+    window.verificarFirebase = window.verificarConexaoFirebase;
     console.log('🔧 Para testar conexão Firebase, execute: verificarFirebase()');
 }
