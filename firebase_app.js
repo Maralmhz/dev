@@ -61,6 +61,7 @@ function caminhoChecklist(checklistId, dataCriacao) {
     };
 }
 
+// ✅ FIX: Adicionando export
 export async function salvarChecklist(checklist) {
     try {
         console.log("📦 Checklist recebido:", checklist);
@@ -137,6 +138,7 @@ async function atualizarIndiceVeiculo(checklist) {
     }
 }
 
+// ✅ FIX: Adicionando export
 export async function buscarChecklistsMes(ano, mes, limite = 20) {
     const { db } = await initFirebase();
     const { collection, getDocs, query, orderBy, limit } = await import(
