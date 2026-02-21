@@ -35,10 +35,11 @@ service cloud.firestore {
     }
 
     // ==========================================
-    // OFICINAS
+    // OFICINAS - ROOT
     // ==========================================
 
     match /oficinas/{oficinaId} {
+      // Apenas leitura da oficina em si
       allow read: if pertenceOficina(oficinaId);
       allow write: if isAdmin() && pertenceOficina(oficinaId);
 
@@ -47,6 +48,7 @@ service cloud.firestore {
       // ==========================================
 
       match /ordens_servico/{osId} {
+        // ISOLAMENTO: Só acessa se o oficinaId do PATH == oficinaId do TOKEN
         allow read: if pertenceOficina(oficinaId);
 
         allow create: if pertenceOficina(oficinaId) &&
@@ -54,13 +56,20 @@ service cloud.firestore {
           isValidString(request.resource.data.cliente_id, 100) &&
           isValidString(request.resource.data.veiculo_id, 100) &&
           isValidNumber(request.resource.data.financeiro.total) &&
-          request.resource.data.version == 1;
+          request.resource.data.version == 1 &&
+          // Validações financeiras críticas
+          request.resource.data.financeiro.valor_pago == 0 &&
+          request.resource.data.financeiro.desconto >= 0;
 
         allow update: if pertenceOficina(oficinaId) &&
           versionIncremented() &&
-          // Campos read-only não podem mudar
+          // Campos read-only (não podem mudar)
           request.resource.data.numero_os == resource.data.numero_os &&
-          request.resource.data.data_entrada == resource.data.data_entrada;
+          request.resource.data.data_entrada == resource.data.data_entrada &&
+          request.resource.data.cliente_id == resource.data.cliente_id &&
+          request.resource.data.veiculo_id == resource.data.veiculo_id &&
+          // Valor total não pode ser alterado diretamente
+          request.resource.data.financeiro.total == resource.data.financeiro.total;
 
         allow delete: if false; // Bloqueado - usar status: 'cancelado'
       }
@@ -76,7 +85,9 @@ service cloud.firestore {
           isValidString(request.resource.data.nome, 200) &&
           isValidString(request.resource.data.cpf_cnpj, 20);
 
-        allow update: if pertenceOficina(oficinaId);
+        allow update: if pertenceOficina(oficinaId) &&
+          // CPF/CNPJ não pode mudar
+          request.resource.data.cpf_cnpj == resource.data.cpf_cnpj;
 
         allow delete: if false; // Bloqueado - usar ativo: false
       }
@@ -92,7 +103,9 @@ service cloud.firestore {
           isValidString(request.resource.data.placa, 10) &&
           isValidString(request.resource.data.cliente_id, 100);
 
-        allow update: if pertenceOficina(oficinaId);
+        allow update: if pertenceOficina(oficinaId) &&
+          // Placa não pode mudar
+          request.resource.data.placa == resource.data.placa;
 
         allow delete: if false;
       }
@@ -109,11 +122,14 @@ service cloud.firestore {
           isValidString(request.resource.data.codigo, 50) &&
           isValidNumber(request.resource.data.quantidade_inicial) &&
           isValidNumber(request.resource.data.preco_venda) &&
-          request.resource.data.version == 1;
+          request.resource.data.version == 1 &&
+          // Quantidade não pode ser negativa
+          request.resource.data.quantidade_atual >= 0;
 
         allow update: if pertenceOficina(oficinaId) &&
           versionIncremented() &&
           isValidNumber(request.resource.data.quantidade_atual) &&
+          request.resource.data.quantidade_atual >= 0 &&
           // Código não pode mudar
           request.resource.data.codigo == resource.data.codigo;
 
@@ -130,7 +146,8 @@ service cloud.firestore {
         // Apenas criação via transação
         allow create: if pertenceOficina(oficinaId) &&
           request.resource.data.tipo in ['entrada', 'saida'] &&
-          isValidNumber(request.resource.data.quantidade);
+          isValidNumber(request.resource.data.quantidade) &&
+          request.resource.data.quantidade > 0;
 
         // Não pode alterar ou deletar histórico
         allow update, delete: if false;
@@ -164,9 +181,11 @@ service cloud.firestore {
         allow create: if pertenceOficina(oficinaId) &&
           isValidString(request.resource.data.os_id, 100) &&
           isValidNumber(request.resource.data.valor) &&
-          request.resource.data.valor > 0;
+          request.resource.data.valor > 0 &&
+          // Validar forma de pagamento
+          request.resource.data.forma_pagamento is string;
 
-        // Pagamentos não podem ser alterados ou deletados
+        // Pagamentos NÃO podem ser alterados ou deletados
         allow update, delete: if false;
       }
 
