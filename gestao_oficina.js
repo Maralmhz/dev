@@ -30,12 +30,14 @@ let modoCalendarioCompacto = false;
 
 function novoOS(placa = '', cliente = '') {
   return {
-    id: Date.now(),
+    id: gerarIdOS(),
     oficina_id: window.OFICINA_CONFIG?.oficina_id || 'default',
     placa: placa.toUpperCase(),
     nome_cliente: cliente,
+    cliente_id: '',
     telefone: '',
     modelo: '',
+    veiculo_id: '',
     data_criacao: new Date().toISOString(),
     data_prevista_entrada: new Date().toISOString(),
     data_prevista_saida: new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString(),
@@ -62,11 +64,21 @@ function novoOS(placa = '', cliente = '') {
 
 
 function normalizarIdOS(valor) {
-  return String(valor ?? '');
+  if (window.CoreUtils?.normalizeId) return window.CoreUtils.normalizeId(valor);
+  return String(valor ?? '').trim();
+}
+
+function gerarIdOS() {
+  if (window.CoreUtils?.generateStableId) return window.CoreUtils.generateStableId('os');
+  return `os_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
 function buildOnclickId(osId) {
   return JSON.stringify(normalizarIdOS(osId));
+}
+
+function getOficinaAtualId() {
+  return window.OFICINA_CONFIG?.oficina_id || 'default';
 }
 
 function buscarChecklistRecentePorPlaca(placa) {
@@ -82,14 +94,36 @@ function buscarChecklistRecentePorPlaca(placa) {
     .sort((a, b) => new Date(b.data_criacao || 0) - new Date(a.data_criacao || 0))[0] || null;
 }
 
+
+function buscarChecklistRecentePorCampo(campo, valor) {
+  const valorBusca = normalizarIdOS(valor);
+  if (!valorBusca) return null;
+
+  const oficinaId = window.OFICINA_CONFIG?.oficina_id || 'sem_identificacao';
+  const chave = `checklists_${oficinaId}`;
+  const lista = JSON.parse(localStorage.getItem(chave) || '[]');
+
+  return lista
+    .filter(item => normalizarIdOS(item[campo]) === valorBusca)
+    .sort((a, b) => new Date(b.data_criacao || 0) - new Date(a.data_criacao || 0))[0] || null;
+}
+
 // ==========================================
 // STORAGE
 // ==========================================
 
+async function persistirOS(os) {
+  const resultado = salvarOS(os);
+  if (resultado && typeof resultado.then === 'function') {
+    await resultado;
+  }
+}
+
+
 function salvarOS(os) {
   let lista = JSON.parse(localStorage.getItem(OS_AGENDA_KEY) || '[]');
   if (!os.id) {
-    os.id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    os.id = gerarIdOS();
   }
   const idx = lista.findIndex(o => normalizarIdOS(o.id) === normalizarIdOS(os.id));
   
@@ -239,7 +273,7 @@ function buscarOSPorPlaca(placa) {
   )[0];
 }
 
-function vincularChecklistOS(osId, checklistId) {
+async function vincularChecklistOS(osId, checklistId) {
   const os = carregarOS().find(o => normalizarIdOS(o.id) === normalizarIdOS(osId));
   if (!os) return;
   
@@ -249,7 +283,7 @@ function vincularChecklistOS(osId, checklistId) {
     os.data_entrada_real = new Date().toISOString();
   }
   
-  salvarOS(os);
+  await persistirOS(os);
 }
 
 // Hook no formulário de checklist (adicionar no app.js)
@@ -449,7 +483,7 @@ function toggleDropdownEtapa(osId, event) {
   dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
 }
 
-function mudarEtapa(osId, novaEtapa) {
+async function mudarEtapa(osId, novaEtapa) {
   const os = carregarOS().find(o => normalizarIdOS(o.id) === normalizarIdOS(osId));
   if (!os) return;
   
@@ -459,7 +493,7 @@ function mudarEtapa(osId, novaEtapa) {
     data: new Date().toISOString()
   });
   
-  salvarOS(os);
+  await persistirOS(os);
   renderizarVisao();
   mostrarNotificacao(`🔄 Movido para ${formatarEtapa(novaEtapa)}`, 'info');
   
@@ -739,6 +773,15 @@ function atualizarResumoTopo(osHoje) {
         <div class="resumo-valor">${counts.total}</div>
       </div>
     </div>
+    ${filtroKanbanAtivo ? `
+      <div class="resumo-card" style="cursor:pointer;" onclick="irParaColunaKanban('todos')" title="Limpar filtro">
+        <div class="resumo-icon">🧹</div>
+        <div class="resumo-info">
+          <div class="resumo-label">Limpar filtro</div>
+          <div class="resumo-valor">${filtroKanbanAtivo}</div>
+        </div>
+      </div>
+    ` : ''}
   `;
 }
 
@@ -773,6 +816,8 @@ function abrirModalOS(os = null) {
       <h3>${os ? '✏️ Editar' : '➕ Nova'} OS</h3>
       <div class="modal-form">
         <input id="modal_placa" placeholder="Placa *" maxlength="8" value="${os?.placa || ''}" style="text-transform: uppercase;" onblur="autocompletarNovaOS()">
+        <input id="modal_cliente_id" placeholder="ID Cliente" value="${os?.cliente_id || ''}" onblur="autocompletarNovaOS()">
+        <input id="modal_veiculo_id" placeholder="ID Veículo" value="${os?.veiculo_id || ''}" onblur="autocompletarNovaOS()">
         <input id="modal_cliente" placeholder="Nome do Cliente *" value="${os?.nome_cliente || ''}">
         <input id="modal_telefone" placeholder="Telefone" value="${os?.telefone || ''}">
         <input id="modal_modelo" placeholder="Modelo" value="${os?.modelo || ''}">
@@ -811,18 +856,28 @@ async function autocompletarNovaOS() {
   if (osEditando) return;
 
   const inputPlaca = document.getElementById('modal_placa');
+  const inputClienteId = document.getElementById('modal_cliente_id');
+  const inputVeiculoId = document.getElementById('modal_veiculo_id');
   if (!inputPlaca) return;
 
   const placa = inputPlaca.value.trim().toUpperCase();
-  if (!placa) return;
+  const clienteId = inputClienteId?.value?.trim() || '';
+  const veiculoId = inputVeiculoId?.value?.trim() || '';
 
-  const oficinaAtual = window.OFICINA_CONFIG?.oficina_id || 'default';
-  const osExistente = carregarOS()
-    .filter(o => (o.oficina_id || 'default') === oficinaAtual)
-    .find(o => (o.placa || '').toUpperCase() === placa);
+  const oficinaAtual = getOficinaAtualId();
+  const osLocal = carregarOS().filter(o => (o.oficina_id || 'default') === oficinaAtual);
 
-  const checklistRecente = buscarChecklistRecentePorPlaca(placa);
-  const historico = window.debugOSFirebase?.historicoVeiculo ? await window.debugOSFirebase.historicoVeiculo(placa) : null;
+  const osExistente = osLocal.find(o => (o.placa || '').toUpperCase() === placa) ||
+    osLocal.find(o => normalizarIdOS(o.cliente_id) === normalizarIdOS(clienteId)) ||
+    osLocal.find(o => normalizarIdOS(o.veiculo_id) === normalizarIdOS(veiculoId));
+
+  const checklistRecente = buscarChecklistRecentePorPlaca(placa) ||
+    buscarChecklistRecentePorCampo('cliente_id', clienteId) ||
+    buscarChecklistRecentePorCampo('veiculo_id', veiculoId);
+
+  const historico = window.debugOSFirebase?.historicoVeiculo && placa
+    ? await window.debugOSFirebase.historicoVeiculo(placa)
+    : null;
 
   const dados = osExistente || checklistRecente || historico;
   if (!dados) return;
@@ -834,7 +889,8 @@ async function autocompletarNovaOS() {
   if (cliente && !cliente.value && dados.nome_cliente) cliente.value = dados.nome_cliente;
   if (telefone && !telefone.value && dados.telefone) telefone.value = dados.telefone;
   if (modelo && !modelo.value && dados.modelo) modelo.value = dados.modelo;
-
+  if (inputClienteId && !inputClienteId.value && dados.cliente_id) inputClienteId.value = dados.cliente_id;
+  if (inputVeiculoId && !inputVeiculoId.value && dados.veiculo_id) inputVeiculoId.value = dados.veiculo_id;
 }
 
 async function salvarNovoOS() {
@@ -855,14 +911,16 @@ async function salvarNovoOS() {
   
   os.placa = placa.toUpperCase();
   os.nome_cliente = cliente;
+  os.cliente_id = document.getElementById('modal_cliente_id')?.value.trim() || '';
   os.telefone = document.getElementById('modal_telefone').value.trim();
   os.modelo = document.getElementById('modal_modelo').value.trim();
+  os.veiculo_id = document.getElementById('modal_veiculo_id')?.value.trim() || '';
   os.prioridade = document.getElementById('modal_prioridade').value;
   os.data_prevista_entrada = new Date(document.getElementById('modal_entrada').value).toISOString();
   os.data_prevista_saida = new Date(document.getElementById('modal_saida').value).toISOString();
   os.observacoes = document.getElementById('modal_obs').value.trim();
   
-  salvarOS(os);
+  await persistirOS(os);
 
   const modoEdicao = Boolean(osEditando);
   fecharModal();
@@ -882,7 +940,7 @@ function fecharModal() {
 // AÇÕES DA OS
 // ==========================================
 
-function acaoOS(id, acao) {
+async function acaoOS(id, acao) {
   const listaOS = carregarOS();
   const os = listaOS.find(o => normalizarIdOS(o.id) === normalizarIdOS(id));
   if (!os) {
@@ -903,7 +961,7 @@ function acaoOS(id, acao) {
         status_novo: 'em_andamento'
       });
       console.log('OS depois da entrada:', os.status_geral);
-      salvarOS(os);
+      await persistirOS(os);
       mostrarNotificacao(`🚗 Entrada registrada: ${os.placa}`, 'success');
       break;
       
@@ -924,7 +982,7 @@ function acaoOS(id, acao) {
           tempo_total_min: os.tempo_real_min
         });
         
-        salvarOS(os);
+        await persistirOS(os);
         mostrarNotificacao(`✅ ${os.placa} finalizado!`, 'success');
       } else {
         return;
