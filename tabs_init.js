@@ -51,21 +51,33 @@
                     console.error('❌ switchTab não está disponível');
                 }
                 
-                // 2. Aguardar renderização e iniciar dashboard
+                // 2. Aguardar renderização e iniciar dashboard + kanban
                 setTimeout(() => {
+                    // Iniciar Dashboard
                     if (typeof window.iniciarDashboardFirestore === 'function') {
                         window.iniciarDashboardFirestore();
                         console.log('🔥 Dashboard iniciado!');
                     } else {
                         console.warn('⚠️ iniciarDashboardFirestore não disponível');
                     }
-                }, 100);
+                    
+                    // Iniciar Kanban
+                    if (typeof window.iniciarKanban === 'function') {
+                        window.iniciarKanban();
+                        console.log('🎯 Kanban iniciado!');
+                    } else {
+                        console.warn('⚠️ iniciarKanban não disponível');
+                    }
+                }, 150);
             });
             
             console.log('✅ Aba Gestão Oficina inicializada');
         } else {
             console.error('❌ Botão [data-tab-gestao] não encontrado no DOM');
         }
+        
+        // ✅ Parar listeners ao sair da aba Gestão Oficina
+        interceptarTrocaAba();
 
         // ✅ Inicializar botão Nova OS
         const observarBotaoNovaOS = () => {
@@ -88,6 +100,35 @@
         observarBotaoNovaOS(); // Tentar imediatamente também
 
         console.log('🎉 Inicialização de abas concluída!');
+    }
+    
+    /**
+     * Intercepta troca de aba para parar listeners
+     */
+    function interceptarTrocaAba() {
+        const botoesAba = document.querySelectorAll('.tab-button');
+        
+        botoesAba.forEach(botao => {
+            botao.addEventListener('click', function() {
+                // Se está saindo da aba gestão-oficina
+                const abaAtual = document.querySelector('.tab-content.active');
+                if (abaAtual && abaAtual.id === 'gestao-oficina') {
+                    // Parar dashboard
+                    if (typeof window.pararDashboardFirestore === 'function') {
+                        window.pararDashboardFirestore();
+                        console.log('🛑 Dashboard parado');
+                    }
+                    
+                    // Parar kanban
+                    if (typeof window.pararKanban === 'function') {
+                        window.pararKanban();
+                        console.log('🛑 Kanban parado');
+                    }
+                }
+            });
+        });
+        
+        console.log('✅ Interceptador de aba configurado');
     }
 
     // Executar quando DOM estiver pronto
