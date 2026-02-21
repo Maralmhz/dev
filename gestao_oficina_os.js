@@ -367,19 +367,52 @@ const osManager = {
   },
   
   // ==========================================
-  // ESTOQUE
+  // ESTOQUE - INTEGRAÇÃO REAL
   // ==========================================
   
   async baixarEstoque(pecas, osId) {
-    // Implementação simplificada - será completada em gestao_oficina_estoque.js
     console.log('🔄 Baixando estoque para OS:', osId);
     
+    // Verificar se estoqueManager está disponível
+    if (typeof estoqueManager === 'undefined') {
+      console.warn('⚠️ estoqueManager não encontrado, baixa manual necessária');
+      return;
+    }
+    
+    // Garantir que estoqueManager está inicializado
+    if (!estoqueManager.oficina_id) {
+      estoqueManager.init(this.oficina_id);
+    }
+    
+    const resultados = [];
+    
     for (const peca of pecas) {
-      if (peca.peca_id) {
-        // Lógica de baixa será implementada no módulo de estoque
-        console.log(`  - ${peca.nome}: ${peca.quantidade} unidades`);
+      if (peca.peca_id && peca.quantidade) {
+        try {
+          // Dar saída no estoque usando o método do estoqueManager
+          const resultado = await estoqueManager.darSaida(
+            peca.peca_id,
+            peca.quantidade,
+            `Saída para OS ${osId}`,
+            'os',
+            osId
+          );
+          
+          if (resultado.success) {
+            console.log(`  ✅ ${peca.nome}: ${peca.quantidade} unidades baixadas`);
+            resultados.push({ peca_id: peca.peca_id, success: true });
+          } else {
+            console.warn(`  ⚠️ ${peca.nome}: ${resultado.error}`);
+            resultados.push({ peca_id: peca.peca_id, success: false, error: resultado.error });
+          }
+        } catch (error) {
+          console.error(`  ❌ Erro ao baixar ${peca.nome}:`, error.message);
+          resultados.push({ peca_id: peca.peca_id, success: false, error: error.message });
+        }
       }
     }
+    
+    return { success: true, resultados };
   },
   
   // ==========================================
@@ -472,4 +505,4 @@ if (typeof window !== 'undefined') {
   window.osManager = osManager;
 }
 
-console.log('✅ gestao_oficina_os.js v1.0.1 carregado');
+console.log('✅ gestao_oficina_os.js v1.0.2 (ESTOQUE INTEGRADO) carregado');
