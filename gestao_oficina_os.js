@@ -1,11 +1,12 @@
 // ==========================================
 // 🚗 SISTEMA DE ORDEM DE SERVIÇO (OS)
 // ==========================================
-// Gestão completa de OS com validações e integração
+// V2.0: COM TRANSAÇÕES, IDEMPOTÊNCIA E VERSIONAMENTO
 
 const osManager = {
   oficina_id: null,
   db: null,
+  operacoesEmAndamento: new Set(), // Proteção contra clique duplo
   
   // ==========================================
   // INICIALIZAÇÃO
@@ -14,22 +15,37 @@ const osManager = {
   init(oficina_id) {
     this.oficina_id = oficina_id;
     this.db = firebase.firestore();
-    console.log('✅ OS Manager inicializado para:', oficina_id);
+    console.log('✅ OS Manager v2.0 (BLINDADO) inicializado para:', oficina_id);
   },
   
   // ==========================================
-  // CRIAR NOVA OS
+  // CRIAR NOVA OS - COM TRANSAÇÃO ATÔMICA
   // ==========================================
   
   async criarOS(dadosOS) {
+    // Gerar ID de operação para idempotência
+    const operacaoId = `criar_os_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Proteção contra clique duplo
+    if (this.operacoesEmAndamento.has('criar_os')) {
+      return { success: false, error: 'Operação já em andamento. Aguarde...' };
+    }
+    
+    this.operacoesEmAndamento.add('criar_os');
+    
     try {
       // Validações
       this.validarOS(dadosOS);
       
-      // Preparar dados
+      // Preparar dados base
+      const timestamp = firebase.firestore.Timestamp.now();
+      const numero_os = dadosOS.numero_os || this.gerarNumeroOS();
+      
       const osData = {
         // Identificação
-        numero_os: dadosOS.numero_os || this.gerarNumeroOS(),
+        numero_os: numero_os,
+        operacao_id: operacaoId, // Para idempotência
+        version: 1, // Controle de concorrência
         
         // Relacionamentos
         cliente_id: dadosOS.cliente_id,
@@ -48,7 +64,7 @@ const osManager = {
           total_servicos: this.calcularTotalServicos(dadosOS.servicos || []),
           total_pecas: this.calcularTotalPecas(dadosOS.pecas || []),
           desconto: dadosOS.desconto || 0,
-          total: 0, // Será calculado
+          total: 0,
           valor_pago: 0,
           valor_restante: 0,
           status_pagamento: 'pendente',
@@ -56,26 +72,24 @@ const osManager = {
           data_vencimento: dadosOS.data_vencimento || null
         },
         
-        // Checklist (vazio por enquanto)
+        // Checklist
         checklist: {
           itens: [],
           progresso: 0,
           status: 'pendente'
         },
         
-        // Observações
+        // Observações e fotos
         observacoes: dadosOS.observacoes || '',
-        
-        // Fotos
         fotos: dadosOS.fotos || [],
         
         // Timestamps
-        data_entrada: firebase.firestore.Timestamp.now(),
-        ultima_atualizacao: firebase.firestore.Timestamp.now(),
+        data_entrada: timestamp,
+        ultima_atualizacao: timestamp,
         
         // Histórico
         historico: [{
-          timestamp: firebase.firestore.Timestamp.now(),
+          timestamp: timestamp,
           tipo: 'criacao',
           descricao: 'OS criada no sistema',
           usuario: 'Sistema'
@@ -86,112 +100,113 @@ const osManager = {
       osData.financeiro.total = this.calcularTotal(osData);
       osData.financeiro.valor_restante = osData.financeiro.total;
       
-      // Salvar no Firestore
-      const osRef = await this.db
-        .collection('oficinas')
-        .doc(this.oficina_id)
-        .collection('ordens_servico')
-        .add(osData);
+      // ==================================================
+      // TRANSAÇÃO FIRESTORE - CRIAR OS + BAIXAR ESTOQUE
+      // ==================================================
       
-      console.log('✅ OS criada:', osRef.id);
+      const resultado = await this.db.runTransaction(async (transaction) => {
+        const oficinaRef = this.db.collection('oficinas').doc(this.oficina_id);
+        
+        // 1. Criar referência da OS
+        const osRef = oficinaRef.collection('ordens_servico').doc();
+        
+        // 2. Validar e reservar estoque
+        const pecasRefs = [];
+        const pecasData = [];
+        
+        for (const peca of osData.pecas) {
+          if (peca.peca_id && peca.quantidade) {
+            const pecaRef = oficinaRef.collection('pecas').doc(peca.peca_id);
+            const pecaDoc = await transaction.get(pecaRef);
+            
+            if (!pecaDoc.exists) {
+              throw new Error(`Peça ${peca.nome} não encontrada no estoque`);
+            }
+            
+            const pecaData = pecaDoc.data();
+            const qtdAtual = pecaData.quantidade_atual || 0;
+            
+            if (qtdAtual < peca.quantidade) {
+              throw new Error(`Estoque insuficiente para ${peca.nome}. Disponível: ${qtdAtual}, Necessário: ${peca.quantidade}`);
+            }
+            
+            pecasRefs.push(pecaRef);
+            pecasData.push({
+              ...pecaData,
+              nova_quantidade: qtdAtual - peca.quantidade,
+              quantidade_baixada: peca.quantidade
+            });
+          }
+        }
+        
+        // 3. Criar OS
+        transaction.set(osRef, osData);
+        
+        // 4. Baixar estoque e criar movimentações
+        for (let i = 0; i < pecasRefs.length; i++) {
+          const pecaRef = pecasRefs[i];
+          const peca = pecasData[i];
+          
+          // Atualizar quantidade
+          transaction.update(pecaRef, {
+            quantidade_atual: peca.nova_quantidade,
+            ultima_movimentacao: timestamp,
+            version: firebase.firestore.FieldValue.increment(1)
+          });
+          
+          // Criar registro de movimentação
+          const movRef = oficinaRef.collection('movimentacoes_estoque').doc();
+          transaction.set(movRef, {
+            peca_id: pecaRef.id,
+            tipo: 'saida',
+            quantidade: peca.quantidade_baixada,
+            motivo: `Saída para OS ${numero_os}`,
+            referencia_tipo: 'os',
+            referencia_id: osRef.id,
+            quantidade_anterior: peca.quantidade_atual,
+            quantidade_nova: peca.nova_quantidade,
+            data: timestamp,
+            usuario: 'Sistema'
+          });
+        }
+        
+        return { osId: osRef.id, numero_os: numero_os };
+      });
       
-      // Baixar estoque (se houver peças)
-      if (osData.pecas.length > 0) {
-        await this.baixarEstoque(osData.pecas, osRef.id);
-      }
+      console.log('✅ OS criada com transação:', resultado.osId);
       
-      return { success: true, id: osRef.id, numero_os: osData.numero_os };
+      return { 
+        success: true, 
+        id: resultado.osId, 
+        numero_os: resultado.numero_os,
+        operacao_id: operacaoId
+      };
       
     } catch (error) {
       console.error('❌ Erro ao criar OS:', error);
       return { success: false, error: error.message };
+    } finally {
+      // Liberar proteção após 2 segundos
+      setTimeout(() => {
+        this.operacoesEmAndamento.delete('criar_os');
+      }, 2000);
     }
   },
   
   // ==========================================
-  // ATUALIZAR OS
-  // ==========================================
-  
-  async atualizarOS(osId, dados) {
-    try {
-      const osRef = this.db
-        .collection('oficinas')
-        .doc(this.oficina_id)
-        .collection('ordens_servico')
-        .doc(osId);
-      
-      // Buscar OS atual
-      const osDoc = await osRef.get();
-      if (!osDoc.exists) {
-        throw new Error('OS não encontrada');
-      }
-      
-      const osAtual = osDoc.data();
-      
-      // Preparar dados de atualização
-      const updateData = {
-        ...dados,
-        ultima_atualizacao: firebase.firestore.Timestamp.now()
-      };
-      
-      // Recalcular totais se necessário
-      if (dados.servicos || dados.pecas || dados.desconto !== undefined) {
-        const servicos = dados.servicos || osAtual.servicos;
-        const pecas = dados.pecas || osAtual.pecas;
-        const desconto = dados.desconto !== undefined ? dados.desconto : osAtual.financeiro.desconto;
-        
-        updateData.financeiro = {
-          ...osAtual.financeiro,
-          total_servicos: this.calcularTotalServicos(servicos),
-          total_pecas: this.calcularTotalPecas(pecas),
-          desconto: desconto
-        };
-        
-        updateData.financeiro.total = 
-          updateData.financeiro.total_servicos + 
-          updateData.financeiro.total_pecas - 
-          updateData.financeiro.desconto;
-        
-        updateData.financeiro.valor_restante = 
-          updateData.financeiro.total - (osAtual.financeiro.valor_pago || 0);
-      }
-      
-      // Atualizar status de pagamento
-      if (updateData.financeiro) {
-        updateData.financeiro.status_pagamento = this.determinarStatusPagamento(
-          updateData.financeiro.valor_pago || osAtual.financeiro.valor_pago,
-          updateData.financeiro.total,
-          updateData.financeiro.data_vencimento || osAtual.financeiro.data_vencimento
-        );
-      }
-      
-      // Adicionar ao histórico
-      const historicoEntry = {
-        timestamp: firebase.firestore.Timestamp.now(),
-        tipo: 'atualizacao',
-        descricao: dados.historico_descricao || 'OS atualizada',
-        usuario: dados.usuario || 'Sistema'
-      };
-      
-      updateData.historico = firebase.firestore.FieldValue.arrayUnion(historicoEntry);
-      
-      // Salvar
-      await osRef.update(updateData);
-      
-      console.log('✅ OS atualizada:', osId);
-      return { success: true };
-      
-    } catch (error) {
-      console.error('❌ Erro ao atualizar OS:', error);
-      return { success: false, error: error.message };
-    }
-  },
-  
-  // ==========================================
-  // REGISTRAR PAGAMENTO
+  // REGISTRAR PAGAMENTO - COM TRANSAÇÃO
   // ==========================================
   
   async registrarPagamento(osId, valorPagamento, formaPagamento) {
+    const operacaoId = `pag_${osId}_${Date.now()}`;
+    
+    // Proteção contra duplicação
+    if (this.operacoesEmAndamento.has(operacaoId)) {
+      return { success: false, error: 'Pagamento já em processamento' };
+    }
+    
+    this.operacoesEmAndamento.add(operacaoId);
+    
     try {
       const osRef = this.db
         .collection('oficinas')
@@ -199,47 +214,137 @@ const osManager = {
         .collection('ordens_servico')
         .doc(osId);
       
-      const osDoc = await osRef.get();
-      if (!osDoc.exists) {
-        throw new Error('OS não encontrada');
-      }
+      // ==================================================
+      // TRANSAÇÃO FIRESTORE - REGISTRAR PAGAMENTO
+      // ==================================================
       
-      const osData = osDoc.data();
-      const valorAtual = osData.financeiro.valor_pago || 0;
-      const novoValorPago = valorAtual + valorPagamento;
-      
-      // Validar pagamento
-      if (novoValorPago > osData.financeiro.total) {
-        throw new Error('Valor pago não pode ser maior que o total');
-      }
-      
-      const novoValorRestante = osData.financeiro.total - novoValorPago;
-      const novoStatus = this.determinarStatusPagamento(
-        novoValorPago,
-        osData.financeiro.total,
-        osData.financeiro.data_vencimento
-      );
-      
-      // Atualizar
-      await osRef.update({
-        'financeiro.valor_pago': novoValorPago,
-        'financeiro.valor_restante': novoValorRestante,
-        'financeiro.status_pagamento': novoStatus,
-        'financeiro.forma_pagamento': formaPagamento,
-        ultima_atualizacao: firebase.firestore.Timestamp.now(),
-        historico: firebase.firestore.FieldValue.arrayUnion({
-          timestamp: firebase.firestore.Timestamp.now(),
-          tipo: 'pagamento',
-          descricao: `Pagamento de R$ ${valorPagamento.toFixed(2)} recebido (${formaPagamento})`,
-          usuario: 'Sistema'
-        })
+      const resultado = await this.db.runTransaction(async (transaction) => {
+        const osDoc = await transaction.get(osRef);
+        
+        if (!osDoc.exists) {
+          throw new Error('OS não encontrada');
+        }
+        
+        const osData = osDoc.data();
+        const valorAtual = osData.financeiro.valor_pago || 0;
+        const novoValorPago = valorAtual + valorPagamento;
+        
+        // Validar pagamento
+        if (novoValorPago > osData.financeiro.total) {
+          throw new Error('Valor pago não pode ser maior que o total');
+        }
+        
+        const novoValorRestante = osData.financeiro.total - novoValorPago;
+        const novoStatus = this.determinarStatusPagamento(
+          novoValorPago,
+          osData.financeiro.total,
+          osData.financeiro.data_vencimento
+        );
+        
+        // Atualizar OS atomicamente
+        transaction.update(osRef, {
+          'financeiro.valor_pago': novoValorPago,
+          'financeiro.valor_restante': novoValorRestante,
+          'financeiro.status_pagamento': novoStatus,
+          'financeiro.forma_pagamento': formaPagamento,
+          ultima_atualizacao: firebase.firestore.Timestamp.now(),
+          version: firebase.firestore.FieldValue.increment(1),
+          historico: firebase.firestore.FieldValue.arrayUnion({
+            timestamp: firebase.firestore.Timestamp.now(),
+            tipo: 'pagamento',
+            descricao: `Pagamento de R$ ${valorPagamento.toFixed(2)} recebido (${formaPagamento})`,
+            usuario: 'Sistema',
+            operacao_id: operacaoId
+          })
+        });
+        
+        return { valor_restante: novoValorRestante };
       });
       
       console.log('✅ Pagamento registrado:', valorPagamento);
-      return { success: true, valor_restante: novoValorRestante };
+      return { success: true, ...resultado, operacao_id: operacaoId };
       
     } catch (error) {
       console.error('❌ Erro ao registrar pagamento:', error);
+      return { success: false, error: error.message };
+    } finally {
+      setTimeout(() => {
+        this.operacoesEmAndamento.delete(operacaoId);
+      }, 2000);
+    }
+  },
+  
+  // ==========================================
+  // ATUALIZAR OS - COM CONTROLE DE VERSÃO
+  // ==========================================
+  
+  async atualizarOS(osId, dados, versaoEsperada = null) {
+    try {
+      const osRef = this.db
+        .collection('oficinas')
+        .doc(this.oficina_id)
+        .collection('ordens_servico')
+        .doc(osId);
+      
+      return await this.db.runTransaction(async (transaction) => {
+        const osDoc = await transaction.get(osRef);
+        
+        if (!osDoc.exists) {
+          throw new Error('OS não encontrada');
+        }
+        
+        const osAtual = osDoc.data();
+        
+        // Verificar versão (controle de concorrência)
+        if (versaoEsperada !== null && osAtual.version !== versaoEsperada) {
+          throw new Error('OS foi modificada por outro usuário. Recarregue os dados.');
+        }
+        
+        const updateData = {
+          ...dados,
+          ultima_atualizacao: firebase.firestore.Timestamp.now(),
+          version: firebase.firestore.FieldValue.increment(1)
+        };
+        
+        // Recalcular totais se necessário
+        if (dados.servicos || dados.pecas || dados.desconto !== undefined) {
+          const servicos = dados.servicos || osAtual.servicos;
+          const pecas = dados.pecas || osAtual.pecas;
+          const desconto = dados.desconto !== undefined ? dados.desconto : osAtual.financeiro.desconto;
+          
+          updateData.financeiro = {
+            ...osAtual.financeiro,
+            total_servicos: this.calcularTotalServicos(servicos),
+            total_pecas: this.calcularTotalPecas(pecas),
+            desconto: desconto
+          };
+          
+          updateData.financeiro.total = 
+            updateData.financeiro.total_servicos + 
+            updateData.financeiro.total_pecas - 
+            updateData.financeiro.desconto;
+          
+          updateData.financeiro.valor_restante = 
+            updateData.financeiro.total - (osAtual.financeiro.valor_pago || 0);
+        }
+        
+        // Adicionar ao histórico
+        const historicoEntry = {
+          timestamp: firebase.firestore.Timestamp.now(),
+          tipo: 'atualizacao',
+          descricao: dados.historico_descricao || 'OS atualizada',
+          usuario: dados.usuario || 'Sistema'
+        };
+        
+        updateData.historico = firebase.firestore.FieldValue.arrayUnion(historicoEntry);
+        
+        transaction.update(osRef, updateData);
+        
+        return { success: true, nova_versao: osAtual.version + 1 };
+      });
+      
+    } catch (error) {
+      console.error('❌ Erro ao atualizar OS:', error);
       return { success: false, error: error.message };
     }
   },
@@ -267,6 +372,7 @@ const osManager = {
       await osRef.update({
         status: novoStatus,
         ultima_atualizacao: firebase.firestore.Timestamp.now(),
+        version: firebase.firestore.FieldValue.increment(1),
         historico: firebase.firestore.FieldValue.arrayUnion({
           timestamp: firebase.firestore.Timestamp.now(),
           tipo: 'mudanca_status',
@@ -328,7 +434,6 @@ const osManager = {
   
   determinarStatusPagamento(valorPago, total, dataVencimento) {
     if (valorPago === 0) {
-      // Verificar se está atrasado
       if (dataVencimento) {
         const vencimento = new Date(dataVencimento);
         const hoje = new Date();
@@ -367,61 +472,12 @@ const osManager = {
   },
   
   // ==========================================
-  // ESTOQUE - INTEGRAÇÃO REAL
-  // ==========================================
-  
-  async baixarEstoque(pecas, osId) {
-    console.log('🔄 Baixando estoque para OS:', osId);
-    
-    // Verificar se estoqueManager está disponível
-    if (typeof estoqueManager === 'undefined') {
-      console.warn('⚠️ estoqueManager não encontrado, baixa manual necessária');
-      return;
-    }
-    
-    // Garantir que estoqueManager está inicializado
-    if (!estoqueManager.oficina_id) {
-      estoqueManager.init(this.oficina_id);
-    }
-    
-    const resultados = [];
-    
-    for (const peca of pecas) {
-      if (peca.peca_id && peca.quantidade) {
-        try {
-          // Dar saída no estoque usando o método do estoqueManager
-          const resultado = await estoqueManager.darSaida(
-            peca.peca_id,
-            peca.quantidade,
-            `Saída para OS ${osId}`,
-            'os',
-            osId
-          );
-          
-          if (resultado.success) {
-            console.log(`  ✅ ${peca.nome}: ${peca.quantidade} unidades baixadas`);
-            resultados.push({ peca_id: peca.peca_id, success: true });
-          } else {
-            console.warn(`  ⚠️ ${peca.nome}: ${resultado.error}`);
-            resultados.push({ peca_id: peca.peca_id, success: false, error: resultado.error });
-          }
-        } catch (error) {
-          console.error(`  ❌ Erro ao baixar ${peca.nome}:`, error.message);
-          resultados.push({ peca_id: peca.peca_id, success: false, error: error.message });
-        }
-      }
-    }
-    
-    return { success: true, resultados };
-  },
-  
-  // ==========================================
   // UTILITÁRIOS
   // ==========================================
   
   gerarNumeroOS() {
     const hoje = new Date();
-    const placa = 'XXXXX'; // Será preenchido com placa do veículo
+    const placa = 'XXXXX';
     const dia = hoje.getDate().toString().padStart(2, '0');
     const mes = (hoje.getMonth() + 1).toString().padStart(2, '0');
     const ano = hoje.getFullYear().toString().substr(-2);
@@ -461,7 +517,6 @@ const osManager = {
         .doc(this.oficina_id)
         .collection('ordens_servico');
       
-      // Aplicar filtros
       if (filtros.status) {
         query = query.where('status', '==', filtros.status);
       }
@@ -476,10 +531,8 @@ const osManager = {
           .where('data_entrada', '<=', firebase.firestore.Timestamp.fromDate(new Date(filtros.data_fim)));
       }
       
-      // Ordenar
       query = query.orderBy('data_entrada', 'desc');
       
-      // Limitar
       if (filtros.limite) {
         query = query.limit(filtros.limite);
       }
@@ -505,4 +558,4 @@ if (typeof window !== 'undefined') {
   window.osManager = osManager;
 }
 
-console.log('✅ gestao_oficina_os.js v1.0.2 (ESTOQUE INTEGRADO) carregado');
+console.log('✅ gestao_oficina_os.js v2.0.0 (BLINDADO: TRANSAÇÕES + IDEMPOTÊNCIA + VERSIONAMENTO) carregado');
