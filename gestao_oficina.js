@@ -21,6 +21,8 @@ const PRIORIDADES = {
 
 let visualizacaoAtual = 'hoje'; // hoje, semana, mes, ano
 let dropdownAberto = null;
+let filtroKanbanAtivo = null;
+let modoCalendarioCompacto = false;
 
 // ==========================================
 // MODELO DE DADOS
@@ -58,13 +60,38 @@ function novoOS(placa = '', cliente = '') {
   };
 }
 
+
+function normalizarIdOS(valor) {
+  return String(valor ?? '');
+}
+
+function buildOnclickId(osId) {
+  return JSON.stringify(normalizarIdOS(osId));
+}
+
+function buscarChecklistRecentePorPlaca(placa) {
+  const placaNormalizada = (placa || '').toUpperCase().trim();
+  if (!placaNormalizada) return null;
+
+  const oficinaId = window.OFICINA_CONFIG?.oficina_id || 'sem_identificacao';
+  const chave = `checklists_${oficinaId}`;
+  const lista = JSON.parse(localStorage.getItem(chave) || '[]');
+
+  return lista
+    .filter(item => (item.placa || '').toUpperCase().trim() === placaNormalizada)
+    .sort((a, b) => new Date(b.data_criacao || 0) - new Date(a.data_criacao || 0))[0] || null;
+}
+
 // ==========================================
 // STORAGE
 // ==========================================
 
 function salvarOS(os) {
   let lista = JSON.parse(localStorage.getItem(OS_AGENDA_KEY) || '[]');
-  const idx = lista.findIndex(o => o.id === os.id);
+  if (!os.id) {
+    os.id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  }
+  const idx = lista.findIndex(o => normalizarIdOS(o.id) === normalizarIdOS(os.id));
   
   if (idx > -1) {
     lista[idx] = os;
@@ -89,7 +116,7 @@ function carregarOS(filtro = null) {
 function excluirOS(id) {
   if (!confirm('🗑️ Tem certeza que deseja excluir esta OS?')) return;
   
-  let lista = carregarOS().filter(o => o.id !== id);
+  let lista = carregarOS().filter(o => normalizarIdOS(o.id) !== normalizarIdOS(id));
   localStorage.setItem(OS_AGENDA_KEY, JSON.stringify(lista));
   renderizarVisao();
   mostrarNotificacao('OS excluída!', 'success');
@@ -101,21 +128,18 @@ function excluirOS(id) {
 
 // Função para buscar e destacar OS específica (ex: vinda do calendário ou semana)
 function abrirDetalhesOS(placaOuId) {
-    // Muda para a visualização de 'hoje'
     mudarVisualizacao('hoje');
-    
+
     setTimeout(() => {
-        // Tenta encontrar o card pelo data-id primeiro (se for número), ou então procura o texto da placa
         let card = null;
-        if (typeof placaOuId === 'number' || !isNaN(placaOuId)) {
-            card = document.querySelector(`.os-card[data-id="${placaOuId}"]`);
-        }
-        
+        const idNormalizado = normalizarIdOS(placaOuId);
+        card = document.querySelector(`.os-card[data-id="${idNormalizado}"]`);
+
         if (!card) {
-            // Busca por texto de placa
+            const placaBusca = String(placaOuId || '').toUpperCase();
             const cards = document.querySelectorAll('.os-card');
-            for(let c of cards) {
-                if(c.textContent.includes(placaOuId)) {
+            for (let c of cards) {
+                if (c.textContent.toUpperCase().includes(placaBusca)) {
                     card = c;
                     break;
                 }
@@ -123,12 +147,11 @@ function abrirDetalhesOS(placaOuId) {
         }
 
         if (card) {
-            // Scroll suave até o card e efeito visual de "piscar"
             card.scrollIntoView({ behavior: 'smooth', block: 'center' });
             card.style.transition = 'all 0.3s ease';
             card.style.transform = 'scale(1.05)';
             card.style.boxShadow = '0 0 20px var(--color-primary)';
-            
+
             setTimeout(() => {
                 card.style.transform = 'scale(1)';
                 card.style.boxShadow = '';
@@ -136,34 +159,28 @@ function abrirDetalhesOS(placaOuId) {
         } else {
             mostrarNotificacao(`OS ${placaOuId} não encontrada na visão de hoje.`, 'warning');
         }
-    }, 100);
+    }, 120);
 }
 
 // Navegação rápida ao clicar nos blocos de resumo do topo
 function irParaColunaKanban(tipo) {
+    filtroKanbanAtivo = tipo === 'todos' ? null : tipo;
     mudarVisualizacao('hoje');
+
     setTimeout(() => {
-        let alvoId = '';
-        if (tipo === 'agendado') alvoId = 'agendados';
-        else if (tipo === 'em_andamento') alvoId = 'em_andamento';
-        else if (tipo === 'finalizado') alvoId = 'finalizados';
-        else if (tipo === 'atrasados' || tipo === 'nao_chegaram') {
-            // Para atrasados, rola até o primeiro card vermelho
+        if (tipo === 'atrasados' || tipo === 'nao_chegaram') {
             const cardProblema = document.querySelector('.os-card.atrasado, .os-card.nao-chegou');
             if (cardProblema) {
                 cardProblema.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            } else {
-                mostrarNotificacao('Nenhuma OS com problema encontrada hoje!', 'info');
+                return;
             }
-            return;
         }
 
-        const coluna = document.getElementById(alvoId);
-        if (coluna) {
-            coluna.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            coluna.style.animation = 'highlight 1s';
-        }
-    }, 100);
+        const mapa = { agendado: 'agendados', em_andamento: 'em_andamento', finalizado: 'finalizados' };
+        const alvoId = mapa[tipo];
+        const coluna = alvoId ? document.getElementById(alvoId) : null;
+        if (coluna) coluna.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 120);
 }
 
 // ==========================================
@@ -223,7 +240,7 @@ function buscarOSPorPlaca(placa) {
 }
 
 function vincularChecklistOS(osId, checklistId) {
-  const os = carregarOS().find(o => o.id === osId);
+  const os = carregarOS().find(o => normalizarIdOS(o.id) === normalizarIdOS(osId));
   if (!os) return;
   
   os.checklist_id = checklistId;
@@ -316,9 +333,15 @@ function renderizarVisao() {
 
 function renderizarKanban() {
   const hoje = new Date().toDateString();
-  const osHoje = carregarOS()
+  let osHoje = carregarOS()
     .filter(os => new Date(os.data_prevista_entrada).toDateString() === hoje)
     .map(calcularAlertas);
+
+  if (filtroKanbanAtivo === 'atrasados') osHoje = osHoje.filter(os => os.atrasado);
+  if (filtroKanbanAtivo === 'nao_chegaram') osHoje = osHoje.filter(os => os.nao_compareceu);
+  if (['agendado', 'em_andamento', 'finalizado'].includes(filtroKanbanAtivo)) {
+    osHoje = osHoje.filter(os => os.status_geral === filtroKanbanAtivo);
+  }
   
   const kanbanContainer = document.getElementById('kanban-view');
   if (!kanbanContainer) return;
@@ -362,25 +385,25 @@ function renderizarCardOS(os) {
   }
   
   return `
-    <div class="os-card ${os.atrasado ? 'atrasado' : ''} ${os.nao_compareceu ? 'nao-chegou' : ''} ${prioridade.class}" data-id="${os.id}">
-      <div class="os-header" style="cursor:pointer;" onclick="editarOS(${os.id})" title="Clique para editar">
+    <div class="os-card ${os.atrasado ? 'atrasado' : ''} ${os.nao_compareceu ? 'nao-chegou' : ''} ${prioridade.class}" data-id="${normalizarIdOS(os.id)}">
+      <div class="os-header" style="cursor:pointer;" onclick="editarOS(${buildOnclickId(os.id)})" title="Clique para editar">
         <strong>${prioridade.cor} ${os.placa}</strong>
         ${os.atrasado ? '<span class="badge-atraso">🚨 ATRASADO</span>' : ''}
         ${os.nao_compareceu ? '<span class="badge-nao-chegou">⏰ NÃO CHEGOU</span>' : ''}
       </div>
-      <div class="os-info" style="cursor:pointer;" onclick="editarOS(${os.id})" title="Clique para editar">
+      <div class="os-info" style="cursor:pointer;" onclick="editarOS(${buildOnclickId(os.id)})" title="Clique para editar">
         <div class="os-cliente">👤 ${os.nome_cliente || 'Cliente não informado'}</div>
         ${os.modelo ? `<div class="os-modelo">🚗 ${os.modelo}</div>` : ''}
         <div class="os-horario">⏰ ${new Date(os.data_prevista_entrada).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}</div>
         
         <div class="os-etapa-selector" onclick="event.stopPropagation();">
-          <button class="btn-etapa" onclick="toggleDropdownEtapa(${os.id}, event)">
+          <button class="btn-etapa" onclick="toggleDropdownEtapa(${buildOnclickId(os.id)}, event)">
             ${obterIconeEtapa(os.etapa_atual)} ${formatarEtapa(os.etapa_atual)} ▼
           </button>
           <div class="dropdown-etapas" id="dropdown-${os.id}" style="display: none;">
             ${ETAPAS.map(etapa => `
               <div class="dropdown-item ${os.etapa_atual === etapa.id ? 'active' : ''}" 
-                   onclick="mudarEtapa(${os.id}, '${etapa.id}')">
+                   onclick="mudarEtapa(${buildOnclickId(os.id)}, '${etapa.id}')">
                 ${etapa.icon} ${etapa.nome}
               </div>
             `).join('')}
@@ -391,10 +414,10 @@ function renderizarCardOS(os) {
         ${os.observacoes ? `<div class="os-obs">💬 ${os.observacoes}</div>` : ''}
       </div>
       <div class="os-actions">
-        ${os.status_geral === 'agendado' ? `<button onclick="acaoOS(${os.id}, 'entrada')" class="btn-acao">🚗 Entrada</button>` : ''}
-        ${os.status_geral !== 'finalizado' ? `<button onclick="acaoOS(${os.id}, 'finalizar')" class="btn-acao btn-success">✅ Finalizar</button>` : ''}
-        <button onclick="editarOS(${os.id})" class="btn-acao btn-edit">✏️</button>
-        <button onclick="excluirOS(${os.id})" class="btn-acao btn-delete">🗑️</button>
+        ${os.status_geral === 'agendado' ? `<button onclick="acaoOS(${buildOnclickId(os.id)}, 'entrada')" class="btn-acao">🚗 Entrada</button>` : ''}
+        ${os.status_geral !== 'finalizado' ? `<button onclick="acaoOS(${buildOnclickId(os.id)}, 'finalizar')" class="btn-acao btn-success">✅ Finalizar</button>` : ''}
+        <button onclick="editarOS(${buildOnclickId(os.id)})" class="btn-acao btn-edit">✏️</button>
+        <button onclick="excluirOS(${buildOnclickId(os.id)})" class="btn-acao btn-delete">🗑️</button>
       </div>
     </div>
   `;
@@ -427,7 +450,7 @@ function toggleDropdownEtapa(osId, event) {
 }
 
 function mudarEtapa(osId, novaEtapa) {
-  const os = carregarOS().find(o => o.id === osId);
+  const os = carregarOS().find(o => normalizarIdOS(o.id) === normalizarIdOS(osId));
   if (!os) return;
   
   os.etapa_atual = novaEtapa;
@@ -505,11 +528,11 @@ function renderizarPainelSemana() {
           </div>
         </div>
         ${osdia.slice(0, 3).map(os => `
-          <div class="dia-os-mini" style="cursor:pointer;" onclick="abrirDetalhesOS('${os.placa}')" title="Ir para OS">
+          <div class="dia-os-mini" style="cursor:pointer;" onclick='abrirDetalhesOS(${buildOnclickId(os.id)})' title="Ir para OS">
             ${os.placa} ${os.atrasado ? '🔴' : ''}
           </div>
         `).join('')}
-        ${osdia.length > 3 ? `<div class="dia-mais" style="cursor:pointer;" onclick="abrirDetalhesOS('${osdia[3].placa}')">+${osdia.length - 3} mais</div>` : ''}
+        ${osdia.length > 3 ? `<div class="dia-mais" style="cursor:pointer;" onclick='abrirDetalhesOS(${buildOnclickId(osdia[3].id)})'>+${osdia.length - 3} mais</div>` : ''}
       </div>
     `;
   });
@@ -553,6 +576,7 @@ function renderizarPainelMes() {
   calendario += `
     <div class="mes-header">
       <h3>${primeiroDia.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</h3>
+      <button class="btn-painel" onclick="toggleCalendarioCompacto()">${modoCalendarioCompacto ? '🗓️ Mostrar todos os dias' : '🧩 Mostrar apenas dias com agendamento'}</button>
     </div>
     <div class="mes-stats">
       <div class="stat-box">📊 Total: <strong>${stats.total}</strong></div>
@@ -582,11 +606,17 @@ function renderizarPainelMes() {
     
     const isHoje = data.toDateString() === hoje.toDateString();
     const temOS = osDia.length > 0;
-    
-    // Tornar dias clicáveis para filtrar as OSs
+
+    if (modoCalendarioCompacto && !temOS && !isHoje) {
+      calendario += '<div class="dia-vazio"></div>';
+      continue;
+    }
+
+    const onclickDia = temOS ? `onclick='abrirDetalhesOS(${buildOnclickId(osDia[0].id)})'` : (isHoje ? "onclick=\"mudarVisualizacao('hoje')\"" : '');
+
     calendario += `
-      <div class="dia-calendario ${isHoje ? 'hoje' : ''} ${temOS ? 'tem-os' : ''}" 
-           ${temOS || isHoje ? `style="cursor:pointer;" onclick="mudarVisualizacao('semana')"` : ''}>
+      <div class="dia-calendario ${isHoje ? 'hoje' : ''} ${temOS ? 'tem-os' : ''}"
+           ${temOS || isHoje ? `style="cursor:pointer;" ${onclickDia}` : ''}>
         <div class="dia-numero">${dia}</div>
         ${temOS ? `<div class="dia-badge">${osDia.length}</div>` : ''}
       </div>
@@ -725,7 +755,7 @@ function abrirModalNovoOS() {
 }
 
 function editarOS(id) {
-  const os = carregarOS().find(o => o.id === id);
+  const os = carregarOS().find(o => normalizarIdOS(o.id) === normalizarIdOS(id));
   if (!os) return;
   osEditando = os;
   abrirModalOS(os);
@@ -742,7 +772,7 @@ function abrirModalOS(os = null) {
     <div class="modal">
       <h3>${os ? '✏️ Editar' : '➕ Nova'} OS</h3>
       <div class="modal-form">
-        <input id="modal_placa" placeholder="Placa *" maxlength="8" value="${os?.placa || ''}" style="text-transform: uppercase;">
+        <input id="modal_placa" placeholder="Placa *" maxlength="8" value="${os?.placa || ''}" style="text-transform: uppercase;" onblur="autocompletarNovaOS()">
         <input id="modal_cliente" placeholder="Nome do Cliente *" value="${os?.nome_cliente || ''}">
         <input id="modal_telefone" placeholder="Telefone" value="${os?.telefone || ''}">
         <input id="modal_modelo" placeholder="Modelo" value="${os?.modelo || ''}">
@@ -777,7 +807,37 @@ function abrirModalOS(os = null) {
   };
 }
 
-function salvarNovoOS() {
+async function autocompletarNovaOS() {
+  if (osEditando) return;
+
+  const inputPlaca = document.getElementById('modal_placa');
+  if (!inputPlaca) return;
+
+  const placa = inputPlaca.value.trim().toUpperCase();
+  if (!placa) return;
+
+  const oficinaAtual = window.OFICINA_CONFIG?.oficina_id || 'default';
+  const osExistente = carregarOS()
+    .filter(o => (o.oficina_id || 'default') === oficinaAtual)
+    .find(o => (o.placa || '').toUpperCase() === placa);
+
+  const checklistRecente = buscarChecklistRecentePorPlaca(placa);
+  const historico = window.debugOSFirebase?.historicoVeiculo ? await window.debugOSFirebase.historicoVeiculo(placa) : null;
+
+  const dados = osExistente || checklistRecente || historico;
+  if (!dados) return;
+
+  const cliente = document.getElementById('modal_cliente');
+  const telefone = document.getElementById('modal_telefone');
+  const modelo = document.getElementById('modal_modelo');
+
+  if (cliente && !cliente.value && dados.nome_cliente) cliente.value = dados.nome_cliente;
+  if (telefone && !telefone.value && dados.telefone) telefone.value = dados.telefone;
+  if (modelo && !modelo.value && dados.modelo) modelo.value = dados.modelo;
+
+}
+
+async function salvarNovoOS() {
   const placa = document.getElementById('modal_placa').value.trim();
   const cliente = document.getElementById('modal_cliente').value.trim();
   
@@ -803,9 +863,11 @@ function salvarNovoOS() {
   os.observacoes = document.getElementById('modal_obs').value.trim();
   
   salvarOS(os);
+
+  const modoEdicao = Boolean(osEditando);
   fecharModal();
   renderizarVisao();
-  mostrarNotificacao(osEditando ? '✅ OS atualizada!' : '✅ OS criada!', 'success');
+  mostrarNotificacao(modoEdicao ? '✅ OS atualizada e salva!' : '✅ OS criada e salva!', 'success');
 }
 
 function fecharModal() {
@@ -822,7 +884,7 @@ function fecharModal() {
 
 function acaoOS(id, acao) {
   const listaOS = carregarOS();
-  const os = listaOS.find(o => o.id === id);
+  const os = listaOS.find(o => normalizarIdOS(o.id) === normalizarIdOS(id));
   if (!os) {
     console.error('OS não encontrada:', id);
     return;
@@ -875,6 +937,11 @@ function acaoOS(id, acao) {
     console.log('Re-renderizando visão...');
     renderizarVisao();
   }, 100);
+}
+
+function toggleCalendarioCompacto() {
+  modoCalendarioCompacto = !modoCalendarioCompacto;
+  if (visualizacaoAtual === 'mes') renderizarPainelMes();
 }
 
 // ==========================================
