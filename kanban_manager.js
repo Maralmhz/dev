@@ -4,7 +4,8 @@
 // Sistema Kanban com atualização em tempo real via Firestore
 // Respeita multi-tenant (OFICINA_ID)
 
-const OFICINA_ID = window.OFICINA_CONFIG?.oficina_id || 'modelo';
+// ✅ Usa window.OFICINA_CONFIG diretamente (sem redeclarar)
+const getOficinaID = () => window.OFICINA_CONFIG?.oficina_id || 'modelo';
 
 // ==========================================
 // ESTADO DO KANBAN
@@ -26,7 +27,8 @@ let draggedOS = null; // OS sendo arrastada
  * Inicia o Kanban com listeners em tempo real
  */
 function iniciarKanban() {
-  console.log('🎯 Iniciando Kanban...');
+  const OFICINA_ID = getOficinaID();
+  console.log('🎯 Iniciando Kanban para oficina:', OFICINA_ID);
   
   if (!firebase || !firebase.firestore) {
     console.error('❌ Firebase Firestore não disponível');
@@ -240,6 +242,8 @@ async function handleDrop(e, novoStatus) {
  * Atualiza status da OS e registra no histórico
  */
 async function atualizarStatusOS(osId, novoStatus, statusAnterior) {
+  const OFICINA_ID = getOficinaID();
+  
   try {
     const db = firebase.firestore();
     const osRef = db
