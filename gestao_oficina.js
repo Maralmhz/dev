@@ -1,4 +1,13 @@
 // ==========================================
+// ✅ EXPOR FUNÇÕES AO ESCOPO GLOBAL (window) IMEDIATAMENTE
+// ==========================================
+// Declarar variáveis primeiro para evitar "is not defined"
+let abrirModalNovoOS, editarOS, excluirOS, acaoOS, mudarEtapa;
+let toggleDropdownEtapa, mudarVisualizacao, abrirDetalhesOS;
+let irParaColunaKanban, toggleCalendarioCompacto, iniciarGestaoOficina;
+let salvarNovoOS, fecharModal, autocompletarNovaOS;
+
+// ==========================================
 // GESTÃO DA OFICINA - Módulo Completo V2
 // ==========================================
 
@@ -152,7 +161,7 @@ function carregarOS(filtro = null) {
   return lista;
 }
 
-function excluirOS(id) {
+function excluirOSInternal(id) {
   if (!confirm('🗑️ Tem certeza que deseja excluir esta OS?')) return;
   
   let lista = carregarOS().filter(o => normalizarIdOS(o.id) !== normalizarIdOS(id));
@@ -166,8 +175,8 @@ function excluirOS(id) {
 // ==========================================
 
 // Função para buscar e destacar OS específica (ex: vinda do calendário ou semana)
-function abrirDetalhesOS(placaOuId) {
-    mudarVisualizacao('hoje');
+function abrirDetalhesOSInternal(placaOuId) {
+    mudarVisualizacaoInternal('hoje');
 
     setTimeout(() => {
         let card = null;
@@ -202,9 +211,9 @@ function abrirDetalhesOS(placaOuId) {
 }
 
 // Navegação rápida ao clicar nos blocos de resumo do topo
-function irParaColunaKanban(tipo) {
+function irParaColunaKanbanInternal(tipo) {
     filtroKanbanAtivo = tipo === 'todos' ? null : tipo;
-    mudarVisualizacao('hoje');
+    mudarVisualizacaoInternal('hoje');
 
     setTimeout(() => {
         if (tipo === 'atrasados' || tipo === 'nao_chegaram') {
@@ -343,7 +352,7 @@ function renderizarPainelControle() {
   `;
 }
 
-function mudarVisualizacao(tipo) {
+function mudarVisualizacaoInternal(tipo) {
   visualizacaoAtual = tipo;
   renderizarPainelControle();
   renderizarVisao();
@@ -473,7 +482,7 @@ function formatarEtapa(etapaId) {
 }
 
 // Dropdown de etapas
-function toggleDropdownEtapa(osId, event) {
+function toggleDropdownEtapaInternal(osId, event) {
   event.stopPropagation();
   
   const dropdown = document.getElementById(`dropdown-${osId}`);
@@ -488,7 +497,7 @@ function toggleDropdownEtapa(osId, event) {
   dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
 }
 
-async function mudarEtapa(osId, novaEtapa) {
+async function mudarEtapaInternal(osId, novaEtapa) {
   const os = carregarOS().find(o => normalizarIdOS(o.id) === normalizarIdOS(osId));
   if (!os) return;
   
@@ -797,12 +806,12 @@ function atualizarResumoTopo(osHoje) {
 let modalOS = null;
 let osEditando = null;
 
-function abrirModalNovoOS() {
+function abrirModalNovoOSInternal() {
   osEditando = null;
   abrirModalOS();
 }
 
-function editarOS(id) {
+function editarOSInternal(id) {
   const os = carregarOS().find(o => normalizarIdOS(o.id) === normalizarIdOS(id));
   if (!os) return;
   osEditando = os;
@@ -853,11 +862,11 @@ function abrirModalOS(os = null) {
   document.getElementById('modal_placa').focus();
   
   modalOS.onclick = (e) => {
-    if (e.target === modalOS) fecharModal();
+    if (e.target === modalOS) fecharModalInternal();
   };
 }
 
-async function autocompletarNovaOS() {
+async function autocompletarNovaOSInternal() {
   if (osEditando) return;
 
   const inputPlaca = document.getElementById('modal_placa');
@@ -898,7 +907,7 @@ async function autocompletarNovaOS() {
   if (inputVeiculoId && !inputVeiculoId.value && dados.veiculo_id) inputVeiculoId.value = dados.veiculo_id;
 }
 
-async function salvarNovoOS() {
+async function salvarNovoOSInternal() {
   const placa = document.getElementById('modal_placa').value.trim();
   const cliente = document.getElementById('modal_cliente').value.trim();
   
@@ -928,7 +937,7 @@ async function salvarNovoOS() {
   const resultadoPersistencia = await persistirOS(os);
 
   const modoEdicao = Boolean(osEditando);
-  fecharModal();
+  fecharModalInternal();
   renderizarVisao();
   
   if (resultadoPersistencia && resultadoPersistencia.ok) {
@@ -938,7 +947,7 @@ async function salvarNovoOS() {
   }
 }
 
-function fecharModal() {
+function fecharModalInternal() {
   if (modalOS) {
     modalOS.remove();
     modalOS = null;
@@ -950,7 +959,7 @@ function fecharModal() {
 // AÇÕES DA OS
 // ==========================================
 
-async function acaoOS(id, acao) {
+async function acaoOSInternal(id, acao) {
   const listaOS = carregarOS();
   const os = listaOS.find(o => normalizarIdOS(o.id) === normalizarIdOS(id));
   if (!os) {
@@ -1007,7 +1016,7 @@ async function acaoOS(id, acao) {
   }, 100);
 }
 
-function toggleCalendarioCompacto() {
+function toggleCalendarioCompactoInternal() {
   modoCalendarioCompacto = !modoCalendarioCompacto;
   if (visualizacaoAtual === 'mes') renderizarPainelMes();
 }
@@ -1080,7 +1089,7 @@ function atualizarBadgeAlertas() {
 // INICIALIZAÇÃO
 // ==========================================
 
-function iniciarGestaoOficina() {
+function iniciarGestaoOficinaInternal() {
   renderizarPainelControle();
   renderizarVisao();
   atualizarBadgeAlertas();
@@ -1100,12 +1109,12 @@ function iniciarGestaoOficina() {
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('gestao-oficina')) {
-      setTimeout(iniciarGestaoOficina, 100);
+      setTimeout(iniciarGestaoOficinaInternal, 100);
     }
   });
 } else {
   if (document.getElementById('gestao-oficina')) {
-    setTimeout(iniciarGestaoOficina, 100);
+    setTimeout(iniciarGestaoOficinaInternal, 100);
   }
 }
 
@@ -1113,18 +1122,18 @@ if (document.readyState === 'loading') {
 // ✅ EXPOR FUNÇÕES AO ESCOPO GLOBAL (window)
 // ==========================================
 if (typeof window !== 'undefined') {
-  window.abrirModalNovoOS = abrirModalNovoOS;
-  window.editarOS = editarOS;
-  window.excluirOS = excluirOS;
-  window.acaoOS = acaoOS;
-  window.mudarEtapa = mudarEtapa;
-  window.toggleDropdownEtapa = toggleDropdownEtapa;
-  window.mudarVisualizacao = mudarVisualizacao;
-  window.abrirDetalhesOS = abrirDetalhesOS;
-  window.irParaColunaKanban = irParaColunaKanban;
-  window.toggleCalendarioCompacto = toggleCalendarioCompacto;
-  window.iniciarGestaoOficina = iniciarGestaoOficina;
-  window.salvarNovoOS = salvarNovoOS;
-  window.fecharModal = fecharModal;
-  window.autocompletarNovaOS = autocompletarNovaOS;
+  window.abrirModalNovoOS = abrirModalNovoOSInternal;
+  window.editarOS = editarOSInternal;
+  window.excluirOS = excluirOSInternal;
+  window.acaoOS = acaoOSInternal;
+  window.mudarEtapa = mudarEtapaInternal;
+  window.toggleDropdownEtapa = toggleDropdownEtapaInternal;
+  window.mudarVisualizacao = mudarVisualizacaoInternal;
+  window.abrirDetalhesOS = abrirDetalhesOSInternal;
+  window.irParaColunaKanban = irParaColunaKanbanInternal;
+  window.toggleCalendarioCompacto = toggleCalendarioCompactoInternal;
+  window.iniciarGestaoOficina = iniciarGestaoOficinaInternal;
+  window.salvarNovoOS = salvarNovoOSInternal;
+  window.fecharModal = fecharModalInternal;
+  window.autocompletarNovaOS = autocompletarNovaOSInternal;
 }
