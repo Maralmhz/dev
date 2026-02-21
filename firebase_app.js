@@ -19,7 +19,7 @@ let firestoreDB = null;
 async function initFirebase() {
     if (firebaseApp) return { app: firebaseApp, db: firestoreDB };
 
-    const { initializeApp } = await import(
+    const { initializeApp, getApps, getApp } = await import(
         "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"
     );
     const { getFirestore } = await import(
@@ -32,7 +32,7 @@ async function initFirebase() {
         throw new Error("OFICINA_CONFIG.oficina_id não definido");
     }
 
-    firebaseApp = initializeApp(config);
+    firebaseApp = getApps().length ? getApp() : initializeApp(config);
     firestoreDB = getFirestore(firebaseApp);
 
     console.log("🔥 Firebase inicializado:", window.OFICINA_CONFIG.oficina_id);
@@ -41,7 +41,7 @@ async function initFirebase() {
 }
 
 function getOficinaId() {
-    return window.OFICINA_CONFIG.oficina_id;
+    return window.OFICINA_CONFIG?.oficina_id || "sem_identificacao";
 }
 
 function gerarCaminhoData(dataISO) {

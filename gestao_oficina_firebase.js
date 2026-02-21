@@ -20,7 +20,7 @@ async function initFirebaseOS() {
     }
 
     // Reutiliza a inicialização existente do checklist
-    const { initializeApp } = await import(
+    const { initializeApp, getApps, getApp } = await import(
       'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js'
     );
     const { getFirestore } = await import(
@@ -36,7 +36,7 @@ async function initFirebaseOS() {
       appId: window.FIREBASE_APP_ID
     };
 
-    const app = initializeApp(config);
+    const app = getApps().length ? getApp() : initializeApp(config);
     const db = getFirestore(app);
 
     console.log('🔥 Firebase OS inicializado:', window.OFICINA_CONFIG.oficina_id);
@@ -73,7 +73,10 @@ function normalizarOS(os) {
     placa: os.placa?.toUpperCase() || '',
     status_geral: os.status_geral || 'agendado',
     prioridade: os.prioridade || 'normal',
-    historico_etapas: os.historico_etapas || []
+    historico_etapas: os.historico_etapas || [],
+    cliente_id: os.cliente_id || '',
+    veiculo_id: os.veiculo_id || '',
+    sync_status: os.sync_status || 'pending'
   };
 }
 
@@ -82,11 +85,6 @@ function normalizarOS(os) {
 // ==========================================
 
 export async function salvarOSFirebase(os) {
-  if (!firebaseSyncAtivo) {
-    console.log('📴 Sincronização Firebase desabilitada');
-    return false;
-  }
-
   try {
     const db = await initFirebaseOS();
     if (!db) return false;
@@ -145,9 +143,10 @@ async function atualizarIndiceVeiculoOS(db, os) {
       nome_cliente: os.nome_cliente || '',
       telefone: os.telefone || '',
       modelo: os.modelo || '',
+      cliente_id: os.cliente_id || '',
+      veiculo_id: os.veiculo_id || placa,
       ultima_os: os.data_criacao,
       historico_os_ids: arrayUnion(os.id),
-      total_os: arrayUnion(os.id).length,
       updated_at: serverTimestamp()
     }, { merge: true });
 
@@ -162,11 +161,6 @@ async function atualizarIndiceVeiculoOS(db, os) {
 // ==========================================
 
 export async function buscarOSFirebaseMes(ano, mes, limite = 100) {
-  if (!firebaseSyncAtivo) {
-    console.log('📴 Sincronização Firebase desabilitada');
-    return [];
-  }
-
   try {
     const db = await initFirebaseOS();
     if (!db) return [];
@@ -210,12 +204,14 @@ export async function buscarOSFirebaseMesAtual(limite = 100) {
 // ==========================================
 
 export async function sincronizarOSFirebase() {
-  if (!firebaseSyncAtivo) {
-    mostrarNotificacao('⚠️ Sincronização Firebase não configurada', 'warning');
-    return { sucesso: false, mensagem: 'Firebase não configurado' };
-  }
-
   try {
+    if (!firebaseSyncAtivo) {
+      const db = await initFirebaseOS();
+      if (!db) {
+        mostrarNotificacao('⚠️ Sincronização Firebase não configurada', 'warning');
+        return { sucesso: false, mensagem: 'Firebase não configurado' };
+      }
+    }
     mostrarNotificacao('🔄 Sincronizando com Firebase...', 'info');
 
     // 1. Buscar OS da nuvem (mês atual)
@@ -394,22 +390,37 @@ export async function excluirOSFirebase(osId, dataCriacao) {
 
 // Override da função salvarOS original
 const salvarOSOriginal = window.salvarOS;
-window.salvarOS = function(os) {
-  // Salvar localmente primeiro
-  salvarOSOriginal(os);
-  
-  // Salvar no Firebase (assíncrono)
+window.salvarOS = async function(os) {
+  const payload = {
+    ...os,
+    sync_status: firebaseSyncAtivo ? 'syncing' : 'local_only',
+    sync_error: null,
+    last_sync_attempt: new Date().toISOString()
+  };
+
   if (firebaseSyncAtivo) {
-    salvarOSFirebase(os).catch(err => {
-      console.error('❌ Erro ao salvar OS no Firebase:', err);
-    });
+    const ok = await salvarOSFirebase(payload);
+    if (ok) {
+      payload.sync_status = 'synced';
+      payload.last_sync_at = new Date().toISOString();
+      payload.sync_error = null;
+    } else {
+      payload.sync_status = 'pending_sync';
+      payload.sync_error = 'Falha ao persistir no Firebase';
+    }
   }
+
+  // fallback explícito local sempre preservado
+  salvarOSOriginal(payload);
+  return payload;
 };
+
+window.salvarOSFirebase = salvarOSFirebase;
 
 // Override da função excluirOS
 const excluirOSOriginal = window.excluirOS;
 window.excluirOS = async function(id) {
-  const os = carregarOS().find(o => o.id === id);
+  const os = carregarOS().find(o => String(o.id) === String(id));
   if (!os) return;
 
   if (!confirm('🗑️ Tem certeza que deseja excluir esta OS?')) return;
@@ -418,7 +429,7 @@ window.excluirOS = async function(id) {
   await excluirOSFirebase(id, os.data_criacao);
 
   // Excluir localmente
-  let lista = carregarOS().filter(o => o.id !== id);
+  let lista = carregarOS().filter(o => String(o.id) !== String(id));
   localStorage.setItem(OS_AGENDA_KEY, JSON.stringify(lista));
   
   renderizarVisao();
