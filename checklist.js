@@ -6,6 +6,40 @@ let itensOrcamento = [];
 let streamCamera = null;
 let fotosVeiculo = JSON.parse(localStorage.getItem('fotosVeiculo') || '[]');
 
+
+function normalizeId(value) {
+    if (window.CoreUtils?.normalizeId) return window.CoreUtils.normalizeId(value);
+    return String(value ?? '').trim();
+}
+
+function gerarIdChecklist() {
+    if (window.CoreUtils?.generateStableId) return window.CoreUtils.generateStableId('chk');
+    return `chk_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function getChecklistStorageKey() {
+    const oficinaId = window.OFICINA_CONFIG?.oficina_id || 'sem_identificacao';
+    return `checklists_${oficinaId}`;
+}
+
+function carregarChecklistsLocais() {
+    const chaveAtual = getChecklistStorageKey();
+    const checklistsOficina = JSON.parse(localStorage.getItem(chaveAtual) || '[]');
+
+    if (checklistsOficina.length > 0) return checklistsOficina;
+
+    // Migração retrocompatível da chave antiga
+    const legado = JSON.parse(localStorage.getItem('checklists') || '[]');
+    const oficinaAtual = window.OFICINA_CONFIG?.oficina_id;
+    if (!oficinaAtual || legado.length === 0) return [];
+
+    const filtrados = legado.filter(c => (c.oficina_id || oficinaAtual) === oficinaAtual);
+    if (filtrados.length > 0) {
+        salvarLocalStorage(chaveAtual, filtrados);
+    }
+    return filtrados;
+}
+
 // ==========================================
 // FUNÇÕES AUXILIARES
 // ==========================================
@@ -69,18 +103,18 @@ async function sincronizarChecklists() {
             const dadosNuvem = await modulo.buscarChecklistsMesAtual();
             
             if (dadosNuvem.length > 0) {
-                let local = JSON.parse(localStorage.getItem('checklists') || '[]');
-                const idsLocais = new Set(local.map(c => c.id));
+                let local = carregarChecklistsLocais();
+                const idsLocais = new Set(local.map(c => normalizeId(c.id)));
                 
                 let novos = 0;
                 dadosNuvem.forEach(item => {
-                    if (!idsLocais.has(item.id)) {
+                    if (!idsLocais.has(normalizeId(item.id))) {
                         local.push(item);
                         novos++;
                     }
                 });
 
-                salvarLocalStorage('checklists', local); // ✅ Usando wrapper
+                salvarLocalStorage(getChecklistStorageKey(), local); // ✅ Usando wrapper
                 carregarHistorico();
                 
                 const hoje = new Date();
@@ -118,18 +152,18 @@ async function sincronizarTodosChecklists() {
             const dadosNuvem = await modulo.buscarChecklistsNuvem();
             
             if (dadosNuvem.length > 0) {
-                let local = JSON.parse(localStorage.getItem('checklists') || '[]');
-                const idsLocais = new Set(local.map(c => c.id));
+                let local = carregarChecklistsLocais();
+                const idsLocais = new Set(local.map(c => normalizeId(c.id)));
                 
                 let novos = 0;
                 dadosNuvem.forEach(item => {
-                    if (!idsLocais.has(item.id)) {
+                    if (!idsLocais.has(normalizeId(item.id))) {
                         local.push(item);
                         novos++;
                     }
                 });
 
-                salvarLocalStorage('checklists', local); // ✅ Usando wrapper
+                salvarLocalStorage(getChecklistStorageKey(), local); // ✅ Usando wrapper
                 carregarHistorico();
                 alert(`✅ Sincronização COMPLETA concluída!\n\n${novos} novos checklists baixados\nTotal: ${dadosNuvem.length}`);
             }
@@ -287,6 +321,7 @@ async function salvarChecklist() {
     }
 
     let checklist;
+    const estavaEditando = Boolean(checklistEditando);
     
     // ✅ FIX #1: Detecta se está editando ou criando novo
     if (checklistEditando) {
@@ -295,7 +330,7 @@ async function salvarChecklist() {
         Object.assign(checklist, formData);
     } else {
         checklist = {
-            id: Date.now(),
+            id: gerarIdChecklist(),
             oficina_id: window.OFICINA_CONFIG?.oficina_id || "sem_identificacao",
             data_criacao: new Date().toISOString(),
             ...formData
@@ -306,8 +341,8 @@ async function salvarChecklist() {
     checklist.complexidade = document.getElementById('complexidade')?.value || '';
     
     // 1. SALVAR LOCALMENTE (SEMPRE)
-    let checklists = JSON.parse(localStorage.getItem('checklists') || '[]');
-    const idx = checklists.findIndex(c => c.id === checklist.id);
+    let checklists = carregarChecklistsLocais();
+    const idx = checklists.findIndex(c => normalizeId(c.id) === normalizeId(checklist.id));
     
     if (idx > -1) {
         checklists[idx] = checklist; // Substitui se já existe
@@ -315,9 +350,15 @@ async function salvarChecklist() {
         checklists.push(checklist); // Adiciona se novo
     }
     
-    const sucesso = salvarLocalStorage('checklists', checklists); // ✅ Usando wrapper
+    const sucesso = salvarLocalStorage(getChecklistStorageKey(), checklists); // ✅ Usando wrapper
     if (!sucesso) {
         return; // Para execução se falhou
+    }
+
+    const persistido = carregarChecklistsLocais().some(c => String(c.id) === String(checklist.id));
+    if (!persistido) {
+        alert('❌ Falha de persistência local: checklist não encontrado após salvar.');
+        return;
     }
 
     // Feedback Visual
@@ -348,7 +389,7 @@ async function salvarChecklist() {
     checklistEditando = null; // ✅ Limpa modo edição
     renderizarTabela();
 
-    const msg = checklistEditando ? "atualizado" : "salvo";
+    const msg = estavaEditando ? "atualizado" : "salvo";
     alert(`✅ Checklist ${msg} com sucesso no Histórico` + msgExtra);
     document.getElementById('checklistForm').reset();
     atualizarResumoVeiculo();
@@ -358,7 +399,7 @@ async function salvarChecklist() {
 function carregarHistorico() {
     const listaDiv = document.getElementById('checklistsList');
     const emptyMsg = document.getElementById('emptyMessage');
-    const checklists = JSON.parse(localStorage.getItem('checklists') || '[]');
+    const checklists = carregarChecklistsLocais();
 
     listaDiv.innerHTML = '';
 
@@ -381,8 +422,8 @@ function carregarHistorico() {
                 <p>📅 ${dataFormatada} às ${horaFormatada} | 👤 ${item.nome_cliente || 'Cliente não inf.'}</p>
             </div>
             <div class="checklist-actions">
-                <button class="btn-small btn-secondary" onclick="carregarChecklist(${item.id})">✏️ Editar</button>
-                <button class="btn-small btn-danger" onclick="excluirChecklist(${item.id})">🗑️</button>
+                <button class="btn-small btn-secondary" onclick="carregarChecklist(${JSON.stringify(String(item.id))})">✏️ Editar</button>
+                <button class="btn-small btn-danger" onclick="excluirChecklist(${JSON.stringify(String(item.id))})">🗑️</button>
             </div>
         `;
         listaDiv.appendChild(card);
@@ -391,8 +432,8 @@ function carregarHistorico() {
 
 // ✅ FIX #1: Carrega checklist com flag de edição
 function carregarChecklist(id) {
-    const checklists = JSON.parse(localStorage.getItem('checklists') || '[]');
-    const item = checklists.find(c => c.id === id);
+    const checklists = carregarChecklistsLocais();
+    const item = checklists.find(c => normalizeId(c.id) === normalizeId(id));
 
     if (!item) return;
 
@@ -436,16 +477,16 @@ function marcarCheckbox(name, value) {
 
 function excluirChecklist(id) {
     if (confirm("Tem certeza que deseja excluir este checklist?")) {
-        let checklists = JSON.parse(localStorage.getItem('checklists') || '[]');
-        checklists = checklists.filter(c => c.id !== id);
-        salvarLocalStorage('checklists', checklists); // ✅ Usando wrapper
+        let checklists = carregarChecklistsLocais();
+        checklists = checklists.filter(c => normalizeId(c.id) !== normalizeId(id));
+        salvarLocalStorage(getChecklistStorageKey(), checklists); // ✅ Usando wrapper
         carregarHistorico();
     }
 }
 
 function filtrarChecklists() {
     const termo = document.getElementById('searchInput').value.toLowerCase();
-    const checklists = JSON.parse(localStorage.getItem('checklists') || '[]');
+    const checklists = carregarChecklistsLocais();
     const listaDiv = document.getElementById('checklistsList');
     const emptyMsg = document.getElementById('emptyMessage');
 
@@ -475,8 +516,8 @@ function filtrarChecklists() {
                 <p>📅 ${dataFormatada} às ${horaFormatada} | 👤 ${item.nome_cliente || 'Cliente não inf.'}</p>
             </div>
             <div class="checklist-actions">
-                <button class="btn-small btn-secondary" onclick="carregarChecklist(${item.id})">✏️ Editar</button>
-                <button class="btn-small btn-danger" onclick="excluirChecklist(${item.id})">🗑️</button>
+                <button class="btn-small btn-secondary" onclick="carregarChecklist(${JSON.stringify(String(item.id))})">✏️ Editar</button>
+                <button class="btn-small btn-danger" onclick="excluirChecklist(${JSON.stringify(String(item.id))})">🗑️</button>
             </div>
         `;
         listaDiv.appendChild(card);
@@ -484,7 +525,7 @@ function filtrarChecklists() {
 }
 
 function ordenarChecklists() {
-    const checklists = JSON.parse(localStorage.getItem('checklists') || '[]');
+    const checklists = carregarChecklistsLocais();
     checklists.sort((a, b) => {
         const placaA = (a.placa || '').toUpperCase();
         const placaB = (b.placa || '').toUpperCase();
@@ -492,7 +533,7 @@ function ordenarChecklists() {
         if (placaA > placaB) return 1;
         return 0;
     });
-    salvarLocalStorage('checklists', checklists); // ✅ Usando wrapper
+    salvarLocalStorage(getChecklistStorageKey(), checklists); // ✅ Usando wrapper
     carregarHistorico();
 }
 
@@ -505,7 +546,7 @@ function limparFormulario() {
 }
 
 function exportarDados() {
-    const db = JSON.parse(localStorage.getItem('checklists') || '[]');
+    const db = carregarChecklistsLocais();
     if (!db.length) {
         alert("Não há dados para exportar.");
         return;
@@ -521,6 +562,7 @@ function exportarDados() {
 
 function limparTodosDados() {
     if (confirm("Deseja apagar TODO o histórico?")) {
+        localStorage.removeItem(getChecklistStorageKey());
         localStorage.removeItem('checklists');
         carregarHistorico();
         alert("Histórico limpo.");
@@ -528,7 +570,7 @@ function limparTodosDados() {
 }
 
 function atualizarRelatorios() {
-    const db = JSON.parse(localStorage.getItem('checklists') || '[]');
+    const db = carregarChecklistsLocais();
     document.getElementById('totalChecklists').textContent = db.length;
 
     const hoje = new Date();
