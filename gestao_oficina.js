@@ -1108,3 +1108,23 @@ if (document.readyState === 'loading') {
     setTimeout(iniciarGestaoOficina, 100);
   }
 }
+
+// ==========================================
+// ✅ EXPOR FUNÇÕES AO ESCOPO GLOBAL (window)
+// ==========================================
+if (typeof window !== 'undefined') {
+  window.abrirModalNovoOS = abrirModalNovoOS;
+  window.editarOS = editarOS;
+  window.excluirOS = excluirOS;
+  window.acaoOS = acaoOS;
+  window.mudarEtapa = mudarEtapa;
+  window.toggleDropdownEtapa = toggleDropdownEtapa;
+  window.mudarVisualizacao = mudarVisualizacao;
+  window.abrirDetalhesOS = abrirDetalhesOS;
+  window.irParaColunaKanban = irParaColunaKanban;
+  window.toggleCalendarioCompacto = toggleCalendarioCompacto;
+  window.iniciarGestaoOficina = iniciarGestaoOficina;
+  window.salvarNovoOS = salvarNovoOS;
+  window.fecharModal = fecharModal;
+  window.autocompletarNovaOS = autocompletarNovaOS;
+}
