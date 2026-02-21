@@ -10,7 +10,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="logo.png">
     <link rel="icon" type="image/png" href="logo.png">
-   <title id="titulo-pagina">Checklist de Entrada – Oficina</title>
+   <title id="titulo-pagina">Checklist de Entrada – Nossa Oficina</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
     <!-- ✅ FIREBASE CDN OFICIAL (COMPAT v9+) -->
@@ -53,7 +53,7 @@
     <button class="tab-button" onclick="switchTab('resumo'); atualizarResumoOS()"><span>📄 Resumo</span></button>
     <button class="tab-button" onclick="switchTab('historico')"><span>📋 Histórico</span></button>
     <button class="tab-button" onclick="switchTab('relatorios')"><span>📊 Relatórios</span></button>
-    <button class="tab-button" onclick="switchTab('gestao-oficina'); iniciarGestaoOficina()"><span>🛠️ Gestão Oficina</span></button>
+    <button class="tab-button" data-tab-gestao><span>🛠️ Gestão Oficina</span></button>
 </div>
         
         <!-- BARRA FIXA DE INFORMAÇÕES DA OS -->
@@ -347,7 +347,7 @@
 
                 <div id="checklistsList"></div>
                 <div id="emptyMessage" style="text-align: center; padding: 40px; color: #999;">
-                    <p style="font-size: 40px; margin-bottom: 10px;">📭</p>
+                    <p style="font-size: 40px; margin-bottom: 10px;">📬</p>
                     <p>Nenhum checklist salvo ainda. Crie um novo para começar!</p>
                 </div>
             </div>
@@ -639,7 +639,7 @@
     </div>
 
 <div class="action-buttons no-pdf">
-      <button type="button" class="btn-success" onclick="gerarPDFResumo()">📥 Baixar PDF</button>
+      <button type="button" class="btn-success" onclick="gerarPDFResumo()">📂 Baixar PDF</button>
        <button type="button" class="btn-primary" onclick="salvarChecklist()" style="background: #27ae60 !important;">💾 Salvar Completo</button>
     </div>
 
@@ -651,7 +651,7 @@
     <div class="content">
         <div class="page-header">
             <h2>🛠️ Gestão da Oficina</h2>
-            <button class="btn-primary" onclick="abrirModalNovoOS()">➞ Nova OS</button>
+            <button class="btn-primary" data-btn-nova-os>➞ Nova OS</button>
         </div>
         
         <!-- PAINEL DE CONTROLE -->
@@ -696,10 +696,13 @@
 <script src="checklist.js"></script>
 <script src="gestao_oficina.js"></script>
 
-<!-- ✅ 4. SYNC FIREBASE GESTÃO OFICINA -->
+<!-- ✅ 4. INICIALIZADOR DE ABAS (FIX ONCLICK) -->
+<script src="tabs_init.js"></script>
+
+<!-- ✅ 5. SYNC FIREBASE GESTÃO OFICINA -->
 <script type="module" src="gestao_oficina_firebase.js"></script>
 
-<!-- ✅ 5. CACHE E SYNC MANAGERS -->
+<!-- ✅ 6. CACHE E SYNC MANAGERS -->
 <script type="module" src="cache_manager.js"></script>
 <script type="module" src="sync_manager.js"></script>
 
