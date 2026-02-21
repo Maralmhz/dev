@@ -8,7 +8,7 @@ let irParaColunaKanban, toggleCalendarioCompacto, iniciarGestaoOficina;
 let salvarNovoOS, fecharModal, autocompletarNovaOS;
 
 // ==========================================
-// GESTÃO DA OFICINA - Módulo Completo V2
+// GESTÃO DA OFICINA - Módulo Completo V2.2.1
 // ==========================================
 
 const OS_AGENDA_KEY = 'os_agenda_oficina';
@@ -306,10 +306,10 @@ if (typeof window !== 'undefined') {
     const os = buscarOSPorPlaca(placa);
     if (os) {
       const vincular = confirm(
-        `🔗 Encontramos uma OS para esta placa:\\n\\n` +
-        `Cliente: ${os.nome_cliente}\\n` +
-        `Status: ${os.status_geral}\\n` +
-        `Etapa: ${formatarEtapa(os.etapa_atual)}\\n\\n` +
+        `🔗 Encontramos uma OS para esta placa:\n\n` +
+        `Cliente: ${os.nome_cliente}\n` +
+        `Status: ${os.status_geral}\n` +
+        `Etapa: ${formatarEtapa(os.etapa_atual)}\n\n` +
         `Deseja vincular ao checklist?`
       );
       
@@ -561,7 +561,7 @@ function renderizarPainelSemana() {
     
     html += `
       <div class="dia-card ${isHoje ? 'dia-hoje' : ''}">
-        <div class="dia-header" ${isHoje ? 'style="cursor:pointer;" onclick="mudarVisualizacao(\\'hoje\\')"' : ''}>
+        <div class="dia-header" ${isHoje ? 'style="cursor:pointer;" onclick="mudarVisualizacao(\'hoje\')"' : ''}>
           <div class="dia-nome">${dia.toLocaleDateString('pt-BR', { weekday: 'short' })}</div>
           <div class="dia-data">${dia.getDate()}</div>
         </div>
@@ -1146,3 +1146,5 @@ if (typeof window !== 'undefined') {
   window.mostrarNotificacao = mostrarNotificacao;
   window.atualizarBadgeAlertas = atualizarBadgeAlertas;
 }
+
+console.log('✅ gestao_oficina.js v2.2.1 carregado');
