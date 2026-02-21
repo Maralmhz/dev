@@ -7,7 +7,7 @@ let streamCamera = null;
 let fotosVeiculo = JSON.parse(localStorage.getItem('fotosVeiculo') || '[]');
 
 // ========================================
-// 🔥 CONFIGURAÇÃO MULTI-TENANT (v1.0.2 - Fundador MVP)
+// 🔥 CONFIGURAÇÃO MULTI-TENANT (v1.0.2.1 - Hotfix)
 // ========================================
 
 // Oficinas válidas (fase Fundador)
@@ -307,6 +307,7 @@ function editarItem(id) {
     alert('Item carregado para edição. Altere e clique ➕ Adicionar!');
 }
 
+// 🔥 HOTFIX: Garantir que totalPecas/totalServicos sejam NUMBER
 function renderizarTabela() {
   const tbodyPecas = document.getElementById("tabelaPecas");
   const tbodyServicos = document.getElementById("tabelaServicos");
@@ -350,21 +351,37 @@ function renderizarTabela() {
   const rTotalGeral = document.getElementById("rTotalGeral");
   if (rTotalGeral) rTotalGeral.textContent = `R$ ${somaTotal.toFixed(2)}`;
   
-  // Atualizar globais para usar no salvamento
-  window.totalPecas = somaPecas;
-  window.totalServicos = somaServicos;
+  // 🔥 HOTFIX CRÍTICO: Garantir que sejam NÚMEROS puros
+  window.totalPecas = Number(somaPecas);
+  window.totalServicos = Number(somaServicos);
+  
+  console.log('💰 Totais atualizados:', {
+    pecas: window.totalPecas,
+    servicos: window.totalServicos,
+    tipo_pecas: typeof window.totalPecas,
+    tipo_servicos: typeof window.totalServicos
+  });
 }
 
 // ==========================================
 // FUNÇÕES PRINCIPAIS E NAVEGAÇÃO
 // ==========================================
 
+// 🔥 HOTFIX: Fix switchTab para evitar erro de onclick null
 function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
-    document.getElementById(tabId).classList.add('active');
+    
+    const targetTab = document.getElementById(tabId);
+    if (targetTab) {
+        targetTab.classList.add('active');
+    }
+    
     document.querySelectorAll('.tab-button').forEach(btn => {
-        if (btn.getAttribute('onclick').includes(tabId)) btn.classList.add('active');
+        const onclickAttr = btn.getAttribute('onclick');
+        if (onclickAttr && onclickAttr.includes(tabId)) {
+            btn.classList.add('active');
+        }
     });
 
     if (tabId === 'historico') carregarHistorico();
@@ -374,7 +391,7 @@ function switchTab(tabId) {
 
 // ========================================
 // 🔥 FUNÇÃO PRINCIPAL: SALVAR CHECKLIST → OS
-// (COMMIT 2 - v1.0.2 Fundador MVP - Arquitetura Limpa)
+// (v1.0.2.1 - HOTFIX HTMLTableCellElement)
 // ========================================
 
 async function salvarChecklist() {
@@ -407,13 +424,25 @@ async function salvarChecklist() {
         }
 
         // ========================================
-        // 2. CALCULAR VALORES
+        // 2. CALCULAR VALORES (FIX CRÍTICO)
         // ========================================
         
-        const totalPecas = window.totalPecas || 0;
-        const totalServicos = window.totalServicos || 0;
+        // 🔥 HOTFIX: Garantir conversão para Number
+        const totalPecas = Number(window.totalPecas) || 0;
+        const totalServicos = Number(window.totalServicos) || 0;
         const desconto = 0;
         const total = totalPecas + totalServicos - desconto;
+        
+        console.log('💰 Valores financeiros:', {
+            totalPecas,
+            totalServicos,
+            total,
+            tipos: {
+                pecas: typeof totalPecas,
+                servicos: typeof totalServicos,
+                total: typeof total
+            }
+        });
 
         // ========================================
         // 3. GERAR NÚMERO DA OS
@@ -454,14 +483,14 @@ async function salvarChecklist() {
             // Itens (peças e serviços)
             itens: itensOrcamento || [],
             
-            // Financeiro (SEM duplicação)
+            // Financeiro (GARANTIDO COMO NUMBER)
             financeiro: {
-                subtotal_pecas: totalPecas,
-                subtotal_servicos: totalServicos,
-                desconto: desconto,
-                total: total,
+                subtotal_pecas: Number(totalPecas),
+                subtotal_servicos: Number(totalServicos),
+                desconto: Number(desconto),
+                total: Number(total),
                 pago: 0,
-                pendente: total,
+                pendente: Number(total),
                 status: 'pendente'
             },
             
@@ -478,7 +507,7 @@ async function salvarChecklist() {
             // Meta (rastreamento)
             meta: {
                 origem: 'checklist',
-                versao_sistema: 'v1.0.2',
+                versao_sistema: 'v1.0.2.1',
                 criado_via: 'web'
             },
             
@@ -1494,7 +1523,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ✅ Log de inicialização
   console.log('🔥 Sistema Multi-tenant inicializado');
   console.log('📍 Oficina ID:', OFICINA_ID);
-  console.log('🏷️ Versão: v1.0.2 - Fundador MVP (Arquitetura Limpa SaaS)');
+  console.log('🏷️ Versão: v1.0.2.1 - HOTFIX Crítico (HTMLTableCellElement + switchTab)');
 });
 
-console.log('✅ Checklist.js v1.0.2 carregado - Arquitetura Limpa: Timestamp SEMPRE, validação apenas Placa');
+console.log('✅ Checklist.js v1.0.2.1 carregado - HOTFIX: totalPecas/totalServicos como Number, switchTab seguro');
