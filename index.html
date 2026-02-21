@@ -666,7 +666,7 @@
         <div id="kanban-view" class="kanban-container">
             <div class="kanban-coluna">
                 <h3>📅 Agendados Hoje</h3>
-                <div class="cards-container" id="agendados"></div>
+                <div class="cards-container" id="recebido"></div>
             </div>
             <div class="kanban-coluna">
                 <h3>🔧 Em Andamento</h3>
@@ -674,7 +674,7 @@
             </div>
             <div class="kanban-coluna">
                 <h3>✅ Finalizados Hoje</h3>
-                <div class="cards-container" id="finalizados"></div>
+                <div class="cards-container" id="finalizado"></div>
             </div>
         </div>
     </div>
@@ -701,17 +701,20 @@
 <!-- ✅ 4. DASHBOARD TEMPO REAL -->
 <script src="gestao_oficina_dashboard.js"></script>
 
-<!-- ✅ 5. INICIALIZADOR DE ABAS (FIX ONCLICK) -->
+<!-- ✅ 5. KANBAN MANAGER -->
+<script src="kanban_manager.js"></script>
+
+<!-- ✅ 6. INICIALIZADOR DE ABAS (FIX ONCLICK) -->
 <script src="tabs_init.js"></script>
 
-<!-- ✅ 6. SYNC FIREBASE GESTÃO OFICINA -->
+<!-- ✅ 7. SYNC FIREBASE GESTÃO OFICINA -->
 <script type="module" src="gestao_oficina_firebase.js"></script>
 
-<!-- ✅ 7. CACHE E SYNC MANAGERS -->
+<!-- ✅ 8. CACHE E SYNC MANAGERS -->
 <script type="module" src="cache_manager.js"></script>
 <script type="module" src="sync_manager.js"></script>
 
-<!-- 🔄 8. MIGRADOR DE CHECKLISTS (RECUPERAÇÃO AUTOMÁTICA) -->
+<!-- 🔄 9. MIGRADOR DE CHECKLISTS (RECUPERAÇÃO AUTOMÁTICA) -->
 <script src="migrar_checklists.js"></script>
 
 <div class="os-footer" id="rRodape" style="position: fixed; bottom: 0; left: 0; right: 0; width: 100%; text-align: center; font-size: 10px; background: #f8f9fa; padding: 8px 12px; border-top: 2px solid var(--color-primary); z-index: 9999; box-sizing: border-box; font-family: Arial, sans-serif;">
