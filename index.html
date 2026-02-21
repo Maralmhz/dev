@@ -166,7 +166,7 @@
         <!-- BOTÕES DE NAVEGAÇÃO -->
         <div class="wizard-buttons right">
             <button type="button" class="btn-secondary" onclick="limparFormulario()">🗑️ Limpar</button>
-            <button type="button" class="btn-primary" onclick="nextStep(2)">Próximo ➡️</button>
+            <button type="button" class="btn-primary" onclick="nextStep(2)">Próximo ➞️</button>
         </div>
     </div>
 
@@ -277,7 +277,7 @@
         <!-- BOTÕES DE NAVEGAÇÃO -->
         <div class="wizard-buttons">
             <button type="button" class="btn-secondary" onclick="prevStep(1)">⬅️ Voltar</button>
-            <button type="button" class="btn-primary" onclick="nextStep(3)">Próximo ➡️</button>
+            <button type="button" class="btn-primary" onclick="nextStep(3)">Próximo ➞️</button>
         </div>
     </div>
 
@@ -329,7 +329,7 @@
         <!-- BOTÕES DE NAVEGAÇÃO -->
         <div class="wizard-buttons">
             <button type="button" class="btn-secondary" onclick="prevStep(2)">⬅️ Voltar</button>
-<button type="button" class="btn-primary" onclick="switchTab('orcamento')">Ir para Peças & Serviços ➡️</button>
+<button type="button" class="btn-primary" onclick="switchTab('orcamento')">Ir para Peças & Serviços ➞️</button>
         </div>
     </div>
 
@@ -698,17 +698,20 @@
 <script src="checklist.js"></script>
 <script src="gestao_oficina.js"></script>
 
-<!-- ✅ 4. INICIALIZADOR DE ABAS (FIX ONCLICK) -->
+<!-- ✅ 4. DASHBOARD TEMPO REAL -->
+<script src="gestao_oficina_dashboard.js"></script>
+
+<!-- ✅ 5. INICIALIZADOR DE ABAS (FIX ONCLICK) -->
 <script src="tabs_init.js"></script>
 
-<!-- ✅ 5. SYNC FIREBASE GESTÃO OFICINA -->
+<!-- ✅ 6. SYNC FIREBASE GESTÃO OFICINA -->
 <script type="module" src="gestao_oficina_firebase.js"></script>
 
-<!-- ✅ 6. CACHE E SYNC MANAGERS -->
+<!-- ✅ 7. CACHE E SYNC MANAGERS -->
 <script type="module" src="cache_manager.js"></script>
 <script type="module" src="sync_manager.js"></script>
 
-<!-- 🔄 7. MIGRADOR DE CHECKLISTS (RECUPERAÇÃO AUTOMÁTICA) -->
+<!-- 🔄 8. MIGRADOR DE CHECKLISTS (RECUPERAÇÃO AUTOMÁTICA) -->
 <script src="migrar_checklists.js"></script>
 
 <div class="os-footer" id="rRodape" style="position: fixed; bottom: 0; left: 0; right: 0; width: 100%; text-align: center; font-size: 10px; background: #f8f9fa; padding: 8px 12px; border-top: 2px solid var(--color-primary); z-index: 9999; box-sizing: border-box; font-family: Arial, sans-serif;">
