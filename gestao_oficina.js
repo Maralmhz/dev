@@ -123,7 +123,7 @@ function buscarChecklistRecentePorCampo(campo, valor) {
 
 async function persistirOS(os) {
   try {
-    const resultado = salvarOS(os);
+    const resultado = salvarOSInternal(os);
     if (resultado && typeof resultado.then === 'function') {
       await resultado;
     }
@@ -134,7 +134,7 @@ async function persistirOS(os) {
   }
 }
 
-function salvarOS(os) {
+function salvarOSInternal(os) {
   let lista = JSON.parse(localStorage.getItem(OS_AGENDA_KEY) || '[]');
   if (!os.id) {
     os.id = gerarIdOS();
@@ -151,7 +151,7 @@ function salvarOS(os) {
   atualizarBadgeAlertas();
 }
 
-function carregarOS(filtro = null) {
+function carregarOSInternal(filtro = null) {
   let lista = JSON.parse(localStorage.getItem(OS_AGENDA_KEY) || '[]');
   
   if (filtro) {
@@ -164,7 +164,7 @@ function carregarOS(filtro = null) {
 function excluirOSInternal(id) {
   if (!confirm('🗑️ Tem certeza que deseja excluir esta OS?')) return;
   
-  let lista = carregarOS().filter(o => normalizarIdOS(o.id) !== normalizarIdOS(id));
+  let lista = carregarOSInternal().filter(o => normalizarIdOS(o.id) !== normalizarIdOS(id));
   localStorage.setItem(OS_AGENDA_KEY, JSON.stringify(lista));
   renderizarVisao();
   mostrarNotificacao('OS excluída!', 'success');
@@ -281,14 +281,14 @@ function calcularEstatisticas(listaOS) {
 // ==========================================
 
 function buscarOSPorPlaca(placa) {
-  return carregarOS(os => 
+  return carregarOSInternal(os => 
     os.placa === placa.toUpperCase() && 
     (os.status_geral === 'agendado' || os.status_geral === 'em_andamento')
   )[0];
 }
 
 async function vincularChecklistOS(osId, checklistId) {
-  const os = carregarOS().find(o => normalizarIdOS(o.id) === normalizarIdOS(osId));
+  const os = carregarOSInternal().find(o => normalizarIdOS(o.id) === normalizarIdOS(osId));
   if (!os) return;
   
   os.checklist_id = checklistId;
@@ -381,7 +381,7 @@ function renderizarVisao() {
 
 function renderizarKanban() {
   const hoje = new Date().toDateString();
-  let osHoje = carregarOS()
+  let osHoje = carregarOSInternal()
     .filter(os => new Date(os.data_prevista_entrada).toDateString() === hoje)
     .map(calcularAlertas);
 
@@ -498,7 +498,7 @@ function toggleDropdownEtapaInternal(osId, event) {
 }
 
 async function mudarEtapaInternal(osId, novaEtapa) {
-  const os = carregarOS().find(o => normalizarIdOS(o.id) === normalizarIdOS(osId));
+  const os = carregarOSInternal().find(o => normalizarIdOS(o.id) === normalizarIdOS(osId));
   if (!os) return;
   
   os.etapa_atual = novaEtapa;
@@ -549,7 +549,7 @@ function renderizarPainelSemana() {
   let html = '<div class="painel-semana">';
   
   diasSemana.forEach(dia => {
-    const osdia = carregarOS().filter(os => 
+    const osdia = carregarOSInternal().filter(os => 
       new Date(os.data_prevista_entrada).toDateString() === dia.toDateString()
     ).map(calcularAlertas);
     
@@ -613,7 +613,7 @@ function renderizarPainelMes() {
   const diasNoMes = ultimoDia.getDate();
   const diaSemanaInicio = primeiroDia.getDay();
   
-  const osMes = carregarOS().filter(os => {
+  const osMes = carregarOSInternal().filter(os => {
     const dataOS = new Date(os.data_prevista_entrada);
     return dataOS.getMonth() === mes && dataOS.getFullYear() === ano;
   }).map(calcularAlertas);
@@ -694,7 +694,7 @@ function renderizarPainelAno() {
   const meses = [];
   
   for (let mes = 0; mes < 12; mes++) {
-    const osMes = carregarOS().filter(os => {
+    const osMes = carregarOSInternal().filter(os => {
       const data = new Date(os.data_prevista_entrada);
       return data.getMonth() === mes && data.getFullYear() === anoAtual;
     }).map(calcularAlertas);
@@ -812,7 +812,7 @@ function abrirModalNovoOSInternal() {
 }
 
 function editarOSInternal(id) {
-  const os = carregarOS().find(o => normalizarIdOS(o.id) === normalizarIdOS(id));
+  const os = carregarOSInternal().find(o => normalizarIdOS(o.id) === normalizarIdOS(id));
   if (!os) return;
   osEditando = os;
   abrirModalOS(os);
@@ -879,7 +879,7 @@ async function autocompletarNovaOSInternal() {
   const veiculoId = inputVeiculoId?.value?.trim() || '';
 
   const oficinaAtual = getOficinaAtualId();
-  const osLocal = carregarOS().filter(o => (o.oficina_id || 'default') === oficinaAtual);
+  const osLocal = carregarOSInternal().filter(o => (o.oficina_id || 'default') === oficinaAtual);
 
   const osExistente = osLocal.find(o => (o.placa || '').toUpperCase() === placa) ||
     osLocal.find(o => normalizarIdOS(o.cliente_id) === normalizarIdOS(clienteId)) ||
@@ -960,7 +960,7 @@ function fecharModalInternal() {
 // ==========================================
 
 async function acaoOSInternal(id, acao) {
-  const listaOS = carregarOS();
+  const listaOS = carregarOSInternal();
   const os = listaOS.find(o => normalizarIdOS(o.id) === normalizarIdOS(id));
   if (!os) {
     console.error('OS não encontrada:', id);
@@ -1063,7 +1063,7 @@ function tocarSomAlerta() {
 }
 
 function atualizarBadgeAlertas() {
-  const osHoje = carregarOS()
+  const osHoje = carregarOSInternal()
     .filter(os => new Date(os.data_prevista_entrada).toDateString() === new Date().toDateString())
     .map(calcularAlertas);
   
@@ -1122,6 +1122,7 @@ if (document.readyState === 'loading') {
 // ✅ EXPOR FUNÇÕES AO ESCOPO GLOBAL (window)
 // ==========================================
 if (typeof window !== 'undefined') {
+  // Funções de UI
   window.abrirModalNovoOS = abrirModalNovoOSInternal;
   window.editarOS = editarOSInternal;
   window.excluirOS = excluirOSInternal;
@@ -1136,4 +1137,12 @@ if (typeof window !== 'undefined') {
   window.salvarNovoOS = salvarNovoOSInternal;
   window.fecharModal = fecharModalInternal;
   window.autocompletarNovaOS = autocompletarNovaOSInternal;
+  
+  // ✅ FUNÇÕES CRÍTICAS PARA FIREBASE
+  window.salvarOS = salvarOSInternal;
+  window.carregarOS = carregarOSInternal;
+  window.OS_AGENDA_KEY = OS_AGENDA_KEY;
+  window.renderizarVisao = renderizarVisao;
+  window.mostrarNotificacao = mostrarNotificacao;
+  window.atualizarBadgeAlertas = atualizarBadgeAlertas;
 }
