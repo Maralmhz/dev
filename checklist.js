@@ -7,7 +7,7 @@ let streamCamera = null;
 let fotosVeiculo = JSON.parse(localStorage.getItem('fotosVeiculo') || '[]');
 
 // ========================================
-// 🔥 CONFIGURAÇÃO MULTI-TENANT (v1.0.0 - Fundador MVP)
+// 🔥 CONFIGURAÇÃO MULTI-TENANT (v1.0.2 - Fundador MVP)
 // ========================================
 
 // Oficinas válidas (fase Fundador)
@@ -114,6 +114,7 @@ function gerarNumeroOS() {
 
 // ========================================
 // 🔥 CALCULAR DATA DE PREVISÃO (3 dias úteis)
+// ARQUITETURA LIMPA: SEMPRE RETORNA TIMESTAMP
 // ========================================
 
 function calcularDataPrevisao() {
@@ -136,14 +137,8 @@ function calcularDataPrevisao() {
   previsao.setDate(previsao.getDate() + diasAdicionados);
   previsao.setHours(18, 0, 0, 0); // 18h do dia
 
-  // ✅ FIX: Verificar se Firebase está disponível
-  if (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.Timestamp) {
-    return firebase.firestore.Timestamp.fromDate(previsao);
-  } else {
-    // Fallback: retornar string ISO se Firebase não disponível
-    console.warn('⚠️ Firebase não disponível, usando data ISO');
-    return previsao.toISOString();
-  }
+  // ✅ ARQUITETURA LIMPA: Firebase Firestore SEMPRE deve existir
+  return firebase.firestore.Timestamp.fromDate(previsao);
 }
 
 // ==========================================
@@ -379,7 +374,7 @@ function switchTab(tabId) {
 
 // ========================================
 // 🔥 FUNÇÃO PRINCIPAL: SALVAR CHECKLIST → OS
-// (COMMIT 1 - v1.0.0 Fundador MVP)
+// (COMMIT 2 - v1.0.2 Fundador MVP - Arquitetura Limpa)
 // ========================================
 
 async function salvarChecklist() {
@@ -404,8 +399,8 @@ async function salvarChecklist() {
         const descricaoProblema = document.getElementById('servicos')?.value || '';
         const observacoes = document.getElementById('obsInspecao')?.value || '';
 
-        // ✅ FIX: Validação apenas de PLACA
-        if (!placa) {
+        // ✅ VALIDAÇÃO: Apenas PLACA é obrigatória
+        if (!placa || placa.trim() === '') {
             alert('❌ Preencha a PLACA do veículo');
             document.getElementById('placa')?.focus();
             return;
@@ -474,16 +469,16 @@ async function salvarChecklist() {
             status: 'RECEBIDO',
             prioridade: 'normal',
             
-            // Datas
+            // Datas (SEMPRE Timestamp - Arquitetura Limpa)
             data_entrada: firebase.firestore.FieldValue.serverTimestamp(),
-            data_previsao: dataPrevisao,
+            data_previsao: dataPrevisao, // ✅ SEMPRE Timestamp
             data_finalizacao: null,
             data_entrega: null,
             
             // Meta (rastreamento)
             meta: {
                 origem: 'checklist',
-                versao_sistema: 'v1.0.1',
+                versao_sistema: 'v1.0.2',
                 criado_via: 'web'
             },
             
@@ -535,7 +530,7 @@ async function salvarChecklist() {
                 id: osRef.id,
                 numero_os: numeroOS,
                 data_entrada: new Date().toISOString(),
-                data_previsao: typeof dataPrevisao === 'string' ? dataPrevisao : dataPrevisao.toDate().toISOString(),
+                data_previsao: dataPrevisao.toDate().toISOString(),
                 backup_em: new Date().toISOString()
             };
 
@@ -1499,8 +1494,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ✅ Log de inicialização
   console.log('🔥 Sistema Multi-tenant inicializado');
   console.log('📍 Oficina ID:', OFICINA_ID);
-  console.log('🏷️ Versão: v1.0.1 - Fundador MVP (Fix Firebase + Validação)');
+  console.log('🏷️ Versão: v1.0.2 - Fundador MVP (Arquitetura Limpa SaaS)');
 });
 
-// ✅ FIX: Service Worker removido (causava erro)
-console.log('✅ Checklist.js v1.0.1 carregado - Fix: Firebase Timestamp + Validação apenas Placa');
+console.log('✅ Checklist.js v1.0.2 carregado - Arquitetura Limpa: Timestamp SEMPRE, validação apenas Placa');
