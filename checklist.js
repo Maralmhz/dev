@@ -416,14 +416,18 @@ function carregarHistorico() {
 
         const card = document.createElement('div');
         card.className = 'checklist-item';
+        
+        // ✅ FIX: Escapar ID corretamente para usar em HTML
+        const idEscapado = String(item.id).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        
         card.innerHTML = `
             <div class="checklist-info">
                 <h4>${(item.placa || '').toUpperCase()} - ${item.modelo || 'Modelo não inf.'}</h4>
                 <p>📅 ${dataFormatada} às ${horaFormatada} | 👤 ${item.nome_cliente || 'Cliente não inf.'}</p>
             </div>
             <div class="checklist-actions">
-                <button class="btn-small btn-secondary" onclick="carregarChecklist(${JSON.stringify(String(item.id))})">✏️ Editar</button>
-                <button class="btn-small btn-danger" onclick="excluirChecklist(${JSON.stringify(String(item.id))})">🗑️</button>
+                <button class="btn-small btn-secondary" onclick="carregarChecklist('${idEscapado}')">✏️ Editar</button>
+                <button class="btn-small btn-danger" onclick="excluirChecklist('${idEscapado}')">🗑️</button>
             </div>
         `;
         listaDiv.appendChild(card);
@@ -435,7 +439,11 @@ function carregarChecklist(id) {
     const checklists = carregarChecklistsLocais();
     const item = checklists.find(c => normalizeId(c.id) === normalizeId(id));
 
-    if (!item) return;
+    if (!item) {
+        console.error('Checklist não encontrado:', id);
+        alert('Erro: Checklist não encontrado!');
+        return;
+    }
 
     checklistEditando = item; // ✅ Marca como editando
     switchTab('novo-checklist');
@@ -510,14 +518,18 @@ function filtrarChecklists() {
 
         const card = document.createElement('div');
         card.className = 'checklist-item';
+        
+        // ✅ FIX: Escapar ID corretamente para usar em HTML
+        const idEscapado = String(item.id).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        
         card.innerHTML = `
             <div class="checklist-info">
                 <h4>${(item.placa || '').toUpperCase()} - ${item.modelo || 'Modelo não inf.'}</h4>
                 <p>📅 ${dataFormatada} às ${horaFormatada} | 👤 ${item.nome_cliente || 'Cliente não inf.'}</p>
             </div>
             <div class="checklist-actions">
-                <button class="btn-small btn-secondary" onclick="carregarChecklist(${JSON.stringify(String(item.id))})">✏️ Editar</button>
-                <button class="btn-small btn-danger" onclick="excluirChecklist(${JSON.stringify(String(item.id))})">🗑️</button>
+                <button class="btn-small btn-secondary" onclick="carregarChecklist('${idEscapado}')">✏️ Editar</button>
+                <button class="btn-small btn-danger" onclick="excluirChecklist('${idEscapado}')">🗑️</button>
             </div>
         `;
         listaDiv.appendChild(card);
