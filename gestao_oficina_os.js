@@ -252,7 +252,7 @@ const osManager = {
     try {
       // Validar se pode finalizar (checklist completo)
       if (novoStatus === 'FINALIZADO') {
-        const podeF finalizar = await this.podeFinalizarOS(osId);
+        const podeFinalizar = await this.podeFinalizarOS(osId);
         if (!podeFinalizar.pode) {
           throw new Error(podeFinalizar.motivo);
         }
@@ -472,4 +472,4 @@ if (typeof window !== 'undefined') {
   window.osManager = osManager;
 }
 
-console.log('✅ gestao_oficina_os.js v1.0.0 carregado');
+console.log('✅ gestao_oficina_os.js v1.0.1 carregado');
