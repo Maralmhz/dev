@@ -1,8 +1,12 @@
 // ==========================================
-// 📱 KANBAN MANAGER - MOBILE FIRST
+// 📱 KANBAN MANAGER - MOBILE FIRST v3.1.2
 // ==========================================
 // Sistema Kanban otimizado para smartphones
 // Cards clicáveis com menu de ações (sem drag & drop)
+
+// ==========================================
+// ESTADO DO KANBAN (DECLARADO NO TOPO)
+// ==========================================
 
 const kanbanState = {
   listeners: {
@@ -73,17 +77,19 @@ function iniciarKanban() {
 function pararKanban() {
   console.log('🛑 Parando listeners do Kanban');
   
-  Object.values(kanbanState.listeners).forEach(unsubscribe => {
-    if (typeof unsubscribe === 'function') {
-      unsubscribe();
-    }
-  });
-  
-  kanbanState.listeners = {
-    recebido: null,
-    em_andamento: null,
-    finalizado: null
-  };
+  if (kanbanState && kanbanState.listeners) {
+    Object.values(kanbanState.listeners).forEach(unsubscribe => {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    });
+    
+    kanbanState.listeners = {
+      recebido: null,
+      em_andamento: null,
+      finalizado: null
+    };
+  }
 }
 
 // ==========================================
@@ -566,7 +572,7 @@ function verDetalhesOS(osId, osData) {
     
     <!-- FOOTER COM AÇÕES -->
     <div style="padding: 20px; border-top: 1px solid #e5e7eb; display: flex; flex-direction: column; gap: 10px;">
-      <button onclick="editarOS('${osId}')" style="
+      <button onclick="editarOSKanban('${osId}')" style="
         width: 100%;
         padding: 14px;
         background: #3b82f6;
@@ -578,7 +584,7 @@ function verDetalhesOS(osId, osData) {
         cursor: pointer;
       ">✏️ Editar OS</button>
       
-      <button onclick="gerarPDFOS('${osId}')" style="
+      <button onclick="gerarPDFOSKanban('${osId}')" style="
         width: 100%;
         padding: 14px;
         background: #10b981;
@@ -621,8 +627,12 @@ function verDetalhesOS(osId, osData) {
 
 function fecharModalDetalhes() {
   const modal = document.getElementById('kanban-modal-detalhes');
-  modal.style.display = 'none';
-  kanbanState.osAtual = null;
+  if (modal) {
+    modal.style.display = 'none';
+  }
+  if (kanbanState) {
+    kanbanState.osAtual = null;
+  }
 }
 
 // ==========================================
@@ -675,7 +685,7 @@ async function moverOSParaStatus(osId, novoStatus, statusAnterior, numeroOS) {
   }
 }
 
-function editarOS(osId) {
+function editarOSKanban(osId) {
   console.log('✏️ Editar OS:', osId);
   fecharModalDetalhes();
   
@@ -684,7 +694,7 @@ function editarOS(osId) {
   }
 }
 
-function gerarPDFOS(osId) {
+function gerarPDFOSKanban(osId) {
   console.log('📄 Gerar PDF da OS:', osId);
   
   if (window.mostrarNotificacao) {
@@ -757,9 +767,9 @@ if (typeof window !== 'undefined') {
   window.iniciarKanban = iniciarKanban;
   window.pararKanban = pararKanban;
   window.fecharModalDetalhes = fecharModalDetalhes;
-  window.editarOS = editarOS;
-  window.gerarPDFOS = gerarPDFOS;
+  window.editarOSKanban = editarOSKanban;
+  window.gerarPDFOSKanban = gerarPDFOSKanban;
   window.enviarWhatsAppOS = enviarWhatsAppOS;
 }
 
-console.log('✅ kanban_manager.js v3.1 MOBILE-FIRST + DETALHES carregado');
+console.log('✅ kanban_manager.js v3.1.2 FIX kanbanState carregado');
