@@ -125,7 +125,6 @@ async function persistirOS(os) {
   }
 }
 
-
 function salvarOS(os) {
   let lista = JSON.parse(localStorage.getItem(OS_AGENDA_KEY) || '[]');
   if (!os.id) {
@@ -298,10 +297,10 @@ if (typeof window !== 'undefined') {
     const os = buscarOSPorPlaca(placa);
     if (os) {
       const vincular = confirm(
-        `🔗 Encontramos uma OS para esta placa:\n\n` +
-        `Cliente: ${os.nome_cliente}\n` +
-        `Status: ${os.status_geral}\n` +
-        `Etapa: ${formatarEtapa(os.etapa_atual)}\n\n` +
+        `🔗 Encontramos uma OS para esta placa:\\n\\n` +
+        `Cliente: ${os.nome_cliente}\\n` +
+        `Status: ${os.status_geral}\\n` +
+        `Etapa: ${formatarEtapa(os.etapa_atual)}\\n\\n` +
         `Deseja vincular ao checklist?`
       );
       
@@ -553,7 +552,7 @@ function renderizarPainelSemana() {
     
     html += `
       <div class="dia-card ${isHoje ? 'dia-hoje' : ''}">
-        <div class="dia-header" ${isHoje ? 'style="cursor:pointer;" onclick="mudarVisualizacao(\'hoje\')"' : ''}>
+        <div class="dia-header" ${isHoje ? 'style="cursor:pointer;" onclick="mudarVisualizacao(\\'hoje\\')"' : ''}>
           <div class="dia-nome">${dia.toLocaleDateString('pt-BR', { weekday: 'short' })}</div>
           <div class="dia-data">${dia.getDate()}</div>
         </div>
@@ -931,7 +930,8 @@ async function salvarNovoOS() {
   const modoEdicao = Boolean(osEditando);
   fecharModal();
   renderizarVisao();
-  if (resultadoPersistencia.ok) {
+  
+  if (resultadoPersistencia && resultadoPersistencia.ok) {
     mostrarNotificacao(modoEdicao ? '✅ OS atualizada e salva!' : '✅ OS criada e salva!', 'success');
   } else {
     mostrarNotificacao('⚠️ OS salva localmente. Verifique sincronização com Firebase.', 'warning');
