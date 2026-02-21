@@ -96,6 +96,77 @@ function excluirOS(id) {
 }
 
 // ==========================================
+// INTERATIVIDADE DO DASHBOARD E KANBAN (NOVO)
+// ==========================================
+
+// Função para buscar e destacar OS específica (ex: vinda do calendário ou semana)
+function abrirDetalhesOS(placaOuId) {
+    // Muda para a visualização de 'hoje'
+    mudarVisualizacao('hoje');
+    
+    setTimeout(() => {
+        // Tenta encontrar o card pelo data-id primeiro (se for número), ou então procura o texto da placa
+        let card = null;
+        if (typeof placaOuId === 'number' || !isNaN(placaOuId)) {
+            card = document.querySelector(`.os-card[data-id="${placaOuId}"]`);
+        }
+        
+        if (!card) {
+            // Busca por texto de placa
+            const cards = document.querySelectorAll('.os-card');
+            for(let c of cards) {
+                if(c.textContent.includes(placaOuId)) {
+                    card = c;
+                    break;
+                }
+            }
+        }
+
+        if (card) {
+            // Scroll suave até o card e efeito visual de "piscar"
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            card.style.transition = 'all 0.3s ease';
+            card.style.transform = 'scale(1.05)';
+            card.style.boxShadow = '0 0 20px var(--color-primary)';
+            
+            setTimeout(() => {
+                card.style.transform = 'scale(1)';
+                card.style.boxShadow = '';
+            }, 1500);
+        } else {
+            mostrarNotificacao(`OS ${placaOuId} não encontrada na visão de hoje.`, 'warning');
+        }
+    }, 100);
+}
+
+// Navegação rápida ao clicar nos blocos de resumo do topo
+function irParaColunaKanban(tipo) {
+    mudarVisualizacao('hoje');
+    setTimeout(() => {
+        let alvoId = '';
+        if (tipo === 'agendado') alvoId = 'agendados';
+        else if (tipo === 'em_andamento') alvoId = 'em_andamento';
+        else if (tipo === 'finalizado') alvoId = 'finalizados';
+        else if (tipo === 'atrasados' || tipo === 'nao_chegaram') {
+            // Para atrasados, rola até o primeiro card vermelho
+            const cardProblema = document.querySelector('.os-card.atrasado, .os-card.nao-chegou');
+            if (cardProblema) {
+                cardProblema.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else {
+                mostrarNotificacao('Nenhuma OS com problema encontrada hoje!', 'info');
+            }
+            return;
+        }
+
+        const coluna = document.getElementById(alvoId);
+        if (coluna) {
+            coluna.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            coluna.style.animation = 'highlight 1s';
+        }
+    }, 100);
+}
+
+// ==========================================
 // ALERTAS E CÁLCULOS
 // ==========================================
 
@@ -292,17 +363,17 @@ function renderizarCardOS(os) {
   
   return `
     <div class="os-card ${os.atrasado ? 'atrasado' : ''} ${os.nao_compareceu ? 'nao-chegou' : ''} ${prioridade.class}" data-id="${os.id}">
-      <div class="os-header">
+      <div class="os-header" style="cursor:pointer;" onclick="editarOS(${os.id})" title="Clique para editar">
         <strong>${prioridade.cor} ${os.placa}</strong>
         ${os.atrasado ? '<span class="badge-atraso">🚨 ATRASADO</span>' : ''}
         ${os.nao_compareceu ? '<span class="badge-nao-chegou">⏰ NÃO CHEGOU</span>' : ''}
       </div>
-      <div class="os-info">
+      <div class="os-info" style="cursor:pointer;" onclick="editarOS(${os.id})" title="Clique para editar">
         <div class="os-cliente">👤 ${os.nome_cliente || 'Cliente não informado'}</div>
         ${os.modelo ? `<div class="os-modelo">🚗 ${os.modelo}</div>` : ''}
         <div class="os-horario">⏰ ${new Date(os.data_prevista_entrada).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}</div>
         
-        <div class="os-etapa-selector">
+        <div class="os-etapa-selector" onclick="event.stopPropagation();">
           <button class="btn-etapa" onclick="toggleDropdownEtapa(${os.id}, event)">
             ${obterIconeEtapa(os.etapa_atual)} ${formatarEtapa(os.etapa_atual)} ▼
           </button>
@@ -404,40 +475,47 @@ function renderizarPainelSemana() {
     diasSemana.push(dia);
   }
   
-  semanaView.innerHTML = `
-    <div class="painel-semana">
-      ${diasSemana.map(dia => {
-        const osdia = carregarOS().filter(os => 
-          new Date(os.data_prevista_entrada).toDateString() === dia.toDateString()
-        ).map(calcularAlertas);
-        
-        const isHoje = dia.toDateString() === hoje.toDateString();
-        
-        return `
-          <div class="dia-card ${isHoje ? 'dia-hoje' : ''}">
-            <div class="dia-header">
-              <div class="dia-nome">${dia.toLocaleDateString('pt-BR', { weekday: 'short' })}</div>
-              <div class="dia-data">${dia.getDate()}</div>
-            </div>
-            <div class="dia-stats">
-              <div class="stat-item">
-                <span class="stat-numero">${osdia.length}</span>
-                <span class="stat-label">Total</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-numero">${osdia.filter(o => o.atrasado).length}</span>
-                <span class="stat-label">⚠️</span>
-              </div>
-            </div>
-            ${osdia.slice(0, 3).map(os => `
-              <div class="dia-os-mini">${os.placa}</div>
-            `).join('')}
-            ${osdia.length > 3 ? `<div class="dia-mais">+${osdia.length - 3} mais</div>` : ''}
+  let html = '<div class="painel-semana">';
+  
+  diasSemana.forEach(dia => {
+    const osdia = carregarOS().filter(os => 
+      new Date(os.data_prevista_entrada).toDateString() === dia.toDateString()
+    ).map(calcularAlertas);
+    
+    // Ocultar dias passados se estiverem vazios para economizar espaço
+    const isPassado = dia < hoje && dia.toDateString() !== hoje.toDateString();
+    if (isPassado && osdia.length === 0) return; // Pula este dia do loop
+    
+    const isHoje = dia.toDateString() === hoje.toDateString();
+    
+    html += `
+      <div class="dia-card ${isHoje ? 'dia-hoje' : ''}">
+        <div class="dia-header" ${isHoje ? 'style="cursor:pointer;" onclick="mudarVisualizacao(\'hoje\')"' : ''}>
+          <div class="dia-nome">${dia.toLocaleDateString('pt-BR', { weekday: 'short' })}</div>
+          <div class="dia-data">${dia.getDate()}</div>
+        </div>
+        <div class="dia-stats">
+          <div class="stat-item">
+            <span class="stat-numero">${osdia.length}</span>
+            <span class="stat-label">Total</span>
           </div>
-        `;
-      }).join('')}
-    </div>
-  `;
+          <div class="stat-item">
+            <span class="stat-numero" style="color:var(--color-danger)">${osdia.filter(o => o.atrasado).length}</span>
+            <span class="stat-label">⚠️</span>
+          </div>
+        </div>
+        ${osdia.slice(0, 3).map(os => `
+          <div class="dia-os-mini" style="cursor:pointer;" onclick="abrirDetalhesOS('${os.placa}')" title="Ir para OS">
+            ${os.placa} ${os.atrasado ? '🔴' : ''}
+          </div>
+        `).join('')}
+        ${osdia.length > 3 ? `<div class="dia-mais" style="cursor:pointer;" onclick="abrirDetalhesOS('${osdia[3].placa}')">+${osdia.length - 3} mais</div>` : ''}
+      </div>
+    `;
+  });
+  
+  html += '</div>';
+  semanaView.innerHTML = html;
 }
 
 // ==========================================
@@ -505,8 +583,10 @@ function renderizarPainelMes() {
     const isHoje = data.toDateString() === hoje.toDateString();
     const temOS = osDia.length > 0;
     
+    // Tornar dias clicáveis para filtrar as OSs
     calendario += `
-      <div class="dia-calendario ${isHoje ? 'hoje' : ''} ${temOS ? 'tem-os' : ''}">
+      <div class="dia-calendario ${isHoje ? 'hoje' : ''} ${temOS ? 'tem-os' : ''}" 
+           ${temOS || isHoje ? `style="cursor:pointer;" onclick="mudarVisualizacao('semana')"` : ''}>
         <div class="dia-numero">${dia}</div>
         ${temOS ? `<div class="dia-badge">${osDia.length}</div>` : ''}
       </div>
@@ -559,7 +639,7 @@ function renderizarPainelAno() {
       <h3>📈 Visão Anual ${anoAtual}</h3>
       <div class="grafico-barras">
         ${meses.map(mes => `
-          <div class="barra-container">
+          <div class="barra-container" style="cursor:pointer;" onclick="mudarVisualizacao('mes')" title="Abrir Mês">
             <div class="barra" style="height: ${(mes.total / maxTotal) * 200}px">
               <div class="barra-fill"></div>
             </div>
@@ -594,28 +674,28 @@ function atualizarResumoTopo(osHoje) {
   };
   
   resumo.innerHTML = `
-    <div class="resumo-card">
+    <div class="resumo-card" style="cursor:pointer;" onclick="irParaColunaKanban('agendado')" title="Ver agendados">
       <div class="resumo-icon">📅</div>
       <div class="resumo-info">
         <div class="resumo-label">Agendados</div>
         <div class="resumo-valor">${counts.agendado}</div>
       </div>
     </div>
-    <div class="resumo-card">
+    <div class="resumo-card" style="cursor:pointer;" onclick="irParaColunaKanban('em_andamento')" title="Ver em andamento">
       <div class="resumo-icon">🔧</div>
       <div class="resumo-info">
         <div class="resumo-label">Em Andamento</div>
         <div class="resumo-valor">${counts.em_andamento}</div>
       </div>
     </div>
-    <div class="resumo-card danger">
+    <div class="resumo-card danger" style="cursor:pointer;" onclick="irParaColunaKanban('atrasados')" title="Ver problemas">
       <div class="resumo-icon">🚨</div>
       <div class="resumo-info">
         <div class="resumo-label">Atrasados</div>
         <div class="resumo-valor">${counts.atrasados}</div>
       </div>
     </div>
-    <div class="resumo-card warning">
+    <div class="resumo-card warning" style="cursor:pointer;" onclick="irParaColunaKanban('nao_chegaram')" title="Ver problemas">
       <div class="resumo-icon">⏰</div>
       <div class="resumo-info">
         <div class="resumo-label">Não Chegaram</div>
