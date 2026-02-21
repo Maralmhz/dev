@@ -26,6 +26,9 @@ function iniciarDashboardFirestore() {
     return;
   }
   
+  // ✅ Renderizar dashboard antes de iniciar listeners
+  renderizarDashboard();
+  
   const db = firebase.firestore();
   const baseRef = db
     .collection('oficinas')
@@ -74,6 +77,8 @@ function iniciarDashboardFirestore() {
   
   // ✅ Calcular total financeiro
   calcularTotalFinanceiro();
+  
+  console.log('✅ Dashboard Firestore iniciado com sucesso!');
 }
 
 /**
@@ -116,6 +121,8 @@ function atualizarContador(tipo, quantidade) {
       elemento.style.transform = 'scale(1)';
       elemento.style.color = '';
     }, 300);
+  } else {
+    console.warn('⚠️ Elemento não encontrado:', elementoId);
   }
 }
 
@@ -172,9 +179,11 @@ async function calcularTotalFinanceiro() {
 function renderizarDashboard() {
   const container = document.querySelector('#gestao-oficina .content');
   if (!container) {
-    console.warn('⚠️ Container #gestao-oficina não encontrado');
+    console.warn('⚠️ Container #gestao-oficina .content não encontrado');
     return;
   }
+  
+  console.log('🎨 Renderizando dashboard...');
   
   const html = `
     <div class="dashboard-header">
@@ -263,6 +272,7 @@ function renderizarDashboard() {
   `;
   
   container.innerHTML = html;
+  console.log('✅ Dashboard renderizado!');
 }
 
 /**
@@ -279,37 +289,6 @@ function atualizarDashboard() {
 }
 
 // ==========================================
-// INICIALIZAÇÃO AUTOMÁTICA
-// ==========================================
-
-// Iniciar quando a aba for aberta
-document.addEventListener('DOMContentLoaded', () => {
-  const btnGestao = document.querySelector('[data-tab-gestao]');
-  
-  if (btnGestao) {
-    btnGestao.addEventListener('click', () => {
-      renderizarDashboard();
-      
-      // Aguardar renderização antes de iniciar listeners
-      setTimeout(() => {
-        iniciarDashboardFirestore();
-      }, 100);
-    });
-  }
-});
-
-// Parar listeners ao sair da aba
-if (window.switchTab) {
-  const switchTabOriginal = window.switchTab;
-  window.switchTab = function(tabId) {
-    if (tabId !== 'gestao-oficina') {
-      pararDashboardFirestore();
-    }
-    return switchTabOriginal.apply(this, arguments);
-  };
-}
-
-// ==========================================
 // EXPOR FUNÇÕES GLOBAIS
 // ==========================================
 
@@ -318,6 +297,7 @@ if (typeof window !== 'undefined') {
   window.pararDashboardFirestore = pararDashboardFirestore;
   window.atualizarDashboard = atualizarDashboard;
   window.calcularTotalFinanceiro = calcularTotalFinanceiro;
+  window.renderizarDashboard = renderizarDashboard;
 }
 
 console.log('✅ gestao_oficina_dashboard.js carregado');
