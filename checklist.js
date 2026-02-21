@@ -7,7 +7,7 @@ let streamCamera = null;
 let fotosVeiculo = JSON.parse(localStorage.getItem('fotosVeiculo') || '[]');
 
 // ========================================
-// 🔥 CONFIGURAÇÃO MULTI-TENANT (v1.0.2.1 - Hotfix)
+// 🔥 CONFIGURAÇÃO MULTI-TENANT (v1.0.2.2 - Data/Hora Auto)
 // ========================================
 
 // Oficinas válidas (fase Fundador)
@@ -97,19 +97,20 @@ function salvarLocalStorage(chave, valor) {
 }
 
 // ========================================
-// 🔥 GERAÇÃO SEGURA DE NÚMERO DE OS
+// 🔥 GERAÇÃO DE NÚMERO DE OS (PLACA + DATA)
+// FORMATO: ABC1234-210226 (PLACA-DDMMAA)
 // ========================================
 
 function gerarNumeroOS() {
-  const hoje = new Date();
-  const yyyy = hoje.getFullYear();
-  const mm = String(hoje.getMonth() + 1).padStart(2, '0');
-  const dd = String(hoje.getDate()).padStart(2, '0');
-
-  // Random de 3 dígitos (evita race condition)
-  const random = Math.floor(100 + Math.random() * 900);
-
-  return `OS${yyyy}${mm}${dd}${random}`;
+    const placa = (document.getElementById('placa')?.value || 'SEM').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    let dataRaw = document.getElementById('data')?.value;
+    let dataObj = dataRaw ? new Date(dataRaw + 'T00:00:00') : new Date();
+    
+    const dia = String(dataObj.getDate()).padStart(2, '0');
+    const mes = String(dataObj.getMonth() + 1).padStart(2, '0');
+    const ano = String(dataObj.getFullYear()).slice(-2);
+    
+    return `${placa}-${dia}${mes}${ano}`;
 }
 
 // ========================================
@@ -304,7 +305,7 @@ function editarItem(id) {
     document.querySelector(`input[name="tipoItem"][value="${item.tipo}"]`).checked = true;
     
     removerItem(id);
-    alert('Item carregado para edição. Altere e clique ➕ Adicionar!');
+    alert('Item carregado para edição. Altere e clique ➞ Adicionar!');
 }
 
 // 🔥 HOTFIX: Garantir que totalPecas/totalServicos sejam NUMBER
@@ -391,7 +392,7 @@ function switchTab(tabId) {
 
 // ========================================
 // 🔥 FUNÇÃO PRINCIPAL: SALVAR CHECKLIST → OS
-// (v1.0.2.1 - HOTFIX HTMLTableCellElement)
+// (v1.0.2.2 - Data/Hora Auto)
 // ========================================
 
 async function salvarChecklist() {
@@ -507,7 +508,7 @@ async function salvarChecklist() {
             // Meta (rastreamento)
             meta: {
                 origem: 'checklist',
-                versao_sistema: 'v1.0.2.1',
+                versao_sistema: 'v1.0.2.2',
                 criado_via: 'web'
             },
             
@@ -642,7 +643,7 @@ function carregarHistorico() {
                 <p>📅 ${dataFormatada} às ${horaFormatada} | 👤 ${item.nome_cliente || 'Cliente não inf.'}</p>
             </div>
             <div class="checklist-actions">
-                <button class="btn-small btn-secondary" onclick="carregarChecklist('${idEscapado}')">✏️ Editar</button>
+                <button class="btn-small btn-secondary" onclick="carregarChecklist('${idEscapado}')"> ✏️ Editar</button>
                 <button class="btn-small btn-danger" onclick="excluirChecklist('${idEscapado}')">🗑️</button>
             </div>
         `;
@@ -744,7 +745,7 @@ function filtrarChecklists() {
                 <p>📅 ${dataFormatada} às ${horaFormatada} | 👤 ${item.nome_cliente || 'Cliente não inf.'}</p>
             </div>
             <div class="checklist-actions">
-                <button class="btn-small btn-secondary" onclick="carregarChecklist('${idEscapado}')">✏️ Editar</button>
+                <button class="btn-small btn-secondary" onclick="carregarChecklist('${idEscapado}')"> ✏️ Editar</button>
                 <button class="btn-small btn-danger" onclick="excluirChecklist('${idEscapado}')">🗑️</button>
             </div>
         `;
@@ -769,6 +770,9 @@ function limparFormulario() {
     if (confirm("Limpar todos os campos do formulário?")) {
         checklistEditando = null; // ✅ Limpa modo edição
         document.getElementById('checklistForm').reset();
+        
+        // 🆕 Preencher data/hora automaticamente
+        preencherDataHoraAtual();
         atualizarResumoVeiculo();
     }
 }
@@ -1242,17 +1246,6 @@ function gerarPDFFotos() {
 // ==========================================
 // RESUMO E IMPRESSÃO
 // ==========================================
-function gerarNumeroOS_OLD() {
-    const placa = (document.getElementById('placa')?.value || 'OS').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-    let dataRaw = document.getElementById('data')?.value;
-    let dataObj = dataRaw ? new Date(dataRaw + 'T00:00:00') : new Date();
-    
-    const dia = String(dataObj.getDate()).padStart(2, '0');
-    const mes = String(dataObj.getMonth() + 1).padStart(2, '0');
-    const ano = String(dataObj.getFullYear()).slice(-2);
-    
-    return `${placa}-${dia}-${mes}-${ano}`;
-}
 
 function atualizarBarraOS() {
     const os = gerarNumeroOS();
@@ -1487,7 +1480,45 @@ function nextStep(step) {
 
 function prevStep(step) { showStep(step); }
 
+// ==========================================
+// 🆕 PREENCHER DATA/HORA AUTOMÁTICO
+// ==========================================
+
+function preencherDataHoraAtual() {
+    const agora = new Date();
+    
+    // Data no formato YYYY-MM-DD (input date)
+    const ano = agora.getFullYear();
+    const mes = String(agora.getMonth() + 1).padStart(2, '0');
+    const dia = String(agora.getDate()).padStart(2, '0');
+    const dataFormatada = `${ano}-${mes}-${dia}`;
+    
+    // Hora no formato HH:MM (input time)
+    const hora = String(agora.getHours()).padStart(2, '0');
+    const minuto = String(agora.getMinutes()).padStart(2, '0');
+    const horaFormatada = `${hora}:${minuto}`;
+    
+    // Preencher campos
+    const campoData = document.getElementById('data');
+    const campoHora = document.getElementById('hora');
+    
+    if (campoData && !campoData.value) {
+        campoData.value = dataFormatada;
+    }
+    
+    if (campoHora && !campoHora.value) {
+        campoHora.value = horaFormatada;
+    }
+    
+    // Atualizar resumos e barra OS
+    atualizarResumoVeiculo();
+    atualizarBarraOS();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  // 🆕 PREENCHER DATA/HORA AUTOMATICAMENTE AO CARREGAR
+  preencherDataHoraAtual();
+  
   renderizarGaleria();
   atualizarBarraOS();
 
@@ -1523,7 +1554,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ✅ Log de inicialização
   console.log('🔥 Sistema Multi-tenant inicializado');
   console.log('📍 Oficina ID:', OFICINA_ID);
-  console.log('🏷️ Versão: v1.0.2.1 - HOTFIX Crítico (HTMLTableCellElement + switchTab)');
+  console.log('🏷️ Versão: v1.0.2.2 - Data/Hora Automática + OS Placa+Data');
 });
 
-console.log('✅ Checklist.js v1.0.2.1 carregado - HOTFIX: totalPecas/totalServicos como Number, switchTab seguro');
+console.log('✅ Checklist.js v1.0.2.2 carregado - FIX: Data/Hora auto + OS Placa-DDMMAA');
