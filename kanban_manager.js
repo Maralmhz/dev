@@ -4,32 +4,22 @@
 // Sistema Kanban com atualização em tempo real via Firestore
 // Respeita multi-tenant (OFICINA_ID)
 
-// ✅ Função auxiliar para pegar OFICINA_ID
-function getOficinaIDKanban() {
-  return window.OFICINA_CONFIG?.oficina_id || 'modelo';
-}
-
-// ==========================================
-// ESTADO DO KANBAN
-// ==========================================
-
-let kanbanListeners = {
-  recebido: null,
-  em_andamento: null,
-  finalizado: null
+// ✅ ESTADO DO KANBAN (DECLARADO PRIMEIRO!)
+const kanbanState = {
+  listeners: {
+    recebido: null,
+    em_andamento: null,
+    finalizado: null
+  },
+  draggedOS: null
 };
-
-let draggedOS = null; // OS sendo arrastada
 
 // ==========================================
 // INICIALIZAÇÃO DO KANBAN
 // ==========================================
 
-/**
- * Inicia o Kanban com listeners em tempo real
- */
 function iniciarKanban() {
-  const OFICINA_ID = getOficinaIDKanban();
+  const OFICINA_ID = window.OFICINA_CONFIG?.oficina_id || 'modelo';
   console.log('🎯 Iniciando Kanban para oficina:', OFICINA_ID);
   
   if (!firebase || !firebase.firestore) {
@@ -44,57 +34,69 @@ function iniciarKanban() {
     .collection('ordens_servico');
   
   // Listener: RECEBIDO
-  kanbanListeners.recebido = baseRef
+  kanbanState.listeners.recebido = baseRef
     .where('status', '==', 'RECEBIDO')
     .orderBy('data_entrada', 'desc')
     .onSnapshot(snapshot => {
-      renderizarColuna('recebido', snapshot.docs);
+      renderizarColunaKanban('recebido', snapshot.docs);
     }, error => {
       console.error('❌ Erro listener Kanban RECEBIDO:', error);
+      if (error.code === 'failed-precondition') {
+        console.log('⚠️ Crie o índice em:', error.message);
+      }
     });
   
   // Listener: EM_ANDAMENTO
-  kanbanListeners.em_andamento = baseRef
+  kanbanState.listeners.em_andamento = baseRef
     .where('status', '==', 'EM_ANDAMENTO')
     .orderBy('data_entrada', 'desc')
     .onSnapshot(snapshot => {
-      renderizarColuna('em_andamento', snapshot.docs);
+      renderizarColunaKanban('em_andamento', snapshot.docs);
     }, error => {
       console.error('❌ Erro listener Kanban EM_ANDAMENTO:', error);
+      if (error.code === 'failed-precondition') {
+        console.log('⚠️ Crie o índice em:', error.message);
+      }
     });
   
   // Listener: FINALIZADO
-  kanbanListeners.finalizado = baseRef
+  kanbanState.listeners.finalizado = baseRef
     .where('status', '==', 'FINALIZADO')
     .orderBy('data_entrada', 'desc')
     .onSnapshot(snapshot => {
-      renderizarColuna('finalizado', snapshot.docs);
+      renderizarColunaKanban('finalizado', snapshot.docs);
     }, error => {
       console.error('❌ Erro listener Kanban FINALIZADO:', error);
+      if (error.code === 'failed-precondition') {
+        console.log('⚠️ Crie o índice em:', error.message);
+      }
     });
   
   console.log('✅ Kanban iniciado com sucesso!');
 }
 
-/**
- * Para todos os listeners do Kanban
- */
 function pararKanban() {
   console.log('🛑 Parando listeners do Kanban');
   
-  Object.values(kanbanListeners).forEach(unsubscribe => {
-    if (unsubscribe) unsubscribe();
+  Object.values(kanbanState.listeners).forEach(unsubscribe => {
+    if (typeof unsubscribe === 'function') {
+      unsubscribe();
+    }
   });
+  
+  // Resetar listeners
+  kanbanState.listeners = {
+    recebido: null,
+    em_andamento: null,
+    finalizado: null
+  };
 }
 
 // ==========================================
 // RENDERIZAÇÃO DAS COLUNAS
 // ==========================================
 
-/**
- * Renderiza uma coluna específica do Kanban
- */
-function renderizarColuna(status, docs) {
+function renderizarColunaKanban(status, docs) {
   const containerId = status === 'em_andamento' ? 'em_andamento' : status;
   const container = document.getElementById(containerId);
   
@@ -103,73 +105,57 @@ function renderizarColuna(status, docs) {
     return;
   }
   
-  // Limpar container
   container.innerHTML = '';
   
   if (docs.length === 0) {
-    container.innerHTML = '<div class="empty-card">📦 Nenhuma OS aqui</div>';
+    container.innerHTML = '<div class="empty-card" style="padding: 20px; text-align: center; color: #999;">📦 Nenhuma OS aqui</div>';
     return;
   }
   
-  // Renderizar cada OS como card
   docs.forEach(doc => {
     const data = doc.data();
-    const card = criarCardOS(doc.id, data, status);
+    const card = criarCardKanban(doc.id, data, status);
     container.appendChild(card);
   });
   
   console.log(`📋 Coluna ${status}: ${docs.length} OS`);
 }
 
-/**
- * Cria um card de OS para o Kanban
- */
-function criarCardOS(osId, data, statusAtual) {
+function criarCardKanban(osId, data, statusAtual) {
   const card = document.createElement('div');
   card.className = 'os-card';
   card.draggable = true;
   card.dataset.osId = osId;
   card.dataset.status = statusAtual;
+  card.style.cssText = 'background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 12px; margin-bottom: 10px; cursor: move;';
   
-  // Extrair dados
   const placa = data.veiculo?.placa || 'SEM PLACA';
   const modelo = data.veiculo?.modelo || 'Veículo';
   const cliente = data.cliente?.nome || 'Cliente não informado';
   const numeroOS = data.numero_os || osId.substring(0, 8).toUpperCase();
-  const dataEntrada = formatarData(data.data_entrada);
+  const dataEntrada = formatarDataKanban(data.data_entrada);
   const total = data.financeiro?.total || 0;
   
-  // HTML do card
   card.innerHTML = `
-    <div class="os-header">
+    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
       <span style="font-weight: bold; color: #333;">#${numeroOS}</span>
       <span style="font-size: 12px; color: #666;">${dataEntrada}</span>
     </div>
-    
-    <div class="os-info">
-      <div class="os-cliente">👤 ${cliente}</div>
-      <div class="os-modelo">🚗 ${modelo}</div>
-      <div style="background: #e3f2fd; padding: 6px 10px; border-radius: 6px; font-size: 12px; color: #1976d2; font-weight: 600; text-align: center;">
-        ${placa}
-      </div>
+    <div style="font-size: 14px; color: #555; margin-bottom: 4px;">👤 ${cliente}</div>
+    <div style="font-size: 13px; color: #777; margin-bottom: 6px;">🚗 ${modelo}</div>
+    <div style="background: #e3f2fd; padding: 6px 10px; border-radius: 6px; font-size: 12px; color: #1976d2; font-weight: 600; text-align: center; margin-bottom: 8px;">
+      ${placa}
     </div>
-    
     ${total > 0 ? `
-      <div style="margin-top: 12px; padding: 8px; background: #f0f0f0; border-radius: 6px; text-align: center;">
-        <div style="font-size: 11px; color: #666; margin-bottom: 2px;">Total</div>
+      <div style="margin-top: 8px; padding: 8px; background: #f0f0f0; border-radius: 6px; text-align: center;">
+        <div style="font-size: 11px; color: #666;">Total</div>
         <div style="font-size: 16px; font-weight: bold; color: #27ae60;">R$ ${total.toFixed(2)}</div>
       </div>
     ` : ''}
-    
-    <div class="os-actions" style="margin-top: 12px;">
-      <button class="btn-acao btn-edit" onclick="editarOS('${osId}')" title="Editar">✏️</button>
-      <button class="btn-acao" onclick="visualizarOS('${osId}')" style="flex: 1;">Ver Detalhes</button>
-    </div>
   `;
   
-  // Eventos de drag & drop
-  card.addEventListener('dragstart', handleDragStart);
-  card.addEventListener('dragend', handleDragEnd);
+  card.addEventListener('dragstart', handleKanbanDragStart);
+  card.addEventListener('dragend', handleKanbanDragEnd);
   
   return card;
 }
@@ -178,31 +164,22 @@ function criarCardOS(osId, data, statusAtual) {
 // DRAG & DROP
 // ==========================================
 
-/**
- * Inicia o arrasto de um card
- */
-function handleDragStart(e) {
-  draggedOS = {
+function handleKanbanDragStart(e) {
+  kanbanState.draggedOS = {
     id: e.target.dataset.osId,
     statusAtual: e.target.dataset.status
   };
   
   e.target.style.opacity = '0.5';
   e.dataTransfer.effectAllowed = 'move';
-  console.log('👋 Arrastando OS:', draggedOS.id);
+  console.log('👋 Arrastando OS:', kanbanState.draggedOS.id);
 }
 
-/**
- * Finaliza o arrasto
- */
-function handleDragEnd(e) {
+function handleKanbanDragEnd(e) {
   e.target.style.opacity = '1';
 }
 
-/**
- * Permite drop sobre a coluna
- */
-function handleDragOver(e) {
+function handleKanbanDragOver(e) {
   if (e.preventDefault) {
     e.preventDefault();
   }
@@ -210,41 +187,33 @@ function handleDragOver(e) {
   return false;
 }
 
-/**
- * Drop do card na coluna
- */
-async function handleDrop(e, novoStatus) {
+async function handleKanbanDrop(e, novoStatus) {
   if (e.stopPropagation) {
     e.stopPropagation();
   }
   
-  if (!draggedOS) return;
+  if (!kanbanState.draggedOS) return;
   
-  const statusAtual = draggedOS.statusAtual;
+  const statusAtual = kanbanState.draggedOS.statusAtual;
   
-  // Não fazer nada se soltar na mesma coluna
   if (statusAtual === novoStatus) {
     console.log('⚠️ Mesma coluna, nada a fazer');
     return;
   }
   
-  console.log(`🔄 Movendo OS ${draggedOS.id}: ${statusAtual} → ${novoStatus}`);
+  console.log(`🔄 Movendo OS ${kanbanState.draggedOS.id}: ${statusAtual} → ${novoStatus}`);
   
-  // Atualizar status no Firestore
-  await atualizarStatusOS(draggedOS.id, novoStatus, statusAtual);
+  await atualizarStatusKanban(kanbanState.draggedOS.id, novoStatus, statusAtual);
   
-  draggedOS = null;
+  kanbanState.draggedOS = null;
 }
 
 // ==========================================
 // ATUALIZAÇÃO DE STATUS
 // ==========================================
 
-/**
- * Atualiza status da OS e registra no histórico
- */
-async function atualizarStatusOS(osId, novoStatus, statusAnterior) {
-  const OFICINA_ID = getOficinaIDKanban();
+async function atualizarStatusKanban(osId, novoStatus, statusAnterior) {
+  const OFICINA_ID = window.OFICINA_CONFIG?.oficina_id || 'modelo';
   
   try {
     const db = firebase.firestore();
@@ -254,7 +223,6 @@ async function atualizarStatusOS(osId, novoStatus, statusAnterior) {
       .collection('ordens_servico')
       .doc(osId);
     
-    // ✅ Buscar dados da OS
     const osDoc = await osRef.get();
     if (!osDoc.exists) {
       console.error('❌ OS não encontrada:', osId);
@@ -263,17 +231,15 @@ async function atualizarStatusOS(osId, novoStatus, statusAnterior) {
     
     const osData = osDoc.data();
     
-    // ✅ Criar entrada de histórico
     const historicoEntry = {
       timestamp: firebase.firestore.Timestamp.now(),
       tipo: 'mudanca_status',
       status_anterior: statusAnterior,
       status_novo: novoStatus,
       usuario: 'Sistema',
-      descricao: `Status alterado de ${traduzirStatus(statusAnterior)} para ${traduzirStatus(novoStatus)}`
+      descricao: `Status alterado de ${traduzirStatusKanban(statusAnterior)} para ${traduzirStatusKanban(novoStatus)}`
     };
     
-    // ✅ Atualizar OS com novo status e histórico
     await osRef.update({
       status: novoStatus,
       ultima_atualizacao: firebase.firestore.Timestamp.now(),
@@ -282,11 +248,10 @@ async function atualizarStatusOS(osId, novoStatus, statusAnterior) {
     
     console.log('✅ Status atualizado:', novoStatus);
     
-    // Notificação de sucesso
     if (window.mostrarNotificacao) {
       const numeroOS = osData.numero_os || osId.substring(0, 8).toUpperCase();
       window.mostrarNotificacao(
-        `✅ OS #${numeroOS} movida para ${traduzirStatus(novoStatus)}`,
+        `✅ OS #${numeroOS} movida para ${traduzirStatusKanban(novoStatus)}`,
         'success'
       );
     }
@@ -304,10 +269,7 @@ async function atualizarStatusOS(osId, novoStatus, statusAnterior) {
 // FUNÇÕES AUXILIARES
 // ==========================================
 
-/**
- * Formata Timestamp do Firestore para string
- */
-function formatarData(timestamp) {
+function formatarDataKanban(timestamp) {
   if (!timestamp) return '-';
   
   try {
@@ -323,10 +285,7 @@ function formatarData(timestamp) {
   }
 }
 
-/**
- * Traduz status para português
- */
-function traduzirStatus(status) {
+function traduzirStatusKanban(status) {
   const mapa = {
     'RECEBIDO': 'Recebido',
     'EM_ANDAMENTO': 'Em Andamento',
@@ -336,35 +295,10 @@ function traduzirStatus(status) {
   return mapa[status] || status;
 }
 
-/**
- * Visualiza detalhes da OS (placeholder)
- */
-function visualizarOS(osId) {
-  console.log('👁️ Visualizar OS:', osId);
-  // TODO: Implementar modal de detalhes
-  if (window.mostrarNotificacao) {
-    window.mostrarNotificacao('🚧 Detalhes da OS em desenvolvimento', 'info');
-  }
-}
-
-/**
- * Edita a OS (placeholder)
- */
-function editarOS(osId) {
-  console.log('✏️ Editar OS:', osId);
-  // TODO: Implementar edição
-  if (window.mostrarNotificacao) {
-    window.mostrarNotificacao('🚧 Edição de OS em desenvolvimento', 'info');
-  }
-}
-
 // ==========================================
-// INICIALIZAÇÃO DAS COLUNAS COM DROP
+// CONFIGURAÇÃO DE DROP ZONES
 // ==========================================
 
-/**
- * Configura eventos de drop nas colunas
- */
 function configurarDropZones() {
   const colunas = [
     { id: 'recebido', status: 'RECEBIDO' },
@@ -375,8 +309,8 @@ function configurarDropZones() {
   colunas.forEach(({ id, status }) => {
     const coluna = document.getElementById(id);
     if (coluna) {
-      coluna.addEventListener('dragover', handleDragOver);
-      coluna.addEventListener('drop', (e) => handleDrop(e, status));
+      coluna.addEventListener('dragover', handleKanbanDragOver);
+      coluna.addEventListener('drop', (e) => handleKanbanDrop(e, status));
       console.log(`✅ Drop zone configurada: ${id}`);
     }
   });
@@ -389,16 +323,13 @@ function configurarDropZones() {
 if (typeof window !== 'undefined') {
   window.iniciarKanban = iniciarKanban;
   window.pararKanban = pararKanban;
-  window.visualizarOS = visualizarOS;
-  window.editarOS = editarOS;
   window.configurarDropZones = configurarDropZones;
 }
 
-// Configurar drop zones quando o DOM estiver pronto
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', configurarDropZones);
 } else {
   configurarDropZones();
 }
 
-console.log('✅ kanban_manager.js carregado');
+console.log('✅ kanban_manager.js v2.0 carregado (SEM CONFLITOS)');
