@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#ffffff">
     <meta name="description" content="Checklist de Oficina - App Offline com PDF">
-    <link rel="stylesheet" href="styles.css?v=3.1">
-    <link rel="stylesheet" href="gestao_oficina.css?v=3.1">
+    <link rel="stylesheet" href="styles.css?v=3.2">
+    <link rel="stylesheet" href="gestao_oficina.css?v=3.2">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="logo.png">
     <link rel="icon" type="image/png" href="logo.png">
@@ -46,7 +46,7 @@
                     <span id="syncText">Online</span>
                 </div>
             </div>
-            <div class="header-badge">v3.1 PRO</div>
+            <div class="header-badge">v3.2 PRO</div>
         </div>
 <div class="tabs">
     <button class="tab-button active" onclick="switchTab('novo-checklist')"><span>➞ Novo Checklist</span></button>
@@ -165,7 +165,7 @@
 
         <!-- BOTÕES DE NAVEGAÇÃO -->
         <div class="wizard-buttons right">
-            <button type="button" class="btn-secondary" onclick="limparFormulario()">🗑️ Limpar</button>
+            <button type="button" class="btn-secondary" onclick="limparFormulario()"> 🗑️ Limpar</button>
             <button type="button" class="btn-primary" onclick="nextStep(2)">Próximo ➞️</button>
         </div>
     </div>
@@ -219,7 +219,7 @@
         </div>
 
         <div class="equip-section">
-            <div class="equip-section-title">🛹 RODAS & PÁRA-BRISAS</div>
+            <div class="equip-section-title">🛼 RODAS & PÁRA-BRISAS</div>
             <div class="checkbox-group">
                 <div class="checkbox-item"><input type="checkbox" id="calotas" name="equipamentos" value="CALOTAS"><label for="calotas">CALOTAS</label></div>
                 <div class="checkbox-item"><input type="checkbox" id="rodas_liga" name="equipamentos" value="RODAS DE LIGA"><label for="rodas_liga">RODAS DE LIGA</label></div>
@@ -681,7 +681,7 @@
 </div>
 
 <!-- ✅ 1. PRIMEIRO: CONFIGS -->
-<script src="config.js?v=3.1"></script>
+<script src="config.js?v=3.2"></script>
 
 <!-- ✅ 2. FIX INICIALIZAÇÃO FIREBASE RTDB GLOBAL -->
 <script>
@@ -692,22 +692,28 @@
 </script>
 
 <!-- ✅ 3. SCRIPTS LOCAIS -->
-<script src="app.js?v=3.1"></script>
-<script src="core_utils.js?v=3.1"></script>
-<script src="checklist.js?v=3.1"></script>
-<script src="gestao_oficina.js?v=3.1"></script>
+<script src="app.js?v=3.2"></script>
+<script src="core_utils.js?v=3.2"></script>
+<script src="checklist.js?v=3.2"></script>
+<script src="gestao_oficina.js?v=3.2"></script>
 
-<!-- ✅ 4. DASHBOARD TEMPO REAL -->
-<script src="gestao_oficina_dashboard.js?v=3.1"></script>
+<!-- ✅ 4. NOVOS MÓDULOS DE GESTÃO -->
+<script src="gestao_oficina_os.js?v=1.0.0"></script>
+<script src="gestao_oficina_checklist.js?v=1.0.0"></script>
+<script src="gestao_oficina_clientes.js?v=1.0.0"></script>
+<script src="gestao_oficina_estoque.js?v=1.0.0"></script>
 
-<!-- ✅ 5. KANBAN MANAGER (MOBILE-FIRST) - CACHE BUSTING -->
-<script src="kanban_manager.js?v=3.1.1"></script>
+<!-- ✅ 5. DASHBOARD TEMPO REAL -->
+<script src="gestao_oficina_dashboard.js?v=2.0.0"></script>
 
-<!-- ✅ 6. INICIALIZADOR DE ABAS (FIX ONCLICK) -->
-<script src="tabs_init.js?v=3.1"></script>
+<!-- ✅ 6. KANBAN MANAGER (MOBILE-FIRST) - CACHE BUSTING -->
+<script src="kanban_manager.js?v=3.2"></script>
 
-<!-- ✅ 7. SYNC FIREBASE GESTÃO OFICINA -->
-<script type="module" src="gestao_oficina_firebase.js?v=3.1"></script>
+<!-- ✅ 7. INICIALIZADOR DE ABAS (FIX ONCLICK) -->
+<script src="tabs_init.js?v=3.2"></script>
+
+<!-- ✅ 8. SYNC FIREBASE GESTÃO OFICINA -->
+<script type="module" src="gestao_oficina_firebase.js?v=3.2"></script>
 
 <div class="os-footer" id="rRodape" style="position: fixed; bottom: 0; left: 0; right: 0; width: 100%; text-align: center; font-size: 10px; background: #f8f9fa; padding: 8px 12px; border-top: 2px solid var(--color-primary); z-index: 9999; box-sizing: border-box; font-family: Arial, sans-serif;">
     <span id="rodape-texto">Developed by Hallz Branding 3199676-6963</span>
