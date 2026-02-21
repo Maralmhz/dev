@@ -4,7 +4,8 @@
 // Conecta ao Firestore e exibe estatísticas em tempo real
 // Respeita multi-tenant (OFICINA_ID)
 
-const OFICINA_ID = window.OFICINA_CONFIG?.oficina_id || 'modelo';
+// ✅ Usa window.OFICINA_CONFIG diretamente (sem redeclarar)
+const getOficinaID = () => window.OFICINA_CONFIG?.oficina_id || 'modelo';
 
 // ==========================================
 // LISTENERS DE TEMPO REAL (onSnapshot)
@@ -19,6 +20,7 @@ let unsubscribeEntregue = null;
  * Inicia todos os listeners de tempo real do dashboard
  */
 function iniciarDashboardFirestore() {
+  const OFICINA_ID = getOficinaID();
   console.log('🔥 Iniciando Dashboard Firestore para oficina:', OFICINA_ID);
   
   if (!firebase || !firebase.firestore) {
@@ -130,6 +132,8 @@ function atualizarContador(tipo, quantidade) {
  * Calcula total financeiro de todas as OS abertas
  */
 async function calcularTotalFinanceiro() {
+  const OFICINA_ID = getOficinaID();
+  
   try {
     const db = firebase.firestore();
     const snapshot = await db
@@ -185,9 +189,11 @@ function renderizarDashboard() {
   
   console.log('🎨 Renderizando dashboard...');
   
+  const nomeOficina = window.OFICINA_CONFIG?.nome || 'Oficina';
+  
   const html = `
     <div class="dashboard-header">
-      <h2>📊 Dashboard - ${window.OFICINA_CONFIG?.nome || 'Oficina'}</h2>
+      <h2>📊 Dashboard - ${nomeOficina}</h2>
       <button class="btn-primary" onclick="atualizarDashboard()">🔄 Atualizar</button>
     </div>
     
@@ -257,16 +263,16 @@ function renderizarDashboard() {
     <!-- KANBAN VIEW (mantido do código antigo) -->
     <div id="kanban-view" class="kanban-container">
       <div class="kanban-coluna">
-        <h3>📅 Agendados Hoje</h3>
-        <div class="cards-container" id="agendados"></div>
+        <h3>📅 Recebidos</h3>
+        <div class="cards-container" id="recebido"></div>
       </div>
       <div class="kanban-coluna">
         <h3>🔧 Em Andamento</h3>
         <div class="cards-container" id="em_andamento"></div>
       </div>
       <div class="kanban-coluna">
-        <h3>✅ Finalizados Hoje</h3>
-        <div class="cards-container" id="finalizados"></div>
+        <h3>✅ Finalizados</h3>
+        <div class="cards-container" id="finalizado"></div>
       </div>
     </div>
   `;
