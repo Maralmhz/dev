@@ -6,6 +6,34 @@ let itensOrcamento = [];
 let streamCamera = null;
 let fotosVeiculo = JSON.parse(localStorage.getItem('fotosVeiculo') || '[]');
 
+// ========================================
+// 🔥 CONFIGURAÇÃO MULTI-TENANT (v1.0.0 - Fundador MVP)
+// ========================================
+
+// Oficinas válidas (fase Fundador)
+const OFICINAS_VALIDAS = [
+  'of_k3m9d82j1l9xp2q', // Oficina 1 - Fundador
+  'of_p8n2k91m3x7y4z', // Oficina 2 - Fundador
+  // Adicionar mais conforme vender
+];
+
+// Captura oficinaId via URL
+function getOficinaId() {
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get('oficina') || 'modelo';
+
+  if (!OFICINAS_VALIDAS.includes(id) && id !== 'modelo') {
+    console.warn('⚠️ oficinaId inválido:', id);
+    if (typeof mostrarNotificacao === 'function') {
+      mostrarNotificacao('Acesso negado. Entre em contato com o suporte.', 'error');
+    }
+    return 'modelo';
+  }
+
+  return id;
+}
+
+const OFICINA_ID = getOficinaId();
 
 function normalizeId(value) {
     if (window.CoreUtils?.normalizeId) return window.CoreUtils.normalizeId(value);
@@ -66,6 +94,49 @@ function salvarLocalStorage(chave, valor) {
         }
         return false;
     }
+}
+
+// ========================================
+// 🔥 GERAÇÃO SEGURA DE NÚMERO DE OS
+// ========================================
+
+function gerarNumeroOS() {
+  const hoje = new Date();
+  const yyyy = hoje.getFullYear();
+  const mm = String(hoje.getMonth() + 1).padStart(2, '0');
+  const dd = String(hoje.getDate()).padStart(2, '0');
+
+  // Random de 3 dígitos (evita race condition)
+  const random = Math.floor(100 + Math.random() * 900);
+
+  return `OS${yyyy}${mm}${dd}${random}`;
+}
+
+// ========================================
+// 🔥 CALCULAR DATA DE PREVISÃO (3 dias úteis)
+// ========================================
+
+function calcularDataPrevisao() {
+  const hoje = new Date();
+  let diasAdicionados = 0;
+  let diasUteis = 0;
+
+  while (diasUteis < 3) {
+    diasAdicionados++;
+    const dataTemp = new Date(hoje);
+    dataTemp.setDate(dataTemp.getDate() + diasAdicionados);
+
+    const diaSemana = dataTemp.getDay();
+    if (diaSemana !== 0 && diaSemana !== 6) { // Não é domingo nem sábado
+      diasUteis++;
+    }
+  }
+
+  const previsao = new Date(hoje);
+  previsao.setDate(previsao.getDate() + diasAdicionados);
+  previsao.setHours(18, 0, 0, 0); // 18h do dia
+
+  return firebase.firestore.Timestamp.fromDate(previsao);
 }
 
 // ==========================================
@@ -276,6 +347,10 @@ function renderizarTabela() {
   
   const rTotalGeral = document.getElementById("rTotalGeral");
   if (rTotalGeral) rTotalGeral.textContent = `R$ ${somaTotal.toFixed(2)}`;
+  
+  // Atualizar globais para usar no salvamento
+  window.totalPecas = somaPecas;
+  window.totalServicos = somaServicos;
 }
 
 // ==========================================
@@ -295,105 +370,214 @@ function switchTab(tabId) {
     if (tabId === 'orcamento') atualizarResumoVeiculo();
 }
 
-// ✅ FIX #1: Salvar com detecção de modo edição
+// ========================================
+// 🔥 FUNÇÃO PRINCIPAL: SALVAR CHECKLIST → OS
+// (COMMIT 1 - v1.0.0 Fundador MVP)
+// ========================================
+
 async function salvarChecklist() {
-    const placa = document.getElementById('placa').value;
-    if (!placa) {
-        alert("Por favor, preencha pelo menos a PLACA para salvar.");
-        return;
-    }
-
-    const formData = {};
-    const elements = document.getElementById('checklistForm').elements;
-
-    for (let i = 0; i < elements.length; i++) {
-        const item = elements[i];
-        if (item.name) {
-            if (item.type === 'checkbox') {
-                if (item.checked) {
-                    if (!formData[item.name]) formData[item.name] = [];
-                    formData[item.name].push(item.value);
-                }
-            } else if (item.type !== 'button') {
-                formData[item.name] = item.value;
-            }
-        }
-    }
-
-    let checklist;
-    const estavaEditando = Boolean(checklistEditando);
-    
-    // ✅ FIX #1: Detecta se está editando ou criando novo
-    if (checklistEditando) {
-        checklist = checklistEditando;
-        checklist.data_modificacao = new Date().toISOString();
-        Object.assign(checklist, formData);
-    } else {
-        checklist = {
-            id: gerarIdChecklist(),
-            oficina_id: window.OFICINA_CONFIG?.oficina_id || "sem_identificacao",
-            data_criacao: new Date().toISOString(),
-            ...formData
-        };
-    }
-    
-    checklist.itensOrcamento = itensOrcamento || [];
-    checklist.complexidade = document.getElementById('complexidade')?.value || '';
-    
-    // 1. SALVAR LOCALMENTE (SEMPRE)
-    let checklists = carregarChecklistsLocais();
-    const idx = checklists.findIndex(c => normalizeId(c.id) === normalizeId(checklist.id));
-    
-    if (idx > -1) {
-        checklists[idx] = checklist; // Substitui se já existe
-    } else {
-        checklists.push(checklist); // Adiciona se novo
-    }
-    
-    const sucesso = salvarLocalStorage(getChecklistStorageKey(), checklists); // ✅ Usando wrapper
-    if (!sucesso) {
-        return; // Para execução se falhou
-    }
-
-    const persistido = carregarChecklistsLocais().some(c => String(c.id) === String(checklist.id));
-    if (!persistido) {
-        alert('❌ Falha de persistência local: checklist não encontrado após salvar.');
-        return;
-    }
-
-    // Feedback Visual
-    const btnSalvar = document.querySelector('button[onclick="salvarChecklist()"]');
-    const txtOriginal = btnSalvar ? btnSalvar.textContent : "Salvar";
-    if(btnSalvar) {
-        btnSalvar.textContent = "☁️ Salvando Nuvem...";
-        btnSalvar.disabled = true;
-    }
-    
-    // 2. TENTAR SALVAR NA NUVEM (estrutura organizada)
-    let msgExtra = "";
     try {
-        await salvarComFirebase(checklist);
-        msgExtra = " e na Nuvem (organizado por pasta)!";
-    } catch (e) {
-        console.warn("Falha nuvem:", e);
-        msgExtra = ".\n\n⚠️ AVISO: Salvo APENAS LOCALMENTE.\nErro ao salvar na nuvem: " + (e.message || "Erro desconhecido");
-    } finally {
-        if(btnSalvar) {
-            btnSalvar.textContent = txtOriginal;
-            btnSalvar.disabled = false;
+        console.log('💾 Iniciando salvamento da OS...');
+
+        // ========================================
+        // 1. COLETAR DADOS DO FORMULÁRIO
+        // ========================================
+        
+        const placa = document.getElementById('placa')?.value || '';
+        const chassi = document.getElementById('chassi')?.value || '';
+        const modelo = document.getElementById('modelo')?.value || '';
+        const km = document.getElementById('km_entrada')?.value || '';
+        const combustivel = document.getElementById('combustivel')?.value || '';
+        
+        const nomeCliente = document.getElementById('nome_cliente')?.value || '';
+        const cpfCnpj = document.getElementById('cpf_cnpj')?.value || '';
+        const telefone = document.getElementById('celular_cliente')?.value || '';
+        const endereco = document.getElementById('endereco_cliente')?.value || '';
+        
+        const descricaoProblema = document.getElementById('servicos')?.value || '';
+        const observacoes = document.getElementById('obsInspecao')?.value || '';
+
+        // Validação básica
+        if (!placa || !nomeCliente || !telefone) {
+            alert('❌ Preencha placa, cliente e telefone');
+            return;
         }
+
+        // ========================================
+        // 2. CALCULAR VALORES
+        // ========================================
+        
+        const totalPecas = window.totalPecas || 0;
+        const totalServicos = window.totalServicos || 0;
+        const desconto = 0;
+        const total = totalPecas + totalServicos - desconto;
+
+        // ========================================
+        // 3. GERAR NÚMERO DA OS
+        // ========================================
+        
+        const numeroOS = gerarNumeroOS();
+        const dataPrevisao = calcularDataPrevisao();
+
+        // ========================================
+        // 4. ESTRUTURAR DADOS DA OS
+        // ========================================
+        
+        const dadosOS = {
+            // Identificação
+            numero_os: numeroOS,
+            
+            // Cliente
+            cliente_nome: nomeCliente,
+            cliente_telefone: telefone,
+            cliente_cpf_cnpj: cpfCnpj,
+            cliente_endereco: endereco,
+            
+            // Veículo
+            veiculo_placa: placa.toUpperCase(),
+            veiculo_chassi: chassi.toUpperCase(),
+            veiculo_modelo: modelo,
+            veiculo_km: km,
+            veiculo_combustivel: combustivel,
+            
+            // Descrição
+            descricao_problema: descricaoProblema,
+            observacoes_inspecao: observacoes,
+            
+            // Equipamentos vistoriados
+            equipamentos: Array.from(document.querySelectorAll('input[name="equipamentos"]:checked'))
+                .map(el => el.value),
+            
+            // Itens (peças e serviços)
+            itens: itensOrcamento || [],
+            
+            // Financeiro (SEM duplicação)
+            financeiro: {
+                subtotal_pecas: totalPecas,
+                subtotal_servicos: totalServicos,
+                desconto: desconto,
+                total: total,
+                pago: 0,
+                pendente: total,
+                status: 'pendente'
+            },
+            
+            // Status e workflow
+            status: 'RECEBIDO',
+            prioridade: 'normal',
+            
+            // Datas
+            data_entrada: firebase.firestore.FieldValue.serverTimestamp(),
+            data_previsao: dataPrevisao,
+            data_finalizacao: null,
+            data_entrega: null,
+            
+            // Meta (rastreamento)
+            meta: {
+                origem: 'checklist',
+                versao_sistema: 'v1.0.0',
+                criado_via: 'web'
+            },
+            
+            // Controle
+            criado_em: firebase.firestore.FieldValue.serverTimestamp(),
+            atualizado_em: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        console.log('📦 Dados da OS:', dadosOS);
+
+        // ========================================
+        // 5. SALVAR NO FIRESTORE
+        // ========================================
+        
+        const db = firebase.firestore();
+        const osRef = db
+            .collection('oficinas').doc(OFICINA_ID)
+            .collection('ordens_servico').doc(); // Auto-ID
+
+        await osRef.set(dadosOS);
+        
+        console.log('✅ OS salva no Firestore:', osRef.id);
+
+        // ========================================
+        // 6. REGISTRAR HISTÓRICO (SUBCOLEÇÃO)
+        // ========================================
+        
+        await osRef.collection('historico').add({
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            usuario_nome: 'Sistema',
+            acao: 'criacao',
+            status_anterior: null,
+            status_novo: 'RECEBIDO',
+            observacao: 'OS criada a partir do checklist de entrada',
+            campo_alterado: null,
+            valor_anterior: null,
+            valor_novo: null
+        });
+
+        console.log('✅ Histórico inicial registrado');
+
+        // ========================================
+        // 7. BACKUP LOCAL SEGURO
+        // ========================================
+        
+        try {
+            const dadosParaBackup = {
+                ...dadosOS,
+                id: osRef.id,
+                numero_os: numeroOS,
+                data_entrada: new Date().toISOString(),
+                data_previsao: dataPrevisao.toDate().toISOString(),
+                backup_em: new Date().toISOString()
+            };
+
+            let backups = JSON.parse(localStorage.getItem('os_backup')) || [];
+            backups.push(dadosParaBackup);
+
+            // Manter apenas últimos 50
+            if (backups.length > 50) {
+                backups = backups.slice(-50);
+            }
+
+            localStorage.setItem('os_backup', JSON.stringify(backups));
+            console.log('✅ Backup local salvo');
+
+        } catch (error) {
+            console.warn('⚠️ Erro ao salvar backup local:', error);
+        }
+
+        // ========================================
+        // 8. LIMPAR FORMULÁRIO
+        // ========================================
+        
+        itensOrcamento = [];
+        checklistEditando = null;
+        renderizarTabela();
+        
+        if (typeof limparFormularioCompleto === 'function') {
+            limparFormularioCompleto();
+        } else {
+            document.getElementById('checklistForm')?.reset();
+        }
+
+        // ========================================
+        // 9. FEEDBACK E REDIRECIONAMENTO
+        // ========================================
+        
+        alert(`✅ OS ${numeroOS} criada com sucesso!`);
+
+        // Aguardar 1 segundo antes de redirecionar
+        setTimeout(() => {
+            switchTab('gestao-oficina');
+            if (typeof iniciarGestaoOficina === 'function') {
+                iniciarGestaoOficina();
+            }
+        }, 1000);
+
+    } catch (error) {
+        console.error('❌ Erro ao salvar OS:', error);
+        alert(`Erro ao criar OS: ${error.message}`);
     }
-
-    // Limpeza e reset
-    itensOrcamento = [];
-    checklistEditando = null; // ✅ Limpa modo edição
-    renderizarTabela();
-
-    const msg = estavaEditando ? "atualizado" : "salvo";
-    alert(`✅ Checklist ${msg} com sucesso no Histórico` + msgExtra);
-    document.getElementById('checklistForm').reset();
-    atualizarResumoVeiculo();
-    switchTab('historico');
 }
 
 function carregarHistorico() {
@@ -1026,7 +1210,7 @@ function gerarPDFFotos() {
 // ==========================================
 // RESUMO E IMPRESSÃO
 // ==========================================
-function gerarNumeroOS() {
+function gerarNumeroOS_OLD() {
     const placa = (document.getElementById('placa')?.value || 'OS').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
     let dataRaw = document.getElementById('data')?.value;
     let dataObj = dataRaw ? new Date(dataRaw + 'T00:00:00') : new Date();
@@ -1303,7 +1487,12 @@ document.addEventListener('DOMContentLoaded', () => {
   
   document.getElementById('placa')?.addEventListener('input', atualizarBarraOS);
   document.getElementById('data')?.addEventListener('input', atualizarBarraOS);
+  
+  // ✅ Log de inicialização
+  console.log('🔥 Sistema Multi-tenant inicializado');
+  console.log('📍 Oficina ID:', OFICINA_ID);
+  console.log('🏷️ Versão: v1.0.0 - Fundador MVP');
 });
 
 // ✅ FIX: Service Worker removido (causava erro)
-console.log('✅ Checklist.js carregado sem Service Worker inline');
+console.log('✅ Checklist.js v1.0.0 carregado - Commit 1: Checklist → OS');
