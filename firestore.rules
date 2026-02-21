@@ -1,0 +1,191 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ==========================================
+    // FUNÇÕES AUXILIARES
+    // ==========================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function oficinaDoToken() {
+      return request.auth.token.oficina_id;
+    }
+
+    function pertenceOficina(oficinaId) {
+      return isAuthenticated() && oficinaDoToken() == oficinaId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.role == 'admin';
+    }
+
+    function isValidString(field, max) {
+      return field is string && field.size() > 0 && field.size() <= max;
+    }
+
+    function isValidNumber(field) {
+      return field is number && field >= 0;
+    }
+
+    function versionIncremented() {
+      return request.resource.data.version == resource.data.version + 1;
+    }
+
+    // ==========================================
+    // OFICINAS
+    // ==========================================
+
+    match /oficinas/{oficinaId} {
+      allow read: if pertenceOficina(oficinaId);
+      allow write: if isAdmin() && pertenceOficina(oficinaId);
+
+      // ==========================================
+      // ORDENS DE SERVIÇO
+      // ==========================================
+
+      match /ordens_servico/{osId} {
+        allow read: if pertenceOficina(oficinaId);
+
+        allow create: if pertenceOficina(oficinaId) &&
+          isValidString(request.resource.data.numero_os, 50) &&
+          isValidString(request.resource.data.cliente_id, 100) &&
+          isValidString(request.resource.data.veiculo_id, 100) &&
+          isValidNumber(request.resource.data.financeiro.total) &&
+          request.resource.data.version == 1;
+
+        allow update: if pertenceOficina(oficinaId) &&
+          versionIncremented() &&
+          // Campos read-only não podem mudar
+          request.resource.data.numero_os == resource.data.numero_os &&
+          request.resource.data.data_entrada == resource.data.data_entrada;
+
+        allow delete: if false; // Bloqueado - usar status: 'cancelado'
+      }
+
+      // ==========================================
+      // CLIENTES
+      // ==========================================
+
+      match /clientes/{clienteId} {
+        allow read: if pertenceOficina(oficinaId);
+
+        allow create: if pertenceOficina(oficinaId) &&
+          isValidString(request.resource.data.nome, 200) &&
+          isValidString(request.resource.data.cpf_cnpj, 20);
+
+        allow update: if pertenceOficina(oficinaId);
+
+        allow delete: if false; // Bloqueado - usar ativo: false
+      }
+
+      // ==========================================
+      // VEÍCULOS
+      // ==========================================
+
+      match /veiculos/{veiculoId} {
+        allow read: if pertenceOficina(oficinaId);
+
+        allow create: if pertenceOficina(oficinaId) &&
+          isValidString(request.resource.data.placa, 10) &&
+          isValidString(request.resource.data.cliente_id, 100);
+
+        allow update: if pertenceOficina(oficinaId);
+
+        allow delete: if false;
+      }
+
+      // ==========================================
+      // ESTOQUE - PEÇAS
+      // ==========================================
+
+      match /pecas/{pecaId} {
+        allow read: if pertenceOficina(oficinaId);
+
+        allow create: if pertenceOficina(oficinaId) &&
+          isValidString(request.resource.data.nome, 200) &&
+          isValidString(request.resource.data.codigo, 50) &&
+          isValidNumber(request.resource.data.quantidade_inicial) &&
+          isValidNumber(request.resource.data.preco_venda) &&
+          request.resource.data.version == 1;
+
+        allow update: if pertenceOficina(oficinaId) &&
+          versionIncremented() &&
+          isValidNumber(request.resource.data.quantidade_atual) &&
+          // Código não pode mudar
+          request.resource.data.codigo == resource.data.codigo;
+
+        allow delete: if false;
+      }
+
+      // ==========================================
+      // MOVIMENTAÇÕES DE ESTOQUE
+      // ==========================================
+
+      match /movimentacoes_estoque/{movId} {
+        allow read: if pertenceOficina(oficinaId);
+
+        // Apenas criação via transação
+        allow create: if pertenceOficina(oficinaId) &&
+          request.resource.data.tipo in ['entrada', 'saida'] &&
+          isValidNumber(request.resource.data.quantidade);
+
+        // Não pode alterar ou deletar histórico
+        allow update, delete: if false;
+      }
+
+      // ==========================================
+      // CHECKLIST
+      // ==========================================
+
+      match /checklists/{checklistId} {
+        allow read: if pertenceOficina(oficinaId);
+
+        allow create: if pertenceOficina(oficinaId) &&
+          request.resource.data.os_id is string;
+
+        allow update: if pertenceOficina(oficinaId) &&
+          isValidNumber(request.resource.data.progresso) &&
+          request.resource.data.progresso >= 0 &&
+          request.resource.data.progresso <= 100;
+
+        allow delete: if false;
+      }
+
+      // ==========================================
+      // PAGAMENTOS (READ-ONLY APÓS CRIAÇÃO)
+      // ==========================================
+
+      match /pagamentos/{pagamentoId} {
+        allow read: if pertenceOficina(oficinaId);
+
+        allow create: if pertenceOficina(oficinaId) &&
+          isValidString(request.resource.data.os_id, 100) &&
+          isValidNumber(request.resource.data.valor) &&
+          request.resource.data.valor > 0;
+
+        // Pagamentos não podem ser alterados ou deletados
+        allow update, delete: if false;
+      }
+
+      // ==========================================
+      // CONFIGURAÇÕES
+      // ==========================================
+
+      match /configuracoes/{configId} {
+        allow read: if pertenceOficina(oficinaId);
+        allow write: if isAdmin() && pertenceOficina(oficinaId);
+      }
+    }
+
+    // ==========================================
+    // BLOQUEAR TODO O RESTO
+    // ==========================================
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
