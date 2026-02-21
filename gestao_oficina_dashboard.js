@@ -1,309 +1,457 @@
 // ==========================================
-// 📊 DASHBOARD GESTÃO DA OFICINA - TEMPO REAL
+// 📊 DASHBOARD GESTÃO DA OFICINA - ENXUTO
 // ==========================================
-// Conecta ao Firestore e exibe estatísticas em tempo real
-// Respeita multi-tenant (OFICINA_ID)
+// Dashboard simplificado com métricas essenciais
 
-// ✅ Usa window.OFICINA_CONFIG diretamente (sem redeclarar)
-const getOficinaID = () => window.OFICINA_CONFIG?.oficina_id || 'modelo';
-
-// ==========================================
-// LISTENERS DE TEMPO REAL (onSnapshot)
-// ==========================================
-
-let unsubscribeRecebido = null;
-let unsubscribeEmAndamento = null;
-let unsubscribeFinalizado = null;
-let unsubscribeEntregue = null;
-
-/**
- * Inicia todos os listeners de tempo real do dashboard
- */
-function iniciarDashboardFirestore() {
-  const OFICINA_ID = getOficinaID();
-  console.log('🔥 Iniciando Dashboard Firestore para oficina:', OFICINA_ID);
+const dashboardManager = {
+  oficina_id: null,
+  db: null,
+  listeners: {
+    recebido: null,
+    em_andamento: null,
+    finalizado: null,
+    entregue: null
+  },
   
-  if (!firebase || !firebase.firestore) {
-    console.error('❌ Firebase Firestore não disponível');
-    return;
-  }
+  // ==========================================
+  // INICIALIZAÇÃO
+  // ==========================================
   
-  // ✅ Renderizar dashboard antes de iniciar listeners
-  renderizarDashboard();
+  init(oficina_id) {
+    this.oficina_id = oficina_id;
+    this.db = firebase.firestore();
+    console.log('✅ Dashboard Manager inicializado');
+  },
   
-  const db = firebase.firestore();
-  const baseRef = db
-    .collection('oficinas')
-    .doc(OFICINA_ID)
-    .collection('ordens_servico');
+  // ==========================================
+  // INICIAR LISTENERS TEMPO REAL
+  // ==========================================
   
-  // ✅ Listener: RECEBIDO
-  unsubscribeRecebido = baseRef
-    .where('status', '==', 'RECEBIDO')
-    .onSnapshot(snapshot => {
-      atualizarContador('recebido', snapshot.size);
-      console.log('📊 RECEBIDO:', snapshot.size);
-    }, error => {
-      console.error('❌ Erro listener RECEBIDO:', error);
-    });
-  
-  // ✅ Listener: EM_ANDAMENTO
-  unsubscribeEmAndamento = baseRef
-    .where('status', '==', 'EM_ANDAMENTO')
-    .onSnapshot(snapshot => {
-      atualizarContador('em_andamento', snapshot.size);
-      console.log('📊 EM_ANDAMENTO:', snapshot.size);
-    }, error => {
-      console.error('❌ Erro listener EM_ANDAMENTO:', error);
-    });
-  
-  // ✅ Listener: FINALIZADO
-  unsubscribeFinalizado = baseRef
-    .where('status', '==', 'FINALIZADO')
-    .onSnapshot(snapshot => {
-      atualizarContador('finalizado', snapshot.size);
-      console.log('📊 FINALIZADO:', snapshot.size);
-    }, error => {
-      console.error('❌ Erro listener FINALIZADO:', error);
-    });
-  
-  // ✅ Listener: ENTREGUE
-  unsubscribeEntregue = baseRef
-    .where('status', '==', 'ENTREGUE')
-    .onSnapshot(snapshot => {
-      atualizarContador('entregue', snapshot.size);
-      console.log('📊 ENTREGUE:', snapshot.size);
-    }, error => {
-      console.error('❌ Erro listener ENTREGUE:', error);
-    });
-  
-  // ✅ Calcular total financeiro
-  calcularTotalFinanceiro();
-  
-  console.log('✅ Dashboard Firestore iniciado com sucesso!');
-}
-
-/**
- * Para todos os listeners ao sair da aba
- */
-function pararDashboardFirestore() {
-  console.log('🛑 Parando listeners do Dashboard');
-  
-  if (unsubscribeRecebido) unsubscribeRecebido();
-  if (unsubscribeEmAndamento) unsubscribeEmAndamento();
-  if (unsubscribeFinalizado) unsubscribeFinalizado();
-  if (unsubscribeEntregue) unsubscribeEntregue();
-}
-
-// ==========================================
-// ATUALIZAÇÃO DE UI
-// ==========================================
-
-/**
- * Atualiza contador específico na UI
- */
-function atualizarContador(tipo, quantidade) {
-  const mapa = {
-    'recebido': 'contadorRecebido',
-    'em_andamento': 'contadorEmAndamento',
-    'finalizado': 'contadorFinalizado',
-    'entregue': 'contadorEntregue'
-  };
-  
-  const elementoId = mapa[tipo];
-  const elemento = document.getElementById(elementoId);
-  
-  if (elemento) {
-    elemento.textContent = quantidade;
+  iniciar() {
+    console.log('🔥 Iniciando Dashboard Tempo Real');
     
-    // Animação de update
-    elemento.style.transform = 'scale(1.2)';
-    elemento.style.color = 'var(--color-primary)';
-    setTimeout(() => {
-      elemento.style.transform = 'scale(1)';
-      elemento.style.color = '';
-    }, 300);
-  } else {
-    console.warn('⚠️ Elemento não encontrado:', elementoId);
-  }
-}
-
-/**
- * Calcula total financeiro de todas as OS abertas
- */
-async function calcularTotalFinanceiro() {
-  const OFICINA_ID = getOficinaID();
-  
-  try {
-    const db = firebase.firestore();
-    const snapshot = await db
+    if (!this.db) {
+      console.error('❌ Firestore não disponível');
+      return;
+    }
+    
+    const baseRef = this.db
       .collection('oficinas')
-      .doc(OFICINA_ID)
-      .collection('ordens_servico')
-      .where('status', 'in', ['RECEBIDO', 'EM_ANDAMENTO', 'FINALIZADO'])
-      .get();
+      .doc(this.oficina_id)
+      .collection('ordens_servico');
     
-    let totalAberto = 0;
+    // Listener: RECEBIDO
+    this.listeners.recebido = baseRef
+      .where('status', '==', 'RECEBIDO')
+      .onSnapshot(snapshot => {
+        this.atualizarCard('recebido', snapshot);
+      });
+    
+    // Listener: EM_ANDAMENTO
+    this.listeners.em_andamento = baseRef
+      .where('status', '==', 'EM_ANDAMENTO')
+      .onSnapshot(snapshot => {
+        this.atualizarCard('em_andamento', snapshot);
+      });
+    
+    // Listener: FINALIZADO
+    this.listeners.finalizado = baseRef
+      .where('status', '==', 'FINALIZADO')
+      .onSnapshot(snapshot => {
+        this.atualizarCard('finalizado', snapshot);
+      });
+    
+    // Listener: ENTREGUE
+    this.listeners.entregue = baseRef
+      .where('status', '==', 'ENTREGUE')
+      .onSnapshot(snapshot => {
+        this.atualizarCard('entregue', snapshot);
+      });
+    
+    // Atualizar financeiro
+    this.atualizarFinanceiro();
+    
+    console.log('✅ Dashboard iniciado!');
+  },
+  
+  // ==========================================
+  // PARAR LISTENERS
+  // ==========================================
+  
+  parar() {
+    console.log('🛑 Parando Dashboard');
+    
+    Object.values(this.listeners).forEach(unsubscribe => {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    });
+    
+    this.listeners = {
+      recebido: null,
+      em_andamento: null,
+      finalizado: null,
+      entregue: null
+    };
+  },
+  
+  // ==========================================
+  // ATUALIZAR CARDS
+  // ==========================================
+  
+  atualizarCard(tipo, snapshot) {
+    const quantidade = snapshot.size;
+    
+    // Calcular totais financeiros
+    let totalValor = 0;
     let totalPago = 0;
     
     snapshot.forEach(doc => {
       const data = doc.data();
-      const total = Number(data.financeiro?.total) || 0;
-      const pago = Number(data.financeiro?.pago) || 0;
-      
-      totalAberto += total;
-      totalPago += pago;
+      totalValor += (data.financeiro?.total || 0);
+      totalPago += (data.financeiro?.valor_pago || 0);
     });
     
-    const totalReceber = totalAberto - totalPago;
+    const totalReceber = totalValor - totalPago;
     
     // Atualizar UI
-    const elemTotal = document.getElementById('totalFinanceiro');
-    const elemReceber = document.getElementById('totalReceber');
-    const elemPago = document.getElementById('totalPago');
+    const mapa = {
+      'recebido': 'card-recebido',
+      'em_andamento': 'card-em-andamento',
+      'finalizado': 'card-finalizado',
+      'entregue': 'card-entregue'
+    };
     
-    if (elemTotal) elemTotal.textContent = `R$ ${totalAberto.toFixed(2)}`;
-    if (elemReceber) elemReceber.textContent = `R$ ${totalReceber.toFixed(2)}`;
-    if (elemPago) elemPago.textContent = `R$ ${totalPago.toFixed(2)}`;
+    const cardId = mapa[tipo];
+    const card = document.getElementById(cardId);
     
-    console.log('💰 Total financeiro:', totalAberto);
+    if (card) {
+      const countEl = card.querySelector('.card-count');
+      const valueEl = card.querySelector('.card-value');
+      const receberEl = card.querySelector('.card-receber');
+      
+      if (countEl) {
+        countEl.textContent = quantidade;
+        // Animação
+        countEl.style.transform = 'scale(1.1)';
+        setTimeout(() => {
+          countEl.style.transform = 'scale(1)';
+        }, 200);
+      }
+      
+      if (valueEl) {
+        valueEl.textContent = `R$ ${totalValor.toFixed(2)}`;
+      }
+      
+      if (receberEl && tipo !== 'entregue') {
+        receberEl.textContent = `A receber: R$ ${totalReceber.toFixed(2)}`;
+      }
+    }
     
-  } catch (error) {
-    console.error('❌ Erro ao calcular total financeiro:', error);
+    console.log(`📊 ${tipo.toUpperCase()}: ${quantidade} OS - R$ ${totalValor.toFixed(2)}`);
+  },
+  
+  // ==========================================
+  // ATUALIZAR FINANCEIRO GERAL
+  // ==========================================
+  
+  async atualizarFinanceiro() {
+    try {
+      const hoje = new Date();
+      const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+      
+      const snapshot = await this.db
+        .collection('oficinas')
+        .doc(this.oficina_id)
+        .collection('ordens_servico')
+        .where('data_entrada', '>=', firebase.firestore.Timestamp.fromDate(primeiroDiaMes))
+        .get();
+      
+      let faturamentoMes = 0;
+      let totalReceber = 0;
+      let totalVencido = 0;
+      
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const total = data.financeiro?.total || 0;
+        const pago = data.financeiro?.valor_pago || 0;
+        const restante = total - pago;
+        
+        // Soma faturamento do mês
+        faturamentoMes += pago;
+        
+        // Se ainda tem saldo a receber
+        if (restante > 0) {
+          totalReceber += restante;
+          
+          // Verificar se está vencido
+          const vencimento = data.financeiro?.data_vencimento;
+          if (vencimento) {
+            const dataVenc = vencimento.toDate ? vencimento.toDate() : new Date(vencimento);
+            if (dataVenc < hoje) {
+              totalVencido += restante;
+            }
+          }
+        }
+      });
+      
+      // Atualizar UI
+      this.atualizarFinanceiroUI(faturamentoMes, totalReceber, totalVencido);
+      
+    } catch (error) {
+      console.error('❌ Erro ao atualizar financeiro:', error);
+    }
+  },
+  
+  atualizarFinanceiroUI(faturamentoMes, totalReceber, totalVencido) {
+    const elemFaturamento = document.getElementById('faturamento-mes');
+    const elemReceber = document.getElementById('total-receber');
+    const elemVencido = document.getElementById('total-vencido');
+    
+    if (elemFaturamento) {
+      elemFaturamento.textContent = `R$ ${faturamentoMes.toFixed(2)}`;
+    }
+    
+    if (elemReceber) {
+      elemReceber.textContent = `R$ ${totalReceber.toFixed(2)}`;
+    }
+    
+    if (elemVencido) {
+      elemVencido.textContent = `R$ ${totalVencido.toFixed(2)}`;
+      
+      // Destacar se houver valores vencidos
+      if (totalVencido > 0) {
+        elemVencido.style.color = '#dc2626';
+        elemVencido.style.fontWeight = 'bold';
+      } else {
+        elemVencido.style.color = '';
+        elemVencido.style.fontWeight = '';
+      }
+    }
+  },
+  
+  // ==========================================
+  // RENDERIZAR DASHBOARD
+  // ==========================================
+  
+  renderizar(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) {
+      console.error('❌ Container não encontrado:', containerId);
+      return;
+    }
+    
+    const html = `
+      <!-- HEADER -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <h2 style="margin: 0; font-size: 24px; color: #333;">📊 Dashboard da Oficina</h2>
+        <div style="display: flex; gap: 12px;">
+          <select id="filtro-periodo" onchange="dashboardManager.aplicarFiltro()" style="
+            padding: 10px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+          ">
+            <option value="hoje">Hoje</option>
+            <option value="semana">Esta Semana</option>
+            <option value="mes" selected>Este Mês</option>
+            <option value="customizado">Personalizado</option>
+          </select>
+          <button onclick="dashboardManager.atualizar()" style="
+            padding: 10px 20px;
+            background: #667eea;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+          ">🔄 Atualizar</button>
+        </div>
+      </div>
+      
+      <!-- CARDS DE STATUS -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 32px;">
+        
+        <!-- RECEBIDO -->
+        <div id="card-recebido" style="
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: #fff;
+          padding: 24px;
+          border-radius: 12px;
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        ">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+            <div style="font-size: 32px;">📅</div>
+            <div style="font-size: 16px; font-weight: 600;">Recebidos</div>
+          </div>
+          <div class="card-count" style="font-size: 48px; font-weight: bold; margin-bottom: 8px;">0</div>
+          <div class="card-value" style="font-size: 14px; opacity: 0.9;">R$ 0,00</div>
+          <div class="card-receber" style="font-size: 12px; opacity: 0.8; margin-top: 4px;">A receber: R$ 0,00</div>
+        </div>
+        
+        <!-- EM ANDAMENTO -->
+        <div id="card-em-andamento" style="
+          background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+          color: #fff;
+          padding: 24px;
+          border-radius: 12px;
+          box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        ">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+            <div style="font-size: 32px;">🔧</div>
+            <div style="font-size: 16px; font-weight: 600;">Em Andamento</div>
+          </div>
+          <div class="card-count" style="font-size: 48px; font-weight: bold; margin-bottom: 8px;">0</div>
+          <div class="card-value" style="font-size: 14px; opacity: 0.9;">R$ 0,00</div>
+          <div class="card-receber" style="font-size: 12px; opacity: 0.8; margin-top: 4px;">A receber: R$ 0,00</div>
+        </div>
+        
+        <!-- FINALIZADO -->
+        <div id="card-finalizado" style="
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          color: #fff;
+          padding: 24px;
+          border-radius: 12px;
+          box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        ">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+            <div style="font-size: 32px;">✅</div>
+            <div style="font-size: 16px; font-weight: 600;">Finalizados</div>
+          </div>
+          <div class="card-count" style="font-size: 48px; font-weight: bold; margin-bottom: 8px;">0</div>
+          <div class="card-value" style="font-size: 14px; opacity: 0.9;">R$ 0,00</div>
+          <div class="card-receber" style="font-size: 12px; opacity: 0.8; margin-top: 4px;">A receber: R$ 0,00</div>
+        </div>
+        
+        <!-- ENTREGUE -->
+        <div id="card-entregue" style="
+          background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+          color: #fff;
+          padding: 24px;
+          border-radius: 12px;
+          box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        ">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+            <div style="font-size: 32px;">🎉</div>
+            <div style="font-size: 16px; font-weight: 600;">Entregues</div>
+          </div>
+          <div class="card-count" style="font-size: 48px; font-weight: bold; margin-bottom: 8px;">0</div>
+          <div class="card-value" style="font-size: 14px; opacity: 0.9;">R$ 0,00</div>
+        </div>
+        
+      </div>
+      
+      <!-- RESUMO FINANCEIRO -->
+      <div style="background: #fff; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 32px;">
+        <h3 style="margin: 0 0 20px 0; font-size: 18px; color: #333;">💰 Resumo Financeiro (Mês Atual)</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+          
+          <div>
+            <div style="font-size: 13px; color: #6b7280; margin-bottom: 8px;">Faturamento Recebido</div>
+            <div id="faturamento-mes" style="font-size: 28px; font-weight: bold; color: #10b981;">R$ 0,00</div>
+          </div>
+          
+          <div>
+            <div style="font-size: 13px; color: #6b7280; margin-bottom: 8px;">Total a Receber</div>
+            <div id="total-receber" style="font-size: 28px; font-weight: bold; color: #f59e0b;">R$ 0,00</div>
+          </div>
+          
+          <div>
+            <div style="font-size: 13px; color: #6b7280; margin-bottom: 8px;">Total Vencido</div>
+            <div id="total-vencido" style="font-size: 28px; font-weight: bold; color: #dc2626;">R$ 0,00</div>
+          </div>
+          
+        </div>
+      </div>
+      
+      <!-- KANBAN VIEW -->
+      <div id="kanban-view" class="kanban-container">
+        <div class="kanban-coluna">
+          <h3>📅 Recebidos</h3>
+          <div class="cards-container" id="recebido"></div>
+        </div>
+        <div class="kanban-coluna">
+          <h3>🔧 Em Andamento</h3>
+          <div class="cards-container" id="em_andamento"></div>
+        </div>
+        <div class="kanban-coluna">
+          <h3>✅ Finalizados</h3>
+          <div class="cards-container" id="finalizado"></div>
+        </div>
+      </div>
+    `;
+    
+    container.innerHTML = html;
+  },
+  
+  // ==========================================
+  // FILTROS
+  // ==========================================
+  
+  aplicarFiltro() {
+    const filtro = document.getElementById('filtro-periodo')?.value;
+    console.log('📊 Aplicando filtro:', filtro);
+    
+    // Lógica de filtro será implementada
+    if (window.mostrarNotificacao) {
+      window.mostrarNotificacao('🚧 Filtro em desenvolvimento', 'info');
+    }
+  },
+  
+  atualizar() {
+    console.log('🔄 Atualizando dashboard...');
+    this.atualizarFinanceiro();
+    
+    if (window.mostrarNotificacao) {
+      window.mostrarNotificacao('✅ Dashboard atualizado!', 'success');
+    }
   }
+};
+
+// ==========================================
+// FUNÇÕES LEGADO (COMPATIBILIDADE)
+// ==========================================
+
+function iniciarDashboardFirestore() {
+  const OFICINA_ID = window.OFICINA_CONFIG?.oficina_id || 'modelo';
+  dashboardManager.init(OFICINA_ID);
+  dashboardManager.iniciar();
 }
 
-// ==========================================
-// RENDERIZAÇÃO DO DASHBOARD
-// ==========================================
+function pararDashboardFirestore() {
+  dashboardManager.parar();
+}
 
-/**
- * Renderiza o HTML do dashboard
- */
 function renderizarDashboard() {
   const container = document.querySelector('#gestao-oficina .content');
-  if (!container) {
-    console.warn('⚠️ Container #gestao-oficina .content não encontrado');
-    return;
+  if (container) {
+    dashboardManager.renderizar('gestao-oficina-content');
+    // Criar elemento com ID se não existir
+    if (!document.getElementById('gestao-oficina-content')) {
+      container.id = 'gestao-oficina-content';
+      dashboardManager.renderizar('gestao-oficina-content');
+    }
   }
-  
-  console.log('🎨 Renderizando dashboard...');
-  
-  const nomeOficina = window.OFICINA_CONFIG?.nome || 'Oficina';
-  
-  const html = `
-    <div class="dashboard-header">
-      <h2>📊 Dashboard - ${nomeOficina}</h2>
-      <button class="btn-primary" onclick="atualizarDashboard()">🔄 Atualizar</button>
-    </div>
-    
-    <div class="dashboard-grid">
-      <!-- CARD: RECEBIDO -->
-      <div class="dashboard-card card-recebido">
-        <div class="card-icon">📥</div>
-        <div class="card-info">
-          <div class="card-label">Recebidos</div>
-          <div class="card-value" id="contadorRecebido">0</div>
-        </div>
-      </div>
-      
-      <!-- CARD: EM ANDAMENTO -->
-      <div class="dashboard-card card-andamento">
-        <div class="card-icon">🔧</div>
-        <div class="card-info">
-          <div class="card-label">Em Andamento</div>
-          <div class="card-value" id="contadorEmAndamento">0</div>
-        </div>
-      </div>
-      
-      <!-- CARD: FINALIZADO -->
-      <div class="dashboard-card card-finalizado">
-        <div class="card-icon">✅</div>
-        <div class="card-info">
-          <div class="card-label">Finalizados</div>
-          <div class="card-value" id="contadorFinalizado">0</div>
-        </div>
-      </div>
-      
-      <!-- CARD: ENTREGUE -->
-      <div class="dashboard-card card-entregue">
-        <div class="card-icon">🚗</div>
-        <div class="card-info">
-          <div class="card-label">Entregues</div>
-          <div class="card-value" id="contadorEntregue">0</div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- SEÇÃO FINANCEIRA -->
-    <div class="dashboard-financeiro">
-      <h3>💰 Financeiro</h3>
-      <div class="financeiro-grid">
-        <div class="financeiro-item">
-          <span class="financeiro-label">Total em Aberto:</span>
-          <span class="financeiro-value" id="totalFinanceiro">R$ 0,00</span>
-        </div>
-        <div class="financeiro-item">
-          <span class="financeiro-label">A Receber:</span>
-          <span class="financeiro-value danger" id="totalReceber">R$ 0,00</span>
-        </div>
-        <div class="financeiro-item">
-          <span class="financeiro-label">Já Pago:</span>
-          <span class="financeiro-value success" id="totalPago">R$ 0,00</span>
-        </div>
-      </div>
-    </div>
-    
-    <!-- PAINEL DE CONTROLE (mantido do código antigo) -->
-    <div id="painel-controle"></div>
-    
-    <!-- RESUMO TOPO (mantido do código antigo) -->
-    <div id="resumoTopo" class="resumo-cards"></div>
-    
-    <!-- KANBAN VIEW (mantido do código antigo) -->
-    <div id="kanban-view" class="kanban-container">
-      <div class="kanban-coluna">
-        <h3>📅 Recebidos</h3>
-        <div class="cards-container" id="recebido"></div>
-      </div>
-      <div class="kanban-coluna">
-        <h3>🔧 Em Andamento</h3>
-        <div class="cards-container" id="em_andamento"></div>
-      </div>
-      <div class="kanban-coluna">
-        <h3>✅ Finalizados</h3>
-        <div class="cards-container" id="finalizado"></div>
-      </div>
-    </div>
-  `;
-  
-  container.innerHTML = html;
-  console.log('✅ Dashboard renderizado!');
 }
 
-/**
- * Força atualização manual do dashboard
- */
 function atualizarDashboard() {
-  console.log('🔄 Atualizando dashboard...');
-  calcularTotalFinanceiro();
-  
-  // Notificação de sucesso
-  if (window.mostrarNotificacao) {
-    window.mostrarNotificacao('✅ Dashboard atualizado!', 'success');
-  }
+  dashboardManager.atualizar();
 }
 
-// ==========================================
-// EXPOR FUNÇÕES GLOBAIS
-// ==========================================
+function calcularTotalFinanceiro() {
+  dashboardManager.atualizarFinanceiro();
+}
 
+// Expor globalmente
 if (typeof window !== 'undefined') {
+  window.dashboardManager = dashboardManager;
   window.iniciarDashboardFirestore = iniciarDashboardFirestore;
   window.pararDashboardFirestore = pararDashboardFirestore;
+  window.renderizarDashboard = renderizarDashboard;
   window.atualizarDashboard = atualizarDashboard;
   window.calcularTotalFinanceiro = calcularTotalFinanceiro;
-  window.renderizarDashboard = renderizarDashboard;
 }
 
-console.log('✅ gestao_oficina_dashboard.js carregado');
+console.log('✅ gestao_oficina_dashboard.js v2.0.0 (ENXUTO) carregado');
