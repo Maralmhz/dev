@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Oficina SaaS - Dashboard</title>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:20px;}
+    .container{max-width:1200px;margin:0 auto;background:white;border-radius:20px;box-shadow:0 20px 40px rgba(0,0,0,0.1);overflow:hidden;}
+    header{background:linear-gradient(90deg,#4f46e5,#7c3aed);color:white;padding:30px;text-align:center;}
+    .login-btn{background:#ef4444;color:white;border:none;padding:15px 30px;border-radius:50px;font-size:18px;cursor:pointer;font-weight:bold;}
+    .dashboard{padding:40px;display:none;}
+    .oficinas-nav{display:flex;gap:20px;margin-bottom:30px;justify-content:center;}
+    .oficina-btn{background:#3b82f6;color:white;border:none;padding:15px 25px;border-radius:12px;cursor:pointer;font-weight:600;transition:all 0.3s;}
+    .oficina-btn:hover{background:#2563eb;transform:translateY(-2px);}
+    .os-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:20px;}
+    .os-card{background:#f8fafc;border:2px solid #e2e8f0;border-radius:16px;padding:25px;transition:all 0.3s;box-shadow:0 4px 6px rgba(0,0,0,0.05);}
+    .os-card:hover{transform:translateY(-5px);box-shadow:0 20px 40px rgba(0,0,0,0.1);}
+    .os-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;}
+    .os-id{font-size:24px;font-weight:800;color:#1e293b;}
+    .status{background:#10b981;color:white;padding:8px 16px;border-radius:20px;font-weight:600;font-size:14px;}
+    .placa{font-size:28px;font-weight:700;color:#3b82f6;margin-bottom:10px;}
+    .cliente-nome{font-size:20px;color:#475569;font-weight:600;}
+    .user-info{position:absolute;top:20px;right:20px;background:rgba(255,255,255,0.9);padding:10px 20px;border-radius:25px;font-weight:600;}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🚗 Oficina SaaS</h1>
+      <p>Dashboard Multi-Tenant</p>
+    </header>
+    
+    <div id="loginScreen">
+      <div style="text-align:center;padding:60px;">
+        <button class="login-btn" onclick="loginGoogle()">🔐 Login Google</button>
+        <p style="color:#64748b;margin-top:20px;">Para acessar ordens de serviço</p>
+      </div>
+    </div>
+    
+    <div id="dashboard" class="dashboard">
+      <div class="user-info" id="userInfo"></div>
+      <div class="oficinas-nav">
+        <button class="oficina-btn" onclick="loadOficina('modelo')">🏢 Oficina Modelo (11 OSs)</button>
+        <button class="oficina-btn" onclick="loadOficina('oficina2')">🏭 Oficina Teste 2</button>
+      </div>
+      <div id="osContainer" class="os-grid"></div>
+    </div>
+  </div>
+
+  <script>
+    // ✅ SUA CONFIG ORIGINAL (FUNCIONANDO)
+    const firebaseConfig = {
+      apiKey: "AIzaSyAZkatw4xvO3MLoZM465YQJso_-PFuLZxo",
+      authDomain: "oficina-dev-hallz.firebaseapp.com",
+      projectId: "oficina-dev-hallz",
+      storageBucket: "oficina-dev-hallz.firebasestorage.app",
+      messagingSenderId: "458466237755",
+      appId: "1:458466237755:web:589d6b233a3c338c466b1e"
+    };
+    
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    
+    // ✅ AUTENTICAÇÃO ORIGINAL
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        document.getElementById('userInfo').innerHTML = `Olá, ${user.displayName || user.email}`;
+        loadOficina('modelo'); // Carrega Oficina Modelo por padrão
+      } else {
+        document.getElementById('loginScreen').style.display = 'block';
+        document.getElementById('dashboard').style.display = 'none';
+      }
+    });
+    
+    // ✅ LOGIN GOOGLE ORIGINAL
+    function loginGoogle() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider).catch(console.error);
+    }
+    
+    // ✅ CARREGA OSs (SEU CÓDIGO ORIGINAL)
+    function loadOficina(oficinaId) {
+      document.getElementById('osContainer').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:#64748b;">🔄 Carregando OSs...</div>';
+      
+      db.collection(`oficinas/${oficinaId}/ordens_servico`).limit(12).get()
+        .then(snapshot => {
+          let html = '';
+          if (snapshot.empty) {
+            html = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:#64748b;">📭 Nenhuma ordem de serviço encontrada</div>';
+          } else {
+            snapshot.docs.forEach(doc => {
+              const data = doc.data();
+              const placa = data.veiculo?.placa || 'N/A';
+              const cliente = data.cliente?.nome || 'N/A';
+              const status = data.status || 'Pendente';
+              html += `
+                <div class="os-card">
+                  <div class="os-header">
+                    <div class="os-id">#${doc.id.slice(-6).toUpperCase()}</div>
+                    <span class="status">${status}</span>
+                  </div>
+                  <div class="placa">${placa}</div>
+                  <div class="cliente-nome">${cliente}</div>
+                  <div style="color:#64748b;font-size:14px;margin-top:10px;">💰 R$ ${(data.financeiro?.total || 0).toLocaleString('pt-BR')}</div>
+                </div>
+              `;
+            });
+          }
+          document.getElementById('osContainer').innerHTML = html;
+        })
+        .catch(e => {
+          document.getElementById('osContainer').innerHTML = `<div style="grid-column:1/-1;color:#ef4444;padding:60px;text-align:center;">❌ Erro: ${e.message}</div>`;
+          console.error(e);
+        });
+    }
+  </script>
+</body>
+</html>
