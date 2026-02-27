@@ -28,6 +28,17 @@
     });
   }
 
+  function ativarGestaoV2() {
+    try {
+      window.GestaoOficinaV2?.init?.();
+      window.GestaoOficinaAgendamentos?.montarCalendario?.();
+      window.GestaoOficinaFinanceiro?.init?.();
+      window.dispatchEvent(new CustomEvent('gestao-oficina:activated'));
+    } catch (error) {
+      console.error('❌ Falha ao ativar módulos V2:', error);
+    }
+  }
+
   async function inicializarAbas() {
     console.log('🔄 Aguardando carregamento das funções...');
     await esperarFuncoes();
@@ -51,13 +62,17 @@
           // 1. Trocar de aba
           if (typeof window.switchTab === 'function') {
             window.switchTab('gestao-oficina');
+            window.dispatchEvent(new CustomEvent('gestao-oficina:activated'));
             console.log('✅ Aba trocada para gestao-oficina');
           } else {
             console.error('❌ switchTab não está disponível');
           }
 
-          // 2. Aguardar renderização e iniciar dashboard + kanban
+          // 2. Aguardar renderização e iniciar módulos
           setTimeout(() => {
+            // Inicializar camada V2 explicitamente (fallback para evitar regressão visual)
+            ativarGestaoV2();
+
             // Iniciar Dashboard
             if (typeof window.iniciarDashboardFirestore === 'function') {
               window.iniciarDashboardFirestore();
@@ -106,6 +121,11 @@
     observer.observe(document.body, { childList: true, subtree: true });
     observarBotaoNovaOS(); // Tentar imediatamente também
 
+    const abaInicialAtiva = document.querySelector('.tab-content.active#gestao-oficina');
+    if (abaInicialAtiva) {
+      setTimeout(ativarGestaoV2, 50);
+    }
+
     console.log('🎉 Inicialização de abas concluída!');
   }
 
@@ -139,6 +159,8 @@
 
     console.log('✅ Interceptador de aba configurado');
   }
+
+  window.ativarGestaoV2 = ativarGestaoV2;
 
   // Executar quando DOM estiver pronto
   if (document.readyState === 'loading') {

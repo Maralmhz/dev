@@ -33,3 +33,4 @@
 - Mapear o objeto `financeiro` e flags de lembrete para Firestore.
 - Reutilizar validações de agendamento no backend (Cloud Functions).
 - Substituir `window.open` de relatório por geração de PDF no servidor.
+

@@ -11,9 +11,6 @@
     dataAtual: new Date(),
   };
 
-  const HORA_INICIO = 7;
-  const HORA_FIM = 19;
-  const SLOT_MIN = 30;
 
   function obterOS() {
     return typeof window.carregarOS === 'function' ? window.carregarOS() : [];
@@ -115,7 +112,6 @@
       .querySelector('#ag-cancelar')
       ?.addEventListener('click', () => modal.remove(), { once: true });
 
-    modal.querySelector('#ag-cancelar')?.addEventListener('click', () => modal.remove());
     modal.addEventListener('click', e => {
       if (e.target === modal) modal.remove();
     });
@@ -139,9 +135,6 @@
       const entrada = new Date(entradaStr);
       const saida = new Date(entrada.getTime() + tempoHoras * 3600000);
 
-      const entrada = new Date(entradaStr);
-      const saida = new Date(entrada.getTime() + tempoHoras * 3600000);
-
       if (entrada < new Date())
         return window.mostrarNotificacao?.('Não é permitido agendar no passado.', 'warning');
       if (entrada.getHours() < HORA_INICIO || saida.getHours() > HORA_FIM)
@@ -155,10 +148,6 @@
           'warning'
         );
 
-        const msg = sugestao
-          ? `Horário ocupado. Próximo disponível: ${sugestao.toLocaleString('pt-BR')}`
-          : 'Horário ocupado e sem sugestão disponível.';
-        return window.mostrarNotificacao?.(msg, 'warning');
       }
 
       const nova =
@@ -238,36 +227,6 @@
       .map(slot => {
         const encontrado = osDia.find(os => {
 
-  function montarCalendario() {
-    let wrap = document.getElementById('agenda-calendario-v2');
-    if (!wrap) {
-      wrap = document.createElement('section');
-      wrap.id = 'agenda-calendario-v2';
-      wrap.className = 'painel-v2';
-      wrap.innerHTML = `<div class="agenda-header"><h3>📆 Calendário</h3><button class="btn-primary" id="agenda-novo">+ Agendar</button></div><div class="agenda-grid" id="agenda-grid"></div>`;
-      document.querySelector('#gestao-oficina .content')?.appendChild(wrap);
-    }
-
-    wrap
-      .querySelector('#agenda-novo')
-      ?.addEventListener('click', () => abrirModalAgendamento(new Date()));
-
-    const grid = wrap.querySelector('#agenda-grid');
-    const hoje = new Date();
-    const slots = [];
-    for (let h = HORA_INICIO; h < HORA_FIM; h += 1) {
-      for (let m = 0; m < 60; m += SLOT_MIN) {
-        const d = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), h, m, 0, 0);
-        slots.push(d);
-      }
-    }
-
-    const osHoje = obterOS().filter(
-      os => new Date(os.data_prevista_entrada).toDateString() === hoje.toDateString()
-    );
-    grid.innerHTML = slots
-      .map(slot => {
-        const encontrado = osHoje.find(os => {
           const ini = new Date(os.data_prevista_entrada);
           const fim = new Date(os.data_prevista_saida);
           return slot >= ini && slot < fim;
@@ -367,25 +326,12 @@
     if (state.visao === 'mes') renderMes(container);
     if (state.visao === 'ano') renderAno(container);
 
-        return `<button class="slot" aria-label="Novo agendamento em ${slot.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}" data-slot="${slot.toISOString()}">${slot.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</button>`;
-      })
-      .join('');
-
-    grid
-      .querySelectorAll('.slot[data-slot]')
-      .forEach(btn =>
-        btn.addEventListener('click', () => abrirModalAgendamento(new Date(btn.dataset.slot)))
-      );
   }
 
   function enviarLembrete(os, janela) {
     console.log(`[lembrete] ${janela} para ${os.placa}`);
     window.mostrarNotificacao?.(`⏰ Lembrete ${janela}: ${os.placa}`, 'info');
 
-    window.mostrarNotificacao?.(
-      `⏰ Lembrete ${janela}: ${os.placa} (${os.nome_cliente || 'cliente'})`,
-      'info'
-    );
   }
 
   function verificarLembretes() {
@@ -445,8 +391,6 @@
     state.inicializado = true;
     renderizarAgenda();
 
-  function init() {
-    montarCalendario();
     verificarLembretes();
     setInterval(verificarLembretes, 60 * 60 * 1000);
   }
@@ -461,6 +405,7 @@
     document
       .querySelector('[data-tab-gestao]')
       ?.addEventListener('click', () => setTimeout(tentar, 80));
+
     const observer = new MutationObserver(tentar);
     observer.observe(document.body, {
       subtree: true,
@@ -473,8 +418,6 @@
   window.GestaoOficinaAgendamentos = {
     montarCalendario,
 
-  window.GestaoOficinaAgendamentos = {
-    init,
     abrirModalAgendamento,
     verificarLembretes,
     conflitoAgendamento,
@@ -485,8 +428,5 @@
   } else {
     initQuandoAbaAtiva();
 
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
   }
 })();
