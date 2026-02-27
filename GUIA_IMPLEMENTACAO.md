@@ -65,3 +65,8 @@ Se aparecer a mensagem de limitação do Codex para PR alterado fora dele, use e
 
 > Dica: manter `?v=` dos assets atualizado em `index.html` reduz bastante falso-positivo de "voltou para versão antiga".
 
+## Controle de PR (separado)
+
+- Este arquivo inclui esta nota para registrar que ajustes de rollout da Gestão V2 podem ser publicados em **PR separado**, sem reaproveitar PR alterado externamente.
+- Em caso de bloqueio de atualização pelo Codex, seguir: novo commit -> novo PR -> deploy.
+
