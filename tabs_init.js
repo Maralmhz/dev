@@ -51,6 +51,7 @@
           // 1. Trocar de aba
           if (typeof window.switchTab === 'function') {
             window.switchTab('gestao-oficina');
+
             console.log('✅ Aba trocada para gestao-oficina');
           } else {
             console.error('❌ switchTab não está disponível');

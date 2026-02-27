@@ -5,7 +5,6 @@
   const FORMAS = ['dinheiro', 'pix', 'cartao_debito', 'cartao_credito', 'faturado'];
   let inicializado = false;
 
-  const FORMAS = ['dinheiro', 'pix', 'cartao_debito', 'cartao_credito', 'faturado'];
 
   function obterOS() {
     return typeof window.carregarOS === 'function' ? window.carregarOS() : [];
@@ -21,7 +20,6 @@
 
   function normalizarFinanceiro(os) {
 
-    os.financeiro = os.financeiro || {};
     const base = {
       custo_pecas: 0,
       custo_mao_obra: 0,
@@ -45,7 +43,7 @@
       historico_pagamentos: [],
     };
     os.financeiro = { ...base, ...(os.financeiro || {}) };
-    os.financeiro = { ...base, ...os.financeiro };
+
     return os;
   }
 
@@ -104,11 +102,6 @@
         <button class="btn-primary" id="f-salvar">💾 Salvar</button>
         <button class="btn-success" id="f-recibo">🧾 Gerar Recibo</button>
 
-
-        <div id="f-resumo" class="painel-financeiro-resumo"></div>
-      </div>
-      <div class="modal-actions">
-        <button class="btn-primary" id="f-salvar">💾 Salvar e Gerar Recibo</button>
         <button class="btn-secondary" id="f-cancelar">Cancelar</button>
       </div>
     </div>`;
@@ -137,19 +130,6 @@
       atualizarResumo();
       os.financeiro.historico_pagamentos = os.financeiro.historico_pagamentos || [];
 
-      modal.querySelector('#f-resumo').innerHTML = `
-        <p>Subtotal: <strong>${moeda(f.valor_subtotal)}</strong></p>
-        <p>Total: <strong>${moeda(f.valor_total)}</strong></p>
-        <p class="${corMargem}">Margem: <strong>${f.margem_lucro_percent.toFixed(1)}%</strong> (${moeda(f.margem_lucro_reais)})</p>
-      `;
-    }
-
-    modal
-      .querySelectorAll('input,select')
-      .forEach(el => el.addEventListener('input', atualizarResumo));
-    atualizarResumo();
-
-    modal.querySelector('#f-salvar')?.addEventListener('click', () => {
       os.financeiro.historico_pagamentos.push({
         data: new Date().toISOString(),
         valor: os.financeiro.valor_total,
@@ -182,12 +162,6 @@
       .querySelector('#f-cancelar')
       ?.addEventListener('click', () => modal.remove(), { once: true });
 
-      renderizarPainelFinanceiro();
-      window.mostrarNotificacao?.('Financeiro atualizado.', 'success');
-      modal.remove();
-    });
-
-    modal.querySelector('#f-cancelar')?.addEventListener('click', () => modal.remove());
     modal.addEventListener('click', e => {
       if (e.target === modal) modal.remove();
     });
@@ -197,32 +171,6 @@
   function renderizarPainelFinanceiro() {
     const secao = document.getElementById('financeiro-v2');
     if (!secao) return;
-
-  function gerarRelatorioFinanceiro() {
-    const dados = obterOS().map(os => normalizarFinanceiro(os));
-    const linhas = dados
-      .map(
-        os =>
-          `<tr><td>${os.placa}</td><td>${os.nome_cliente || '-'}</td><td>${moeda(os.financeiro.valor_total)}</td><td>${os.financeiro.status_pagamento}</td></tr>`
-      )
-      .join('');
-    const totalReceita = dados.reduce((acc, os) => acc + (os.financeiro.valor_total || 0), 0);
-    const html = `<!doctype html><html><body><h1>Relatório Financeiro</h1><p>Total receita: <strong>${moeda(totalReceita)}</strong></p><table border="1" cellspacing="0" cellpadding="6"><thead><tr><th>Placa</th><th>Cliente</th><th>Total</th><th>Status</th></tr></thead><tbody>${linhas}</tbody></table></body></html>`;
-    const nova = window.open('', '_blank');
-    if (!nova) return;
-    nova.document.write(html);
-    nova.document.close();
-  }
-
-  function renderizarPainelFinanceiro() {
-    let secao = document.getElementById('financeiro-v2');
-    if (!secao) {
-      secao = document.createElement('section');
-      secao.id = 'financeiro-v2';
-      secao.className = 'painel-v2';
-      secao.innerHTML = `<div class="agenda-header"><h3>💰 Financeiro</h3><button class="btn-primary" id="gerar-relatorio-financeiro">📊 Gerar Relatório</button></div><div class="financeiro-cards"></div><div class="financeiro-lista"></div>`;
-      document.querySelector('#gestao-oficina .content')?.appendChild(secao);
-    }
 
     const listaOS = obterOS().map(os => normalizarFinanceiro(os));
     const receitaMes = listaOS.reduce((acc, os) => acc + os.financeiro.valor_total, 0);
@@ -242,13 +190,6 @@
     secao.querySelector('.financeiro-cards').innerHTML =
       `<div class="resumo-v2-grid"><div class="resumo-v2-card"><strong>${moeda(receitaMes)}</strong><span>Receita mês</span></div><div class="resumo-v2-card"><strong>${moeda(custosMes)}</strong><span>Custos mês</span></div><div class="resumo-v2-card"><strong>${moeda(lucroMes)}</strong><span>Lucro líquido</span></div><div class="resumo-v2-card"><strong>${moeda(pendente)}</strong><span>A receber</span></div></div>`;
 
-    secao.querySelector('.financeiro-cards').innerHTML = `
-      <div class="resumo-v2-grid">
-        <div class="resumo-v2-card"><strong>${moeda(receitaMes)}</strong><span>Receita mês</span></div>
-        <div class="resumo-v2-card"><strong>${moeda(custosMes)}</strong><span>Custos mês</span></div>
-        <div class="resumo-v2-card"><strong>${moeda(lucroMes)}</strong><span>Lucro líquido</span></div>
-        <div class="resumo-v2-card"><strong>${moeda(pendente)}</strong><span>A receber</span></div>
-      </div>`;
 
     secao.querySelector('.financeiro-lista').innerHTML =
       listaOS
@@ -258,21 +199,6 @@
         )
         .join('') || '<p class="empty-state">Nenhuma OS para exibir.</p>';
 
-          os => `
-      <div class="atrasado-item">
-        <div><strong>${os.placa}</strong> · ${os.nome_cliente || '-'}<br><small>${moeda(os.financeiro.valor_total)} · ${os.financeiro.forma_pagamento || 'sem forma'}</small></div>
-        <div><button class="btn-mini" data-fin-os="${os.id}">Editar</button></div>
-      </div>
-    `
-        )
-        .join('') || '<p class="empty-state">Nenhuma OS para exibir.</p>';
-
-    secao
-      .querySelectorAll('[data-fin-os]')
-      .forEach(btn => btn.addEventListener('click', () => abrirModalFinanceiro(btn.dataset.finOs)));
-    secao
-      .querySelector('#gerar-relatorio-financeiro')
-      ?.addEventListener('click', () => window.GestaoOficinaRecibos?.gerarRelatorioFinanceiro());
   }
 
   function init() {
@@ -301,12 +227,6 @@
       .querySelector('[data-tab-gestao]')
       ?.addEventListener('click', () => setTimeout(tentar, 80));
 
-      ?.addEventListener('click', gerarRelatorioFinanceiro);
-  }
-
-  function init() {
-    renderizarPainelFinanceiro();
-    setInterval(renderizarPainelFinanceiro, 15 * 60 * 1000);
   }
 
   window.GestaoOficinaFinanceiro = {
@@ -322,12 +242,5 @@
   } else {
     initQuandoAbaAtiva();
 
-    gerarRelatorioFinanceiro,
-  };
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
   }
 })();
