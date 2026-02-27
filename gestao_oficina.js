@@ -1141,6 +1141,7 @@ if (typeof window !== 'undefined') {
   // ✅ FUNÇÕES CRÍTICAS PARA FIREBASE
   window.salvarOS = salvarOSInternal;
   window.carregarOS = carregarOSInternal;
+  window.novoOS = novoOS;
   window.OS_AGENDA_KEY = OS_AGENDA_KEY;
   window.renderizarVisao = renderizarVisao;
   window.mostrarNotificacao = mostrarNotificacao;
