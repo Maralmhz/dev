@@ -1,4 +1,10 @@
 (function () {
+  if (window.__financeiroV2Loaded) return;
+  window.__financeiroV2Loaded = true;
+
+  const FORMAS = ['dinheiro', 'pix', 'cartao_debito', 'cartao_credito', 'faturado'];
+  let inicializado = false;
+
   const FORMAS = ['dinheiro', 'pix', 'cartao_debito', 'cartao_credito', 'faturado'];
 
   function obterOS() {
@@ -14,6 +20,7 @@
   }
 
   function normalizarFinanceiro(os) {
+
     os.financeiro = os.financeiro || {};
     const base = {
       custo_pecas: 0,
@@ -37,6 +44,7 @@
       valor_parcela: 0,
       historico_pagamentos: [],
     };
+    os.financeiro = { ...base, ...(os.financeiro || {}) };
     os.financeiro = { ...base, ...os.financeiro };
     return os;
   }
@@ -90,6 +98,12 @@
         <select id="f-parcelas">${Array.from({ length: 12 })
           .map((_, i) => `<option value="${i + 1}">${i + 1}x</option>`)
           .join('')}</select>
+        <div id="f-resumo" class="painel-financeiro-resumo"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary" id="f-salvar">💾 Salvar</button>
+        <button class="btn-success" id="f-recibo">🧾 Gerar Recibo</button>
+
 
         <div id="f-resumo" class="painel-financeiro-resumo"></div>
       </div>
@@ -115,6 +129,14 @@
       calcularFinanceiro(f);
       const corMargem =
         f.margem_lucro_percent > 30 ? 'ok' : f.margem_lucro_percent >= 15 ? 'warn' : 'danger';
+      modal.querySelector('#f-resumo').innerHTML =
+        `<p>Subtotal: <strong>${moeda(f.valor_subtotal)}</strong></p><p>Total: <strong>${moeda(f.valor_total)}</strong></p><p class="${corMargem}">Margem: <strong>${f.margem_lucro_percent.toFixed(1)}%</strong> (${moeda(f.margem_lucro_reais)})</p>`;
+    }
+
+    function persistirFinanceiro() {
+      atualizarResumo();
+      os.financeiro.historico_pagamentos = os.financeiro.historico_pagamentos || [];
+
       modal.querySelector('#f-resumo').innerHTML = `
         <p>Subtotal: <strong>${moeda(f.valor_subtotal)}</strong></p>
         <p>Total: <strong>${moeda(f.valor_total)}</strong></p>
@@ -135,6 +157,31 @@
         usuario: 'sistema_local',
       });
       salvar(os);
+      window.renderizarVisao?.();
+      renderizarPainelFinanceiro();
+      window.mostrarNotificacao?.('Financeiro salvo com sucesso.', 'success');
+    }
+
+    modal
+      .querySelectorAll('input,select')
+      .forEach(el => el.addEventListener('input', atualizarResumo));
+    atualizarResumo();
+
+    modal
+      .querySelector('#f-salvar')
+      ?.addEventListener('click', persistirFinanceiro, { once: true });
+    modal.querySelector('#f-recibo')?.addEventListener(
+      'click',
+      () => {
+        persistirFinanceiro();
+        window.GestaoOficinaRecibos?.gerarRecibo(os.id);
+      },
+      { once: true }
+    );
+    modal
+      .querySelector('#f-cancelar')
+      ?.addEventListener('click', () => modal.remove(), { once: true });
+
       renderizarPainelFinanceiro();
       window.mostrarNotificacao?.('Financeiro atualizado.', 'success');
       modal.remove();
@@ -146,6 +193,10 @@
     });
     document.body.appendChild(modal);
   }
+
+  function renderizarPainelFinanceiro() {
+    const secao = document.getElementById('financeiro-v2');
+    if (!secao) return;
 
   function gerarRelatorioFinanceiro() {
     const dados = obterOS().map(os => normalizarFinanceiro(os));
@@ -188,6 +239,9 @@
       .filter(os => os.financeiro.status_pagamento !== 'pago')
       .reduce((acc, os) => acc + os.financeiro.valor_total, 0);
 
+    secao.querySelector('.financeiro-cards').innerHTML =
+      `<div class="resumo-v2-grid"><div class="resumo-v2-card"><strong>${moeda(receitaMes)}</strong><span>Receita mês</span></div><div class="resumo-v2-card"><strong>${moeda(custosMes)}</strong><span>Custos mês</span></div><div class="resumo-v2-card"><strong>${moeda(lucroMes)}</strong><span>Lucro líquido</span></div><div class="resumo-v2-card"><strong>${moeda(pendente)}</strong><span>A receber</span></div></div>`;
+
     secao.querySelector('.financeiro-cards').innerHTML = `
       <div class="resumo-v2-grid">
         <div class="resumo-v2-card"><strong>${moeda(receitaMes)}</strong><span>Receita mês</span></div>
@@ -199,6 +253,11 @@
     secao.querySelector('.financeiro-lista').innerHTML =
       listaOS
         .map(
+          os =>
+            `<div class="atrasado-item"><div><strong>${os.placa}</strong> · ${os.nome_cliente || '-'}<br><small>${moeda(os.financeiro.valor_total)} · ${os.financeiro.forma_pagamento || 'sem forma'}</small></div><div><button class="btn-mini" data-fin-os="${os.id}">Editar</button></div></div>`
+        )
+        .join('') || '<p class="empty-state">Nenhuma OS para exibir.</p>';
+
           os => `
       <div class="atrasado-item">
         <div><strong>${os.placa}</strong> · ${os.nome_cliente || '-'}<br><small>${moeda(os.financeiro.valor_total)} · ${os.financeiro.forma_pagamento || 'sem forma'}</small></div>
@@ -213,6 +272,35 @@
       .forEach(btn => btn.addEventListener('click', () => abrirModalFinanceiro(btn.dataset.finOs)));
     secao
       .querySelector('#gerar-relatorio-financeiro')
+      ?.addEventListener('click', () => window.GestaoOficinaRecibos?.gerarRelatorioFinanceiro());
+  }
+
+  function init() {
+    if (inicializado) return;
+    const host = document.querySelector('#gestao-oficina .content');
+    if (!host) return;
+    let secao = document.getElementById('financeiro-v2');
+    if (!secao) {
+      secao = document.createElement('section');
+      secao.id = 'financeiro-v2';
+      secao.className = 'painel-v2';
+      secao.innerHTML = `<div class="agenda-header"><h3>💰 Financeiro</h3><button class="btn-primary" id="gerar-relatorio-financeiro">📊 Gerar Relatório</button></div><div class="financeiro-cards"></div><div class="financeiro-lista"></div>`;
+      host.appendChild(secao);
+    }
+    inicializado = true;
+    renderizarPainelFinanceiro();
+  }
+
+  function initQuandoAbaAtiva() {
+    const tentar = () => {
+      const aba = document.getElementById('gestao-oficina');
+      if (aba?.classList.contains('active')) init();
+    };
+    tentar();
+    document
+      .querySelector('[data-tab-gestao]')
+      ?.addEventListener('click', () => setTimeout(tentar, 80));
+
       ?.addEventListener('click', gerarRelatorioFinanceiro);
   }
 
@@ -226,6 +314,14 @@
     normalizarFinanceiro,
     calcularFinanceiro,
     abrirModalFinanceiro,
+    renderizarPainelFinanceiro,
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initQuandoAbaAtiva, { once: true });
+  } else {
+    initQuandoAbaAtiva();
+
     gerarRelatorioFinanceiro,
   };
 
