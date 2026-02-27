@@ -222,7 +222,7 @@
     tentar();
     document
       .querySelector('[data-tab-gestao]')
-      ?.addEventListener('click', () => setTimeout(tentar, 80), { once: true });
+      ?.addEventListener('click', () => setTimeout(tentar, 80));
   }
 
   window.GestaoOficinaFinanceiro = {
