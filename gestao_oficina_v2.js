@@ -2,6 +2,7 @@
   if (window.__gestaoV2Loaded) return;
   window.__gestaoV2Loaded = true;
 
+
   const ETAPAS_PADRAO = [
     'mecanica',
     'lanternagem',
@@ -13,6 +14,7 @@
   ];
   let inicializado = false;
   let rafId = null;
+
 
   function obterOS() {
     return typeof window.carregarOS === 'function' ? window.carregarOS() : [];
