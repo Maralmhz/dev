@@ -321,3 +321,27 @@
   padding: 6px;
 }
 
+/* Neon hover + calendário por etapa */
+.os-card:hover,
+.os-card-mobile:hover {
+  box-shadow:
+    0 0 0 1px rgba(255, 107, 107, 0.35),
+    0 10px 28px rgba(78, 205, 196, 0.35);
+  background-image: linear-gradient(135deg, rgba(255, 107, 107, 0.08), rgba(78, 205, 196, 0.08));
+}
+
+.slot-ocupado.RECEBIDO,
+.slot-ocupado.agendado {
+  background: #dbeafe;
+  border-color: #60a5fa;
+}
+.slot-ocupado.EM_ANDAMENTO,
+.slot-ocupado.em_andamento {
+  background: #fef3c7;
+  border-color: #f59e0b;
+}
+.slot-ocupado.FINALIZADO,
+.slot-ocupado.finalizado {
+  background: #dcfce7;
+  border-color: #22c55e;
+}

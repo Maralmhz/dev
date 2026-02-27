@@ -11,7 +11,6 @@
     dataAtual: new Date(),
   };
 
-
   function obterOS() {
     return typeof window.carregarOS === 'function' ? window.carregarOS() : [];
   }
@@ -27,7 +26,6 @@
   function fimDoDia(data) {
     return new Date(data.getFullYear(), data.getMonth(), data.getDate(), 23, 59, 59, 999);
   }
-
 
   function formatarDataInput(date) {
     const off = date.getTimezoneOffset();
@@ -83,7 +81,6 @@
     `;
   }
 
-
   function abrirModalAgendamento(slotDate = new Date()) {
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
@@ -111,7 +108,6 @@
     modal
       .querySelector('#ag-cancelar')
       ?.addEventListener('click', () => modal.remove(), { once: true });
-
     modal.addEventListener('click', e => {
       if (e.target === modal) modal.remove();
     });
@@ -134,7 +130,6 @@
 
       const entrada = new Date(entradaStr);
       const saida = new Date(entrada.getTime() + tempoHoras * 3600000);
-
       if (entrada < new Date())
         return window.mostrarNotificacao?.('Não é permitido agendar no passado.', 'warning');
       if (entrada.getHours() < HORA_INICIO || saida.getHours() > HORA_FIM)
@@ -147,7 +142,6 @@
             : 'Horário ocupado e sem sugestão disponível.',
           'warning'
         );
-
       }
 
       const nova =
@@ -165,7 +159,6 @@
       salvar(nova);
       window.renderizarVisao?.();
       renderizarAgenda();
-
       window.mostrarNotificacao?.('Agendamento salvo com sucesso!', 'success');
       modal.remove();
     });
@@ -226,7 +219,6 @@
     container.innerHTML = slots
       .map(slot => {
         const encontrado = osDia.find(os => {
-
           const ini = new Date(os.data_prevista_entrada);
           const fim = new Date(os.data_prevista_saida);
           return slot >= ini && slot < fim;
@@ -325,13 +317,18 @@
     if (state.visao === 'semana') renderSemana(container);
     if (state.visao === 'mes') renderMes(container);
     if (state.visao === 'ano') renderAno(container);
-
   }
 
   function enviarLembrete(os, janela) {
     console.log(`[lembrete] ${janela} para ${os.placa}`);
+    const mensagem = window.FirebaseV2?.criarMensagemLembreteWhatsApp
+      ? window.FirebaseV2.criarMensagemLembreteWhatsApp(os, janela === '72h' ? 3 : 1)
+      : `Lembrete ${janela} - OS ${os.placa}`;
+    const tel = String(os.telefone || '').replace(/\D/g, '');
+    os.lembrete_whatsapp_url = tel
+      ? `https://wa.me/55${tel}?text=${encodeURIComponent(mensagem)}`
+      : '';
     window.mostrarNotificacao?.(`⏰ Lembrete ${janela}: ${os.placa}`, 'info');
-
   }
 
   function verificarLembretes() {
@@ -340,6 +337,11 @@
       if (os.status_geral !== 'agendado') return;
       const entrada = new Date(os.data_prevista_entrada);
       const horas = (entrada - agora) / 36e5;
+      if (horas >= 71 && horas <= 73 && !os.lembrete_3dias_enviado) {
+        enviarLembrete(os, '72h');
+        os.lembrete_3dias_enviado = true;
+        salvar(os);
+      }
       if (horas >= 47 && horas <= 49 && !os.lembrete_2dias_enviado) {
         enviarLembrete(os, '48h');
         os.lembrete_2dias_enviado = true;
@@ -390,7 +392,6 @@
     );
     state.inicializado = true;
     renderizarAgenda();
-
     verificarLembretes();
     setInterval(verificarLembretes, 60 * 60 * 1000);
   }
@@ -405,7 +406,7 @@
     document
       .querySelector('[data-tab-gestao]')
       ?.addEventListener('click', () => setTimeout(tentar, 80));
-
+    window.addEventListener('gestao-oficina:activated', tentar);
     const observer = new MutationObserver(tentar);
     observer.observe(document.body, {
       subtree: true,
@@ -417,7 +418,6 @@
 
   window.GestaoOficinaAgendamentos = {
     montarCalendario,
-
     abrirModalAgendamento,
     verificarLembretes,
     conflitoAgendamento,
@@ -427,6 +427,5 @@
     document.addEventListener('DOMContentLoaded', initQuandoAbaAtiva, { once: true });
   } else {
     initQuandoAbaAtiva();
-
   }
 })();

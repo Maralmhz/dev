@@ -36,36 +36,36 @@ function getOficinaId() {
 const OFICINA_ID = getOficinaId();
 
 function normalizeId(value) {
-    if (window.CoreUtils?.normalizeId) return window.CoreUtils.normalizeId(value);
-    return String(value ?? '').trim();
+  if (window.CoreUtils?.normalizeId) return window.CoreUtils.normalizeId(value);
+  return String(value ?? '').trim();
 }
 
 function gerarIdChecklist() {
-    if (window.CoreUtils?.generateStableId) return window.CoreUtils.generateStableId('chk');
-    return `chk_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  if (window.CoreUtils?.generateStableId) return window.CoreUtils.generateStableId('chk');
+  return `chk_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
 function getChecklistStorageKey() {
-    const oficinaId = window.OFICINA_CONFIG?.oficina_id || 'sem_identificacao';
-    return `checklists_${oficinaId}`;
+  const oficinaId = window.OFICINA_CONFIG?.oficina_id || 'sem_identificacao';
+  return `checklists_${oficinaId}`;
 }
 
 function carregarChecklistsLocais() {
-    const chaveAtual = getChecklistStorageKey();
-    const checklistsOficina = JSON.parse(localStorage.getItem(chaveAtual) || '[]');
+  const chaveAtual = getChecklistStorageKey();
+  const checklistsOficina = JSON.parse(localStorage.getItem(chaveAtual) || '[]');
 
-    if (checklistsOficina.length > 0) return checklistsOficina;
+  if (checklistsOficina.length > 0) return checklistsOficina;
 
-    // Migração retrocompatível da chave antiga
-    const legado = JSON.parse(localStorage.getItem('checklists') || '[]');
-    const oficinaAtual = window.OFICINA_CONFIG?.oficina_id;
-    if (!oficinaAtual || legado.length === 0) return [];
+  // Migração retrocompatível da chave antiga
+  const legado = JSON.parse(localStorage.getItem('checklists') || '[]');
+  const oficinaAtual = window.OFICINA_CONFIG?.oficina_id;
+  if (!oficinaAtual || legado.length === 0) return [];
 
-    const filtrados = legado.filter(c => (c.oficina_id || oficinaAtual) === oficinaAtual);
-    if (filtrados.length > 0) {
-        salvarLocalStorage(chaveAtual, filtrados);
-    }
-    return filtrados;
+  const filtrados = legado.filter(c => (c.oficina_id || oficinaAtual) === oficinaAtual);
+  if (filtrados.length > 0) {
+    salvarLocalStorage(chaveAtual, filtrados);
+  }
+  return filtrados;
 }
 
 // ==========================================
@@ -74,26 +74,26 @@ function carregarChecklistsLocais() {
 
 // ✅ FIX #3: Wrapper para localStorage com tratamento de QuotaExceeded
 function salvarLocalStorage(chave, valor) {
-    try {
-        localStorage.setItem(chave, JSON.stringify(valor));
-        return true;
-    } catch (e) {
-        if (e.name === 'QuotaExceededError' || e.code === 22) {
-            alert(
-                '⚠️ ESPAÇO ESGOTADO!\n\n' +
-                'O armazenamento local está cheio.\n' +
-                'Ações:\n' +
-                '1. Exporte seus dados (botão "Exportar")\n' +
-                '2. Limpe dados antigos\n' +
-                '3. Sincronize com a nuvem'
-            );
-            console.error('localStorage cheio:', e);
-        } else {
-            console.error('Erro ao salvar:', e);
-            alert('Erro ao salvar dados: ' + e.message);
-        }
-        return false;
+  try {
+    localStorage.setItem(chave, JSON.stringify(valor));
+    return true;
+  } catch (e) {
+    if (e.name === 'QuotaExceededError' || e.code === 22) {
+      alert(
+        '⚠️ ESPAÇO ESGOTADO!\n\n' +
+          'O armazenamento local está cheio.\n' +
+          'Ações:\n' +
+          '1. Exporte seus dados (botão "Exportar")\n' +
+          '2. Limpe dados antigos\n' +
+          '3. Sincronize com a nuvem'
+      );
+      console.error('localStorage cheio:', e);
+    } else {
+      console.error('Erro ao salvar:', e);
+      alert('Erro ao salvar dados: ' + e.message);
     }
+    return false;
+  }
 }
 
 // ========================================
@@ -102,15 +102,17 @@ function salvarLocalStorage(chave, valor) {
 // ========================================
 
 function gerarNumeroOS() {
-    const placa = (document.getElementById('placa')?.value || 'SEM').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-    let dataRaw = document.getElementById('data')?.value;
-    let dataObj = dataRaw ? new Date(dataRaw + 'T00:00:00') : new Date();
-    
-    const dia = String(dataObj.getDate()).padStart(2, '0');
-    const mes = String(dataObj.getMonth() + 1).padStart(2, '0');
-    const ano = String(dataObj.getFullYear()).slice(-2);
-    
-    return `${placa}-${dia}${mes}${ano}`;
+  const placa = (document.getElementById('placa')?.value || 'SEM')
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .toUpperCase();
+  let dataRaw = document.getElementById('data')?.value;
+  let dataObj = dataRaw ? new Date(dataRaw + 'T00:00:00') : new Date();
+
+  const dia = String(dataObj.getDate()).padStart(2, '0');
+  const mes = String(dataObj.getMonth() + 1).padStart(2, '0');
+  const ano = String(dataObj.getFullYear()).slice(-2);
+
+  return `${placa}-${dia}${mes}${ano}`;
 }
 
 // ========================================
@@ -129,7 +131,8 @@ function calcularDataPrevisao() {
     dataTemp.setDate(dataTemp.getDate() + diasAdicionados);
 
     const diaSemana = dataTemp.getDay();
-    if (diaSemana !== 0 && diaSemana !== 6) { // Não é domingo nem sábado
+    if (diaSemana !== 0 && diaSemana !== 6) {
+      // Não é domingo nem sábado
       diasUteis++;
     }
   }
@@ -148,107 +151,119 @@ function calcularDataPrevisao() {
 
 // ✅ FIX #2: Firebase com tratamento robusto de erro
 async function salvarComFirebase(checklistData) {
-    try {
-        const modulo = await import('./firebase_app.js');
-        if (modulo && modulo.salvarNoFirebase) {
-            await modulo.salvarNoFirebase(checklistData);
-            console.log("✅ Salvo no Firebase (estrutura organizada)!");
-        } else {
-            throw new Error('Função salvarNoFirebase não disponível');
-        }
-    } catch (e) {
-        console.warn('⚠️ Firebase desabilitado:', e.message);
-        throw new Error(`Nuvem indisponível: ${e.message}`);
+  try {
+    const modulo = await import('./firebase_app.js');
+    if (modulo && modulo.salvarNoFirebase) {
+      await modulo.salvarNoFirebase(checklistData);
+      console.log('✅ Salvo no Firebase (estrutura organizada)!');
+    } else {
+      throw new Error('Função salvarNoFirebase não disponível');
     }
+  } catch (e) {
+    console.warn('⚠️ Firebase desabilitado:', e.message);
+    throw new Error(`Nuvem indisponível: ${e.message}`);
+  }
 }
 
 // FUNÇÃO OTIMIZADA - Busca apenas o mês atual (mais rápido e econômico)
 async function sincronizarChecklists() {
-    const btn = document.getElementById('btnSync');
-    const txtOriginal = btn.textContent;
-    btn.textContent = '⏳ Conectando...';
-    btn.disabled = true;
+  const btn = document.getElementById('btnSync');
+  const txtOriginal = btn.textContent;
+  btn.textContent = '⏳ Conectando...';
+  btn.disabled = true;
 
-    try {
-        const modulo = await import('./firebase_app.js');
-        
-        if (modulo && modulo.buscarChecklistsMesAtual) {
-            btn.textContent = '⏳ Baixando mês atual...';
-            const dadosNuvem = await modulo.buscarChecklistsMesAtual();
-            
-            if (dadosNuvem.length > 0) {
-                let local = carregarChecklistsLocais();
-                const idsLocais = new Set(local.map(c => normalizeId(c.id)));
-                
-                let novos = 0;
-                dadosNuvem.forEach(item => {
-                    if (!idsLocais.has(normalizeId(item.id))) {
-                        local.push(item);
-                        novos++;
-                    }
-                });
+  try {
+    const modulo = await import('./firebase_app.js');
 
-                salvarLocalStorage(getChecklistStorageKey(), local); // ✅ Usando wrapper
-                carregarHistorico();
-                
-                const hoje = new Date();
-                const mesNome = hoje.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-                alert(`✅ Sincronização concluída!\n\n${novos} novos checklists de ${mesNome}\nTotal na nuvem: ${dadosNuvem.length}`);
-            } else {
-                const mesAtual = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-                alert(`📭 Nenhum checklist encontrado em ${mesAtual}.`);
-            }
-        }
-    } catch (e) {
-        console.error("Erro sync:", e);
-        alert("❌ Erro ao sincronizar.\n\nDetalhe: " + (e.message || e) + "\n\nVerifique:\n1. Conexão com a Internet\n2. Configuração do Firebase no config.js");
-    } finally {
-        btn.textContent = txtOriginal;
-        btn.disabled = false;
+    if (modulo && modulo.buscarChecklistsMesAtual) {
+      btn.textContent = '⏳ Baixando mês atual...';
+      const dadosNuvem = await modulo.buscarChecklistsMesAtual();
+
+      if (dadosNuvem.length > 0) {
+        let local = carregarChecklistsLocais();
+        const idsLocais = new Set(local.map(c => normalizeId(c.id)));
+
+        let novos = 0;
+        dadosNuvem.forEach(item => {
+          if (!idsLocais.has(normalizeId(item.id))) {
+            local.push(item);
+            novos++;
+          }
+        });
+
+        salvarLocalStorage(getChecklistStorageKey(), local); // ✅ Usando wrapper
+        carregarHistorico();
+
+        const hoje = new Date();
+        const mesNome = hoje.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+        alert(
+          `✅ Sincronização concluída!\n\n${novos} novos checklists de ${mesNome}\nTotal na nuvem: ${dadosNuvem.length}`
+        );
+      } else {
+        const mesAtual = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+        alert(`📭 Nenhum checklist encontrado em ${mesAtual}.`);
+      }
     }
+  } catch (e) {
+    console.error('Erro sync:', e);
+    alert(
+      '❌ Erro ao sincronizar.\n\nDetalhe: ' +
+        (e.message || e) +
+        '\n\nVerifique:\n1. Conexão com a Internet\n2. Configuração do Firebase no config.js'
+    );
+  } finally {
+    btn.textContent = txtOriginal;
+    btn.disabled = false;
+  }
 }
 
 // FUNÇÃO PARA SINCRONIZAR TODOS (opcional - usar raramente)
 async function sincronizarTodosChecklists() {
-    if (!confirm('⚠️ Sincronizar TODOS os checklists pode consumir muitas leituras do Firebase.\n\nDeseja continuar?')) {
-        return;
-    }
-    
-    const btn = document.getElementById('btnSync');
-    const txtOriginal = btn.textContent;
-    btn.textContent = '⏳ Baixando TUDO...';
-    btn.disabled = true;
+  if (
+    !confirm(
+      '⚠️ Sincronizar TODOS os checklists pode consumir muitas leituras do Firebase.\n\nDeseja continuar?'
+    )
+  ) {
+    return;
+  }
 
-    try {
-        const modulo = await import('./firebase_app.js');
-        
-        if (modulo && modulo.buscarChecklistsNuvem) {
-            const dadosNuvem = await modulo.buscarChecklistsNuvem();
-            
-            if (dadosNuvem.length > 0) {
-                let local = carregarChecklistsLocais();
-                const idsLocais = new Set(local.map(c => normalizeId(c.id)));
-                
-                let novos = 0;
-                dadosNuvem.forEach(item => {
-                    if (!idsLocais.has(normalizeId(item.id))) {
-                        local.push(item);
-                        novos++;
-                    }
-                });
+  const btn = document.getElementById('btnSync');
+  const txtOriginal = btn.textContent;
+  btn.textContent = '⏳ Baixando TUDO...';
+  btn.disabled = true;
 
-                salvarLocalStorage(getChecklistStorageKey(), local); // ✅ Usando wrapper
-                carregarHistorico();
-                alert(`✅ Sincronização COMPLETA concluída!\n\n${novos} novos checklists baixados\nTotal: ${dadosNuvem.length}`);
-            }
-        }
-    } catch (e) {
-        console.error("Erro sync completo:", e);
-        alert("❌ Erro ao sincronizar todos os dados: " + (e.message || e));
-    } finally {
-        btn.textContent = txtOriginal;
-        btn.disabled = false;
+  try {
+    const modulo = await import('./firebase_app.js');
+
+    if (modulo && modulo.buscarChecklistsNuvem) {
+      const dadosNuvem = await modulo.buscarChecklistsNuvem();
+
+      if (dadosNuvem.length > 0) {
+        let local = carregarChecklistsLocais();
+        const idsLocais = new Set(local.map(c => normalizeId(c.id)));
+
+        let novos = 0;
+        dadosNuvem.forEach(item => {
+          if (!idsLocais.has(normalizeId(item.id))) {
+            local.push(item);
+            novos++;
+          }
+        });
+
+        salvarLocalStorage(getChecklistStorageKey(), local); // ✅ Usando wrapper
+        carregarHistorico();
+        alert(
+          `✅ Sincronização COMPLETA concluída!\n\n${novos} novos checklists baixados\nTotal: ${dadosNuvem.length}`
+        );
+      }
     }
+  } catch (e) {
+    console.error('Erro sync completo:', e);
+    alert('❌ Erro ao sincronizar todos os dados: ' + (e.message || e));
+  } finally {
+    btn.textContent = txtOriginal;
+    btn.disabled = false;
+  }
 }
 
 // ==========================================
@@ -256,22 +271,22 @@ async function sincronizarTodosChecklists() {
 // ==========================================
 
 function adicionarItemManual() {
-  const descricaoInput = document.getElementById("descricaoItem");
-  const valorInput = document.getElementById("valorItem");
+  const descricaoInput = document.getElementById('descricaoItem');
+  const valorInput = document.getElementById('valorItem');
   const tipo = document.querySelector('input[name="tipoItem"]:checked').value;
 
-  const descricao = (descricaoInput.value || "").trim();
-  const valorBruto = (valorInput.value || "").toString().trim();
-  const valor = valorBruto === "" ? 0 : parseFloat(valorBruto);
+  const descricao = (descricaoInput.value || '').trim();
+  const valorBruto = (valorInput.value || '').toString().trim();
+  const valor = valorBruto === '' ? 0 : parseFloat(valorBruto);
 
   if (!descricao) {
-    alert("Informe a descrição do item.");
+    alert('Informe a descrição do item.');
     descricaoInput.focus();
     return;
   }
 
   if (isNaN(valor) || valor < 0) {
-    alert("Informe um valor válido (0 ou maior).");
+    alert('Informe um valor válido (0 ou maior).');
     valorInput.focus();
     return;
   }
@@ -286,45 +301,45 @@ function adicionarItemManual() {
   itensOrcamento.push(item);
   renderizarTabela();
 
-  descricaoInput.value = "";
-  valorInput.value = "";
+  descricaoInput.value = '';
+  valorInput.value = '';
   descricaoInput.focus();
 }
 
 function removerItem(id) {
-    itensOrcamento = itensOrcamento.filter(i => i.id !== id);
-    renderizarTabela();
+  itensOrcamento = itensOrcamento.filter(i => i.id !== id);
+  renderizarTabela();
 }
 
 function editarItem(id) {
-    const item = itensOrcamento.find(i => i.id === id);
-    if (!item) return;
-    
-    document.getElementById('descricaoItem').value = item.descricao;
-    document.getElementById('valorItem').value = item.valor;
-    document.querySelector(`input[name="tipoItem"][value="${item.tipo}"]`).checked = true;
-    
-    removerItem(id);
-    alert('Item carregado para edição. Altere e clique ➞ Adicionar!');
+  const item = itensOrcamento.find(i => i.id === id);
+  if (!item) return;
+
+  document.getElementById('descricaoItem').value = item.descricao;
+  document.getElementById('valorItem').value = item.valor;
+  document.querySelector(`input[name="tipoItem"][value="${item.tipo}"]`).checked = true;
+
+  removerItem(id);
+  alert('Item carregado para edição. Altere e clique ➞ Adicionar!');
 }
 
 // 🔥 HOTFIX: Garantir que totalPecas/totalServicos sejam NUMBER
 function renderizarTabela() {
-  const tbodyPecas = document.getElementById("tabelaPecas");
-  const tbodyServicos = document.getElementById("tabelaServicos");
+  const tbodyPecas = document.getElementById('tabelaPecas');
+  const tbodyServicos = document.getElementById('tabelaServicos');
 
-  const elTotalPecas = document.getElementById("totalPecas");
-  const elTotalServicos = document.getElementById("totalServicos");
-  const elTotalGeral = document.getElementById("totalGeralFinal");
+  const elTotalPecas = document.getElementById('totalPecas');
+  const elTotalServicos = document.getElementById('totalServicos');
+  const elTotalGeral = document.getElementById('totalGeralFinal');
 
-  if (tbodyPecas) tbodyPecas.innerHTML = "";
-  if (tbodyServicos) tbodyServicos.innerHTML = "";
+  if (tbodyPecas) tbodyPecas.innerHTML = '';
+  if (tbodyServicos) tbodyServicos.innerHTML = '';
 
   let somaPecas = 0;
   let somaServicos = 0;
 
-  itensOrcamento.forEach((item) => {
-    const tr = document.createElement("tr");
+  itensOrcamento.forEach(item => {
+    const tr = document.createElement('tr');
     tr.innerHTML = `
       <td style="border: 1px solid #ddd; padding: 6px;">${item.descricao}</td>
       <td style="border: 1px solid #ddd; padding: 6px; text-align: right;">R$ ${Number(item.valor || 0).toFixed(2)}</td>
@@ -334,7 +349,7 @@ function renderizarTabela() {
       </td>
     `;
 
-    if (item.tipo === "servico") {
+    if (item.tipo === 'servico') {
       somaServicos += Number(item.valor || 0);
       if (tbodyServicos) tbodyServicos.appendChild(tr);
     } else {
@@ -348,19 +363,19 @@ function renderizarTabela() {
   if (elTotalPecas) elTotalPecas.textContent = `R$ ${somaPecas.toFixed(2)}`;
   if (elTotalServicos) elTotalServicos.textContent = `R$ ${somaServicos.toFixed(2)}`;
   if (elTotalGeral) elTotalGeral.textContent = `R$ ${somaTotal.toFixed(2)}`;
-  
-  const rTotalGeral = document.getElementById("rTotalGeral");
+
+  const rTotalGeral = document.getElementById('rTotalGeral');
   if (rTotalGeral) rTotalGeral.textContent = `R$ ${somaTotal.toFixed(2)}`;
-  
+
   // 🔥 HOTFIX CRÍTICO: Garantir que sejam NÚMEROS puros
   window.totalPecas = Number(somaPecas);
   window.totalServicos = Number(somaServicos);
-  
+
   console.log('💰 Totais atualizados:', {
     pecas: window.totalPecas,
     servicos: window.totalServicos,
     tipo_pecas: typeof window.totalPecas,
-    tipo_servicos: typeof window.totalServicos
+    tipo_servicos: typeof window.totalServicos,
   });
 }
 
@@ -370,24 +385,24 @@ function renderizarTabela() {
 
 // 🔥 HOTFIX: Fix switchTab para evitar erro de onclick null
 function switchTab(tabId) {
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
-    
-    const targetTab = document.getElementById(tabId);
-    if (targetTab) {
-        targetTab.classList.add('active');
-    }
-    
-    document.querySelectorAll('.tab-button').forEach(btn => {
-        const onclickAttr = btn.getAttribute('onclick');
-        if (onclickAttr && onclickAttr.includes(tabId)) {
-            btn.classList.add('active');
-        }
-    });
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
 
-    if (tabId === 'historico') carregarHistorico();
-    if (tabId === 'relatorios') atualizarRelatorios();
-    if (tabId === 'orcamento') atualizarResumoVeiculo();
+  const targetTab = document.getElementById(tabId);
+  if (targetTab) {
+    targetTab.classList.add('active');
+  }
+
+  document.querySelectorAll('.tab-button').forEach(btn => {
+    const onclickAttr = btn.getAttribute('onclick');
+    if (onclickAttr && onclickAttr.includes(tabId)) {
+      btn.classList.add('active');
+    }
+  });
+
+  if (tabId === 'historico') carregarHistorico();
+  if (tabId === 'relatorios') atualizarRelatorios();
+  if (tabId === 'orcamento') atualizarResumoVeiculo();
 }
 
 // ========================================
@@ -396,248 +411,279 @@ function switchTab(tabId) {
 // ========================================
 
 async function salvarChecklist() {
-    try {
-        console.log('💾 Iniciando salvamento da OS...');
+  try {
+    console.log('💾 Iniciando salvamento da OS...');
 
-        // ========================================
-        // 1. COLETAR DADOS DO FORMULÁRIO
-        // ========================================
-        
-        const placa = document.getElementById('placa')?.value || '';
-        const chassi = document.getElementById('chassi')?.value || '';
-        const modelo = document.getElementById('modelo')?.value || '';
-        const km = document.getElementById('km_entrada')?.value || '';
-        const combustivel = document.getElementById('combustivel')?.value || '';
-        
-        const nomeCliente = document.getElementById('nome_cliente')?.value || '';
-        const cpfCnpj = document.getElementById('cpf_cnpj')?.value || '';
-        const telefone = document.getElementById('celular_cliente')?.value || '';
-        const endereco = document.getElementById('endereco_cliente')?.value || '';
-        
-        const descricaoProblema = document.getElementById('servicos')?.value || '';
-        const observacoes = document.getElementById('obsInspecao')?.value || '';
+    // ========================================
+    // 1. COLETAR DADOS DO FORMULÁRIO
+    // ========================================
 
-        // ✅ VALIDAÇÃO: Apenas PLACA é obrigatória
-        if (!placa || placa.trim() === '') {
-            alert('❌ Preencha a PLACA do veículo');
-            document.getElementById('placa')?.focus();
-            return;
-        }
+    const placa = document.getElementById('placa')?.value || '';
+    const chassi = document.getElementById('chassi')?.value || '';
+    const modelo = document.getElementById('modelo')?.value || '';
+    const km = document.getElementById('km_entrada')?.value || '';
+    const combustivel = document.getElementById('combustivel')?.value || '';
 
-        // ========================================
-        // 2. CALCULAR VALORES (FIX CRÍTICO)
-        // ========================================
-        
-        // 🔥 HOTFIX: Garantir conversão para Number
-        const totalPecas = Number(window.totalPecas) || 0;
-        const totalServicos = Number(window.totalServicos) || 0;
-        const desconto = 0;
-        const total = totalPecas + totalServicos - desconto;
-        
-        console.log('💰 Valores financeiros:', {
-            totalPecas,
-            totalServicos,
-            total,
-            tipos: {
-                pecas: typeof totalPecas,
-                servicos: typeof totalServicos,
-                total: typeof total
-            }
-        });
+    const nomeCliente = document.getElementById('nome_cliente')?.value || '';
+    const cpfCnpj = document.getElementById('cpf_cnpj')?.value || '';
+    const telefone = document.getElementById('celular_cliente')?.value || '';
+    const endereco = document.getElementById('endereco_cliente')?.value || '';
 
-        // ========================================
-        // 3. GERAR NÚMERO DA OS
-        // ========================================
-        
-        const numeroOS = gerarNumeroOS();
-        const dataPrevisao = calcularDataPrevisao();
+    const descricaoProblema = document.getElementById('servicos')?.value || '';
+    const observacoes = document.getElementById('obsInspecao')?.value || '';
 
-        // ========================================
-        // 4. ESTRUTURAR DADOS DA OS
-        // ========================================
-        
-        const dadosOS = {
-            // Identificação
-            numero_os: numeroOS,
-            
-            // Cliente
-            cliente_nome: nomeCliente,
-            cliente_telefone: telefone,
-            cliente_cpf_cnpj: cpfCnpj,
-            cliente_endereco: endereco,
-            
-            // Veículo
-            veiculo_placa: placa.toUpperCase(),
-            veiculo_chassi: chassi.toUpperCase(),
-            veiculo_modelo: modelo,
-            veiculo_km: km,
-            veiculo_combustivel: combustivel,
-            
-            // Descrição
-            descricao_problema: descricaoProblema,
-            observacoes_inspecao: observacoes,
-            
-            // Equipamentos vistoriados
-            equipamentos: Array.from(document.querySelectorAll('input[name="equipamentos"]:checked'))
-                .map(el => el.value),
-            
-            // Itens (peças e serviços)
-            itens: itensOrcamento || [],
-            
-            // Financeiro (GARANTIDO COMO NUMBER)
-            financeiro: {
-                subtotal_pecas: Number(totalPecas),
-                subtotal_servicos: Number(totalServicos),
-                desconto: Number(desconto),
-                total: Number(total),
-                pago: 0,
-                pendente: Number(total),
-                status: 'pendente'
-            },
-            
-            // Status e workflow
-            status: 'RECEBIDO',
-            prioridade: 'normal',
-            
-            // Datas (SEMPRE Timestamp - Arquitetura Limpa)
-            data_entrada: firebase.firestore.FieldValue.serverTimestamp(),
-            data_previsao: dataPrevisao, // ✅ SEMPRE Timestamp
-            data_finalizacao: null,
-            data_entrega: null,
-            
-            // Meta (rastreamento)
-            meta: {
-                origem: 'checklist',
-                versao_sistema: 'v1.0.2.2',
-                criado_via: 'web'
-            },
-            
-            // Controle
-            criado_em: firebase.firestore.FieldValue.serverTimestamp(),
-            atualizado_em: firebase.firestore.FieldValue.serverTimestamp()
-        };
-
-        console.log('📦 Dados da OS:', dadosOS);
-
-        // ========================================
-        // 5. SALVAR NO FIRESTORE
-        // ========================================
-        
-        const db = firebase.firestore();
-        const osRef = db
-            .collection('oficinas').doc(OFICINA_ID)
-            .collection('ordens_servico').doc(); // Auto-ID
-
-        await osRef.set(dadosOS);
-        
-        console.log('✅ OS salva no Firestore:', osRef.id);
-
-        // ========================================
-        // 6. REGISTRAR HISTÓRICO (SUBCOLEÇÃO)
-        // ========================================
-        
-        await osRef.collection('historico').add({
-            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            usuario_nome: 'Sistema',
-            acao: 'criacao',
-            status_anterior: null,
-            status_novo: 'RECEBIDO',
-            observacao: 'OS criada a partir do checklist de entrada',
-            campo_alterado: null,
-            valor_anterior: null,
-            valor_novo: null
-        });
-
-        console.log('✅ Histórico inicial registrado');
-
-        // ========================================
-        // 7. BACKUP LOCAL SEGURO
-        // ========================================
-        
-        try {
-            const dadosParaBackup = {
-                ...dadosOS,
-                id: osRef.id,
-                numero_os: numeroOS,
-                data_entrada: new Date().toISOString(),
-                data_previsao: dataPrevisao.toDate().toISOString(),
-                backup_em: new Date().toISOString()
-            };
-
-            let backups = JSON.parse(localStorage.getItem('os_backup')) || [];
-            backups.push(dadosParaBackup);
-
-            // Manter apenas últimos 50
-            if (backups.length > 50) {
-                backups = backups.slice(-50);
-            }
-
-            localStorage.setItem('os_backup', JSON.stringify(backups));
-            console.log('✅ Backup local salvo');
-
-        } catch (error) {
-            console.warn('⚠️ Erro ao salvar backup local:', error);
-        }
-
-        // ========================================
-        // 8. LIMPAR FORMULÁRIO
-        // ========================================
-        
-        itensOrcamento = [];
-        checklistEditando = null;
-        renderizarTabela();
-        
-        if (typeof limparFormularioCompleto === 'function') {
-            limparFormularioCompleto();
-        } else {
-            document.getElementById('checklistForm')?.reset();
-        }
-
-        // ========================================
-        // 9. FEEDBACK E REDIRECIONAMENTO
-        // ========================================
-        
-        alert(`✅ OS ${numeroOS} criada com sucesso!`);
-
-        // Aguardar 1 segundo antes de redirecionar
-        setTimeout(() => {
-            switchTab('gestao-oficina');
-            if (typeof iniciarGestaoOficina === 'function') {
-                iniciarGestaoOficina();
-            }
-        }, 1000);
-
-    } catch (error) {
-        console.error('❌ Erro ao salvar OS:', error);
-        alert(`Erro ao criar OS: ${error.message}`);
+    // ✅ VALIDAÇÃO: Apenas PLACA é obrigatória
+    if (!placa || placa.trim() === '') {
+      alert('❌ Preencha a PLACA do veículo');
+      document.getElementById('placa')?.focus();
+      return;
     }
+
+    // ========================================
+    // 2. CALCULAR VALORES (FIX CRÍTICO)
+    // ========================================
+
+    // 🔥 HOTFIX: Garantir conversão para Number
+    const totalPecas = Number(window.totalPecas) || 0;
+    const totalServicos = Number(window.totalServicos) || 0;
+    const desconto = 0;
+    const total = totalPecas + totalServicos - desconto;
+
+    console.log('💰 Valores financeiros:', {
+      totalPecas,
+      totalServicos,
+      total,
+      tipos: {
+        pecas: typeof totalPecas,
+        servicos: typeof totalServicos,
+        total: typeof total,
+      },
+    });
+
+    // ========================================
+    // 3. GERAR NÚMERO DA OS
+    // ========================================
+
+    const numeroOS = gerarNumeroOS();
+    const dataPrevisao = calcularDataPrevisao();
+
+    // ========================================
+    // 4. ESTRUTURAR DADOS DA OS
+    // ========================================
+
+    const dadosOS = {
+      // Identificação
+      numero_os: numeroOS,
+
+      // Cliente
+      cliente_nome: nomeCliente,
+      cliente_telefone: telefone,
+      cliente_cpf_cnpj: cpfCnpj,
+      cliente_endereco: endereco,
+
+      // Veículo
+      veiculo_placa: placa.toUpperCase(),
+      veiculo_chassi: chassi.toUpperCase(),
+      veiculo_modelo: modelo,
+      veiculo_km: km,
+      veiculo_combustivel: combustivel,
+
+      // Descrição
+      descricao_problema: descricaoProblema,
+      observacoes_inspecao: observacoes,
+
+      // Equipamentos vistoriados
+      equipamentos: Array.from(document.querySelectorAll('input[name="equipamentos"]:checked')).map(
+        el => el.value
+      ),
+
+      // Itens (peças e serviços)
+      itens: itensOrcamento || [],
+
+      // Financeiro (GARANTIDO COMO NUMBER)
+      financeiro: {
+        subtotal_pecas: Number(totalPecas),
+        subtotal_servicos: Number(totalServicos),
+        desconto: Number(desconto),
+        total: Number(total),
+        pago: 0,
+        pendente: Number(total),
+        status: 'pendente',
+      },
+
+      // Status e workflow
+      status: 'RECEBIDO',
+      prioridade: 'normal',
+
+      // Datas (SEMPRE Timestamp - Arquitetura Limpa)
+      data_entrada: firebase.firestore.FieldValue.serverTimestamp(),
+      data_previsao: dataPrevisao, // ✅ SEMPRE Timestamp
+      data_finalizacao: null,
+      data_entrega: null,
+
+      // Meta (rastreamento)
+      meta: {
+        origem: 'checklist',
+        versao_sistema: 'v1.0.2.2',
+        criado_via: 'web',
+      },
+
+      // Controle
+      criado_em: firebase.firestore.FieldValue.serverTimestamp(),
+      atualizado_em: firebase.firestore.FieldValue.serverTimestamp(),
+    };
+
+    console.log('📦 Dados da OS:', dadosOS);
+
+    // ========================================
+    // 5. SALVAR NO FIRESTORE
+    // ========================================
+
+    const db = firebase.firestore();
+    const osRef = db.collection('oficinas').doc(OFICINA_ID).collection('ordens_servico').doc(); // Auto-ID
+
+    await osRef.set(dadosOS);
+
+    console.log('✅ OS salva no Firestore:', osRef.id);
+
+    if (window.FirebaseV2?.upsertClienteAuto) {
+      window.FirebaseV2.upsertClienteAuto({
+        nome: nomeCliente,
+        telefone: telefone,
+        email: '',
+        cpf_cnpj: cpfCnpj,
+      }).catch(error => console.warn('⚠️ Auto cadastro cliente (checklist) falhou:', error));
+    }
+
+    // ========================================
+    // 6. REGISTRAR HISTÓRICO (SUBCOLEÇÃO)
+    // ========================================
+
+    await osRef.collection('historico').add({
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      usuario_nome: 'Sistema',
+      acao: 'criacao',
+      status_anterior: null,
+      status_novo: 'RECEBIDO',
+      observacao: 'OS criada a partir do checklist de entrada',
+      campo_alterado: null,
+      valor_anterior: null,
+      valor_novo: null,
+    });
+
+    console.log('✅ Histórico inicial registrado');
+
+    // ========================================
+    // 7. BACKUP LOCAL SEGURO
+    // ========================================
+
+    try {
+      const dadosParaBackup = {
+        ...dadosOS,
+        id: osRef.id,
+        numero_os: numeroOS,
+        data_entrada: new Date().toISOString(),
+        data_previsao: dataPrevisao.toDate().toISOString(),
+        backup_em: new Date().toISOString(),
+      };
+
+      let backups = JSON.parse(localStorage.getItem('os_backup')) || [];
+      backups.push(dadosParaBackup);
+
+      // Manter apenas últimos 50
+      if (backups.length > 50) {
+        backups = backups.slice(-50);
+      }
+
+      localStorage.setItem('os_backup', JSON.stringify(backups));
+      console.log('✅ Backup local salvo');
+    } catch (error) {
+      console.warn('⚠️ Erro ao salvar backup local:', error);
+    }
+
+    // ========================================
+    // 8. LIMPAR FORMULÁRIO
+    // ========================================
+
+    itensOrcamento = [];
+    checklistEditando = null;
+    renderizarTabela();
+
+    if (typeof limparFormularioCompleto === 'function') {
+      limparFormularioCompleto();
+    } else {
+      document.getElementById('checklistForm')?.reset();
+    }
+
+    // ========================================
+    // 9. FEEDBACK E REDIRECIONAMENTO
+    // ========================================
+
+    if (window.novoOS && window.salvarOS) {
+      const agendar = confirm('📅 Deseja agendar próxima revisão para este cliente?');
+      if (agendar) {
+        const entrada = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        entrada.setHours(9, 0, 0, 0);
+        const saida = new Date(entrada.getTime() + 2 * 60 * 60 * 1000);
+        const osAgenda = window.novoOS(placa, nomeCliente || 'Cliente');
+        osAgenda.telefone = telefone;
+        osAgenda.modelo = modelo;
+        osAgenda.status_geral = 'agendado';
+        osAgenda.tipo_servico = 'rapida';
+        osAgenda.tempo_estimado_min = 120;
+        osAgenda.observacoes = `Auto agendamento após checklist ${numeroOS}`;
+        osAgenda.data_prevista_entrada = entrada.toISOString();
+        osAgenda.data_prevista_saida = saida.toISOString();
+        window.salvarOS(osAgenda);
+      }
+    }
+
+    alert(`✅ OS ${numeroOS} criada com sucesso!`);
+
+    // Aguardar 1 segundo antes de redirecionar
+    setTimeout(() => {
+      switchTab('gestao-oficina');
+      if (typeof iniciarGestaoOficina === 'function') {
+        iniciarGestaoOficina();
+      }
+    }, 1000);
+  } catch (error) {
+    console.error('❌ Erro ao salvar OS:', error);
+    alert(`Erro ao criar OS: ${error.message}`);
+  }
 }
 
 function carregarHistorico() {
-    const listaDiv = document.getElementById('checklistsList');
-    const emptyMsg = document.getElementById('emptyMessage');
-    const checklists = carregarChecklistsLocais();
+  const listaDiv = document.getElementById('checklistsList');
+  const emptyMsg = document.getElementById('emptyMessage');
+  const checklists = carregarChecklistsLocais();
 
-    listaDiv.innerHTML = '';
+  listaDiv.innerHTML = '';
 
-    if (checklists.length === 0) {
-        emptyMsg.style.display = 'block';
-        return;
-    } else {
-        emptyMsg.style.display = 'none';
-    }
+  if (checklists.length === 0) {
+    emptyMsg.style.display = 'block';
+    return;
+  } else {
+    emptyMsg.style.display = 'none';
+  }
 
-    checklists.slice().reverse().forEach(item => {
-        const dataFormatada = new Date(item.data_criacao).toLocaleDateString('pt-BR');
-        const horaFormatada = new Date(item.data_criacao).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+  checklists
+    .slice()
+    .reverse()
+    .forEach(item => {
+      const dataFormatada = new Date(item.data_criacao).toLocaleDateString('pt-BR');
+      const horaFormatada = new Date(item.data_criacao).toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
 
-        const card = document.createElement('div');
-        card.className = 'checklist-item';
-        
-        // ✅ FIX: Escapar ID corretamente para usar em HTML
-        const idEscapado = String(item.id).replace(/'/g, "\\'").replace(/"/g, '&quot;');
-        
-        card.innerHTML = `
+      const card = document.createElement('div');
+      card.className = 'checklist-item';
+
+      // ✅ FIX: Escapar ID corretamente para usar em HTML
+      const idEscapado = String(item.id).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
+      card.innerHTML = `
             <div class="checklist-info">
                 <h4>${(item.placa || '').toUpperCase()} - ${item.modelo || 'Modelo não inf.'}</h4>
                 <p>📅 ${dataFormatada} às ${horaFormatada} | 👤 ${item.nome_cliente || 'Cliente não inf.'}</p>
@@ -647,99 +693,117 @@ function carregarHistorico() {
                 <button class="btn-small btn-danger" onclick="excluirChecklist('${idEscapado}')">🗑️</button>
             </div>
         `;
-        listaDiv.appendChild(card);
+      listaDiv.appendChild(card);
     });
 }
 
 // ✅ FIX #1: Carrega checklist com flag de edição
 function carregarChecklist(id) {
-    const checklists = carregarChecklistsLocais();
-    const item = checklists.find(c => normalizeId(c.id) === normalizeId(id));
+  const checklists = carregarChecklistsLocais();
+  const item = checklists.find(c => normalizeId(c.id) === normalizeId(id));
 
-    if (!item) {
-        console.error('Checklist não encontrado:', id);
-        alert('Erro: Checklist não encontrado!');
-        return;
+  if (!item) {
+    console.error('Checklist não encontrado:', id);
+    alert('Erro: Checklist não encontrado!');
+    return;
+  }
+
+  checklistEditando = item; // ✅ Marca como editando
+  switchTab('novo-checklist');
+
+  if (item.nome_cliente && !item.nomecliente) item.nomecliente = item.nome_cliente;
+
+  const setVal = (id, val) => {
+    if (document.getElementById(id)) document.getElementById(id).value = val || '';
+  };
+
+  setVal('nomecliente', item.nomecliente);
+  setVal('cpfcnpj', item.cpf_cnpj || item.cpfcnpj);
+  setVal('celularcliente', item.telefone || item.contato || item.celularcliente);
+  setVal('placa', item.placa);
+  setVal('modelo', item.modelo);
+
+  for (const key in item) {
+    const el = document.getElementsByName(key)[0];
+    if (el && el.type !== 'checkbox' && el.type !== 'file' && el.type !== 'radio') {
+      el.value = item[key];
     }
+  }
 
-    checklistEditando = item; // ✅ Marca como editando
-    switchTab('novo-checklist');
+  document.querySelectorAll('input[type="checkbox"]').forEach(cb => (cb.checked = false));
+  if (item.equipamentos) item.equipamentos.forEach(val => marcarCheckbox('equipamentos', val));
+  if (item.caracteristicas)
+    item.caracteristicas.forEach(val => marcarCheckbox('caracteristicas', val));
+  if (item.cambio) item.cambio.forEach(val => marcarCheckbox('cambio', val));
+  if (item.tracao) item.tracao.forEach(val => marcarCheckbox('tracao', val));
 
-    if (item.nome_cliente && !item.nomecliente) item.nomecliente = item.nome_cliente;
+  itensOrcamento = item.itensOrcamento || [];
+  if (document.getElementById('complexidade'))
+    document.getElementById('complexidade').value = item.complexidade || '';
+  renderizarTabela();
 
-    const setVal = (id, val) => { if(document.getElementById(id)) document.getElementById(id).value = val || ''; }
-    
-    setVal('nomecliente', item.nomecliente);
-    setVal('cpfcnpj', item.cpf_cnpj || item.cpfcnpj);
-    setVal('celularcliente', item.telefone || item.contato || item.celularcliente);
-    setVal('placa', item.placa);
-    setVal('modelo', item.modelo);
-
-    for (const key in item) {
-        const el = document.getElementsByName(key)[0];
-        if (el && el.type !== 'checkbox' && el.type !== 'file' && el.type !== 'radio') {
-            el.value = item[key];
-        }
-    }
-
-    document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
-    if (item.equipamentos) item.equipamentos.forEach(val => marcarCheckbox('equipamentos', val));
-    if (item.caracteristicas) item.caracteristicas.forEach(val => marcarCheckbox('caracteristicas', val));
-    if (item.cambio) item.cambio.forEach(val => marcarCheckbox('cambio', val));
-    if (item.tracao) item.tracao.forEach(val => marcarCheckbox('tracao', val));
-    
-    itensOrcamento = item.itensOrcamento || [];
-    if(document.getElementById('complexidade')) document.getElementById('complexidade').value = item.complexidade || '';
-    renderizarTabela();
-    
-    atualizarResumoVeiculo();
+  atualizarResumoVeiculo();
 }
 
 function marcarCheckbox(name, value) {
-    const els = document.getElementsByName(name);
-    els.forEach(el => { if (el.value === value) el.checked = true; });
+  const els = document.getElementsByName(name);
+  els.forEach(el => {
+    if (el.value === value) el.checked = true;
+  });
 }
 
 function excluirChecklist(id) {
-    if (confirm("Tem certeza que deseja excluir este checklist?")) {
-        let checklists = carregarChecklistsLocais();
-        checklists = checklists.filter(c => normalizeId(c.id) !== normalizeId(id));
-        salvarLocalStorage(getChecklistStorageKey(), checklists); // ✅ Usando wrapper
-        carregarHistorico();
-    }
+  if (confirm('Tem certeza que deseja excluir este checklist?')) {
+    let checklists = carregarChecklistsLocais();
+    checklists = checklists.filter(c => normalizeId(c.id) !== normalizeId(id));
+    salvarLocalStorage(getChecklistStorageKey(), checklists); // ✅ Usando wrapper
+    carregarHistorico();
+  }
 }
 
 function filtrarChecklists() {
-    const termo = document.getElementById('searchInput').value.toLowerCase();
-    const checklists = carregarChecklistsLocais();
-    const listaDiv = document.getElementById('checklistsList');
-    const emptyMsg = document.getElementById('emptyMessage');
+  const termo = document.getElementById('searchInput').value.toLowerCase();
+  const checklists = carregarChecklistsLocais();
+  const listaDiv = document.getElementById('checklistsList');
+  const emptyMsg = document.getElementById('emptyMessage');
 
-    listaDiv.innerHTML = '';
+  listaDiv.innerHTML = '';
 
-    const filtrados = checklists.filter(item => {
-        const texto = ((item.placa || '') + ' ' + (item.modelo || '') + ' ' + (item.nome_cliente || '')).toLowerCase();
-        return texto.includes(termo);
-    });
+  const filtrados = checklists.filter(item => {
+    const texto = (
+      (item.placa || '') +
+      ' ' +
+      (item.modelo || '') +
+      ' ' +
+      (item.nome_cliente || '')
+    ).toLowerCase();
+    return texto.includes(termo);
+  });
 
-    if (!filtrados.length) {
-        emptyMsg.style.display = 'block';
-        return;
-    } else {
-        emptyMsg.style.display = 'none';
-    }
+  if (!filtrados.length) {
+    emptyMsg.style.display = 'block';
+    return;
+  } else {
+    emptyMsg.style.display = 'none';
+  }
 
-    filtrados.slice().reverse().forEach(item => {
-        const dataFormatada = new Date(item.data_criacao).toLocaleDateString('pt-BR');
-        const horaFormatada = new Date(item.data_criacao).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+  filtrados
+    .slice()
+    .reverse()
+    .forEach(item => {
+      const dataFormatada = new Date(item.data_criacao).toLocaleDateString('pt-BR');
+      const horaFormatada = new Date(item.data_criacao).toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
 
-        const card = document.createElement('div');
-        card.className = 'checklist-item';
-        
-        // ✅ FIX: Escapar ID corretamente para usar em HTML
-        const idEscapado = String(item.id).replace(/'/g, "\\'").replace(/"/g, '&quot;');
-        
-        card.innerHTML = `
+      const card = document.createElement('div');
+      card.className = 'checklist-item';
+
+      // ✅ FIX: Escapar ID corretamente para usar em HTML
+      const idEscapado = String(item.id).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
+      card.innerHTML = `
             <div class="checklist-info">
                 <h4>${(item.placa || '').toUpperCase()} - ${item.modelo || 'Modelo não inf.'}</h4>
                 <p>📅 ${dataFormatada} às ${horaFormatada} | 👤 ${item.nome_cliente || 'Cliente não inf.'}</p>
@@ -749,85 +813,87 @@ function filtrarChecklists() {
                 <button class="btn-small btn-danger" onclick="excluirChecklist('${idEscapado}')">🗑️</button>
             </div>
         `;
-        listaDiv.appendChild(card);
+      listaDiv.appendChild(card);
     });
 }
 
 function ordenarChecklists() {
-    const checklists = carregarChecklistsLocais();
-    checklists.sort((a, b) => {
-        const placaA = (a.placa || '').toUpperCase();
-        const placaB = (b.placa || '').toUpperCase();
-        if (placaA < placaB) return -1;
-        if (placaA > placaB) return 1;
-        return 0;
-    });
-    salvarLocalStorage(getChecklistStorageKey(), checklists); // ✅ Usando wrapper
-    carregarHistorico();
+  const checklists = carregarChecklistsLocais();
+  checklists.sort((a, b) => {
+    const placaA = (a.placa || '').toUpperCase();
+    const placaB = (b.placa || '').toUpperCase();
+    if (placaA < placaB) return -1;
+    if (placaA > placaB) return 1;
+    return 0;
+  });
+  salvarLocalStorage(getChecklistStorageKey(), checklists); // ✅ Usando wrapper
+  carregarHistorico();
 }
 
 function limparFormulario() {
-    if (confirm("Limpar todos os campos do formulário?")) {
-        checklistEditando = null; // ✅ Limpa modo edição
-        document.getElementById('checklistForm').reset();
-        
-        // 🆕 Preencher data/hora automaticamente
-        preencherDataHoraAtual();
-        atualizarResumoVeiculo();
-    }
+  if (confirm('Limpar todos os campos do formulário?')) {
+    checklistEditando = null; // ✅ Limpa modo edição
+    document.getElementById('checklistForm').reset();
+
+    // 🆕 Preencher data/hora automaticamente
+    preencherDataHoraAtual();
+    atualizarResumoVeiculo();
+  }
 }
 
 function exportarDados() {
-    const db = carregarChecklistsLocais();
-    if (!db.length) {
-        alert("Não há dados para exportar.");
-        return;
-    }
-    const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'checklists.json';
-    a.click();
-    URL.revokeObjectURL(url);
+  const db = carregarChecklistsLocais();
+  if (!db.length) {
+    alert('Não há dados para exportar.');
+    return;
+  }
+  const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'checklists.json';
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function limparTodosDados() {
-    if (confirm("Deseja apagar TODO o histórico?")) {
-        localStorage.removeItem(getChecklistStorageKey());
-        localStorage.removeItem('checklists');
-        carregarHistorico();
-        alert("Histórico limpo.");
-    }
+  if (confirm('Deseja apagar TODO o histórico?')) {
+    localStorage.removeItem(getChecklistStorageKey());
+    localStorage.removeItem('checklists');
+    carregarHistorico();
+    alert('Histórico limpo.');
+  }
 }
 
 function atualizarRelatorios() {
-    const db = carregarChecklistsLocais();
-    document.getElementById('totalChecklists').textContent = db.length;
+  const db = carregarChecklistsLocais();
+  document.getElementById('totalChecklists').textContent = db.length;
 
-    const hoje = new Date();
-    const mesAtual = hoje.getMonth();
-    const anoAtual = hoje.getFullYear();
+  const hoje = new Date();
+  const mesAtual = hoje.getMonth();
+  const anoAtual = hoje.getFullYear();
 
-    const doMes = db.filter(item => {
-        if (!item.data_criacao) return false;
-        const dataItem = new Date(item.data_criacao);
-        return dataItem.getMonth() === mesAtual && dataItem.getFullYear() === anoAtual;
-    });
-    document.getElementById('checklistsMes').textContent = doMes.length;
+  const doMes = db.filter(item => {
+    if (!item.data_criacao) return false;
+    const dataItem = new Date(item.data_criacao);
+    return dataItem.getMonth() === mesAtual && dataItem.getFullYear() === anoAtual;
+  });
+  document.getElementById('checklistsMes').textContent = doMes.length;
 
-    const marcas = {};
-    db.forEach(item => {
-        const modeloTexto = item.modelo || 'Não Informado';
-        const m = modeloTexto.split(' ')[0].toUpperCase();
-        marcas[m] = (marcas[m] || 0) + 1;
-    });
+  const marcas = {};
+  db.forEach(item => {
+    const modeloTexto = item.modelo || 'Não Informado';
+    const m = modeloTexto.split(' ')[0].toUpperCase();
+    marcas[m] = (marcas[m] || 0) + 1;
+  });
 
-    const sortedMarcas = Object.entries(marcas).sort((a,b) => b[1] - a[1]).slice(0, 5);
-    let htmlGrafico = '';
-    sortedMarcas.forEach(([marca, qtd]) => {
-        const pct = (qtd / db.length) * 100;
-        htmlGrafico += `
+  const sortedMarcas = Object.entries(marcas)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+  let htmlGrafico = '';
+  sortedMarcas.forEach(([marca, qtd]) => {
+    const pct = (qtd / db.length) * 100;
+    htmlGrafico += `
             <div style="margin-bottom: 10px;">
                 <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:2px;">
                     <strong>${marca}</strong>
@@ -838,42 +904,45 @@ function atualizarRelatorios() {
                 </div>
             </div>
         `;
-    });
+  });
 
-    if (!sortedMarcas.length) {
-        htmlGrafico = '<p style="text-align:center; color:#999; font-size:12px;">Sem dados suficientes.</p>';
-    }
+  if (!sortedMarcas.length) {
+    htmlGrafico =
+      '<p style="text-align:center; color:#999; font-size:12px;">Sem dados suficientes.</p>';
+  }
 
-    document.getElementById('graficoMarcas').innerHTML = htmlGrafico;
+  document.getElementById('graficoMarcas').innerHTML = htmlGrafico;
 }
 
 function atualizarResumoVeiculo() {
-    const vPlaca = document.getElementById('placa')?.value || '-';
-    const vModelo = document.getElementById('modelo')?.value || '-';
-    const vChassi = document.getElementById('chassi')?.value || '-';
-    const vKm = document.getElementById('km_entrada')?.value || '-';
-    const vData = document.getElementById('data')?.value || '-';
-    const vHora = document.getElementById('hora')?.value || '-';
-    const vComb = document.getElementById('combustivel')?.value || '-';
-    const vComplex = document.getElementById('complexidade')?.value || '-';
+  const vPlaca = document.getElementById('placa')?.value || '-';
+  const vModelo = document.getElementById('modelo')?.value || '-';
+  const vChassi = document.getElementById('chassi')?.value || '-';
+  const vKm = document.getElementById('km_entrada')?.value || '-';
+  const vData = document.getElementById('data')?.value || '-';
+  const vHora = document.getElementById('hora')?.value || '-';
+  const vComb = document.getElementById('combustivel')?.value || '-';
+  const vComplex = document.getElementById('complexidade')?.value || '-';
 
-    const setContent = (id, val) => { if(document.getElementById(id)) document.getElementById(id).textContent = val; }
+  const setContent = (id, val) => {
+    if (document.getElementById(id)) document.getElementById(id).textContent = val;
+  };
 
-    setContent('resumoPlaca', vPlaca);
-    setContent('resumoModelo', vModelo);
-    setContent('resumoKmEntrada', vKm);
-    setContent('resumoData', vData);
+  setContent('resumoPlaca', vPlaca);
+  setContent('resumoModelo', vModelo);
+  setContent('resumoKmEntrada', vKm);
+  setContent('resumoData', vData);
 
-    setContent('resumoPlaca2', vPlaca);
-    setContent('resumoModelo2', vModelo);
-    setContent('resumoChassi2', vChassi);
-    setContent('resumoKmEntrada2', vKm);
-    setContent('resumoComplexidade', vComplex);
+  setContent('resumoPlaca2', vPlaca);
+  setContent('resumoModelo2', vModelo);
+  setContent('resumoChassi2', vChassi);
+  setContent('resumoKmEntrada2', vKm);
+  setContent('resumoComplexidade', vComplex);
 
-    setContent('resumoPlaca3', vPlaca);
-    setContent('resumoModelo3', vModelo);
-    setContent('resumoChassi3', vChassi);
-    setContent('resumoKmFotos', vKm);
+  setContent('resumoPlaca3', vPlaca);
+  setContent('resumoModelo3', vModelo);
+  setContent('resumoChassi3', vChassi);
+  setContent('resumoKmFotos', vKm);
 }
 
 // ==========================================
@@ -891,43 +960,46 @@ function iniciarCamera() {
   btnTirar.disabled = true;
 
   if (navigator.geolocation) {
-    try { 
-        navigator.geolocation.getCurrentPosition(
-            () => {}, 
-            () => {}, 
-            { timeout: 3000 } // ✅ FIX: Era 800ms, agora 3000ms
-        ); 
-    } catch(e) {}
+    try {
+      navigator.geolocation.getCurrentPosition(
+        () => {},
+        () => {},
+        { timeout: 3000 } // ✅ FIX: Era 800ms, agora 3000ms
+      );
+    } catch (e) {}
   }
 
-  navigator.mediaDevices.getUserMedia({
-    video: {
-      facingMode: { ideal: 'environment' },
-      width: { ideal: 1280 },
-      height: { ideal: 720 }
-    },
-    audio: false
-  }).then((stream) => {
-    streamCamera = stream;
-    video.srcObject = stream;
+  navigator.mediaDevices
+    .getUserMedia({
+      video: {
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+      },
+      audio: false,
+    })
+    .then(stream => {
+      streamCamera = stream;
+      video.srcObject = stream;
 
-    const habilitar = () => {
-      if (video.videoWidth && video.videoHeight) btnTirar.disabled = false;
-    };
+      const habilitar = () => {
+        if (video.videoWidth && video.videoHeight) btnTirar.disabled = false;
+      };
 
-    video.onloadedmetadata = () => {
-      habilitar();
-      const p = video.play();
-      if (p && typeof p.catch === 'function') p.catch(() => {});
-    };
+      video.onloadedmetadata = () => {
+        habilitar();
+        const p = video.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      };
 
-    video.oncanplay = () => habilitar();
-    setTimeout(habilitar, 600);
-  }).catch(err => {
-    container.style.display = 'none';
-    btnTirar.style.display = 'none';
-    alert('Erro câmera: ' + err.message + '\nUse "Galeria"');
-  });
+      video.oncanplay = () => habilitar();
+      setTimeout(habilitar, 600);
+    })
+    .catch(err => {
+      container.style.display = 'none';
+      btnTirar.style.display = 'none';
+      alert('Erro câmera: ' + err.message + '\nUse "Galeria"');
+    });
 }
 
 // ✅ FIX #4: Avisar antes de apagar fotos antigas
@@ -955,28 +1027,30 @@ function tirarFoto(tentativa = 0) {
       id: Date.now(),
       dataURL: canvas.toDataURL('image/jpeg', 0.82),
       data: new Date().toLocaleString('pt-BR'),
-      legenda: ''
+      legenda: '',
     };
 
     // ✅ FIX #4: Avisar se atingir limite
     if (fotosVeiculo.length >= 15) {
-        if (!confirm(
-            '⚠️ LIMITE DE FOTOS ATINGIDO!\n\n' +
+      if (
+        !confirm(
+          '⚠️ LIMITE DE FOTOS ATINGIDO!\n\n' +
             'Você já tem 15 fotos.\n' +
             'Adicionar esta foto vai REMOVER a mais antiga.\n\n' +
             'Continuar?'
-        )) {
-            pararCamera();
-            return;
-        }
+        )
+      ) {
+        pararCamera();
+        return;
+      }
     }
 
     fotosVeiculo.unshift(foto);
     if (fotosVeiculo.length > 15) {
-        const removida = fotosVeiculo.pop();
-        console.log('📸 Foto mais antiga removida automaticamente');
+      const removida = fotosVeiculo.pop();
+      console.log('📸 Foto mais antiga removida automaticamente');
     }
-    
+
     salvarLocalStorage('fotosVeiculo', fotosVeiculo); // ✅ Usando wrapper
     renderizarGaleria();
     pararCamera();
@@ -989,9 +1063,9 @@ function obterTextoMarcaDagua(timeoutMs = 3000) {
 
   if (!navigator.geolocation) return Promise.resolve(dataHora);
 
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     let finalizado = false;
-    const finalizar = (texto) => {
+    const finalizar = texto => {
       if (finalizado) return;
       finalizado = true;
       resolve(texto);
@@ -1001,7 +1075,7 @@ function obterTextoMarcaDagua(timeoutMs = 3000) {
 
     try {
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
+        pos => {
           clearTimeout(timer);
           const lat = pos.coords.latitude.toFixed(4);
           const lng = pos.coords.longitude.toFixed(4);
@@ -1022,7 +1096,7 @@ function obterTextoMarcaDagua(timeoutMs = 3000) {
 
 function adicionarMarcaDagua(canvas, callback) {
   const ctx = canvas.getContext('2d');
-  obterTextoMarcaDagua(3000).then((texto) => {
+  obterTextoMarcaDagua(3000).then(texto => {
     desenharTexto(ctx, canvas.width, canvas.height, texto);
     callback();
   });
@@ -1056,81 +1130,83 @@ function desenharTexto(ctx, w, h, texto) {
 }
 
 function pararCamera() {
-    if (streamCamera) {
-        streamCamera.getTracks().forEach(track => track.stop());
-        streamCamera = null;
-    }
-    document.querySelector('.camera-container').style.display = 'none';
-    document.getElementById('btnTirarFoto').style.display = 'none';
+  if (streamCamera) {
+    streamCamera.getTracks().forEach(track => track.stop());
+    streamCamera = null;
+  }
+  document.querySelector('.camera-container').style.display = 'none';
+  document.getElementById('btnTirarFoto').style.display = 'none';
 }
 
 // ✅ FIX #4: Avisar ao adicionar fotos da galeria também
 function adicionarFotos(event) {
-    const files = Array.from(event.target.files);
-    
-    // ✅ Verificar limite ANTES de processar
-    if (fotosVeiculo.length + files.length > 15) {
-        const aRemover = (fotosVeiculo.length + files.length) - 15;
-        if (!confirm(
-            `⚠️ LIMITE DE FOTOS!\n\n` +
-            `Você está adicionando ${files.length} foto(s).\n` +
-            `Isso vai REMOVER ${aRemover} foto(s) antiga(s).\n\n` +
-            `Continuar?`
-        )) {
-            event.target.value = '';
-            return;
-        }
+  const files = Array.from(event.target.files);
+
+  // ✅ Verificar limite ANTES de processar
+  if (fotosVeiculo.length + files.length > 15) {
+    const aRemover = fotosVeiculo.length + files.length - 15;
+    if (
+      !confirm(
+        `⚠️ LIMITE DE FOTOS!\n\n` +
+          `Você está adicionando ${files.length} foto(s).\n` +
+          `Isso vai REMOVER ${aRemover} foto(s) antiga(s).\n\n` +
+          `Continuar?`
+      )
+    ) {
+      event.target.value = '';
+      return;
     }
-    
-    const processarArquivo = (index) => {
-        if (index >= files.length) return;
-        
-        const file = files[index];
-        const reader = new FileReader();
-        reader.onload = e => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-                
-                adicionarMarcaDagua(canvas, () => {
-                   fotosVeiculo.unshift({
-                        id: Date.now() + Math.random(),
-                        dataURL: canvas.toDataURL('image/jpeg', 0.82),
-                        data: new Date().toLocaleString('pt-BR'),
-                        legenda: ''
-                    });
-                    if (fotosVeiculo.length > 15) fotosVeiculo = fotosVeiculo.slice(0, 15);
-                    salvarLocalStorage('fotosVeiculo', fotosVeiculo); // ✅ Usando wrapper
-                    renderizarGaleria();
-                    processarArquivo(index + 1);
-                });
-            };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
+  }
+
+  const processarArquivo = index => {
+    if (index >= files.length) return;
+
+    const file = files[index];
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+
+        adicionarMarcaDagua(canvas, () => {
+          fotosVeiculo.unshift({
+            id: Date.now() + Math.random(),
+            dataURL: canvas.toDataURL('image/jpeg', 0.82),
+            data: new Date().toLocaleString('pt-BR'),
+            legenda: '',
+          });
+          if (fotosVeiculo.length > 15) fotosVeiculo = fotosVeiculo.slice(0, 15);
+          salvarLocalStorage('fotosVeiculo', fotosVeiculo); // ✅ Usando wrapper
+          renderizarGaleria();
+          processarArquivo(index + 1);
+        });
+      };
+      img.src = e.target.result;
     };
-    processarArquivo(0);
-    event.target.value = '';
+    reader.readAsDataURL(file);
+  };
+  processarArquivo(0);
+  event.target.value = '';
 }
 
 function renderizarGaleria() {
-    const galeria = document.getElementById('galeriaFotos');
-    if (!galeria) return;
-    galeria.innerHTML = '';
-    
-    if (fotosVeiculo.length === 0) {
-        galeria.innerHTML = '<p style="text-align:center;color:#999;padding:40px">📭 Nenhuma foto</p>';
-        return;
-    }
-    
-    fotosVeiculo.slice(0, 15).forEach((foto, index) => {
-        const div = document.createElement('div');
-        div.className = 'foto-item';
-        div.innerHTML = `
+  const galeria = document.getElementById('galeriaFotos');
+  if (!galeria) return;
+  galeria.innerHTML = '';
+
+  if (fotosVeiculo.length === 0) {
+    galeria.innerHTML = '<p style="text-align:center;color:#999;padding:40px">📭 Nenhuma foto</p>';
+    return;
+  }
+
+  fotosVeiculo.slice(0, 15).forEach((foto, index) => {
+    const div = document.createElement('div');
+    div.className = 'foto-item';
+    div.innerHTML = `
             <img src="${foto.dataURL}" alt="Foto ${index + 1}" loading="lazy">
             <input type="text" class="foto-legenda" value="${foto.legenda || ''}" placeholder="Escreva uma legenda..." onchange="salvarLegenda(${foto.id}, this.value)">
             <div class="foto-overlay"><span style="color:white;font-size:10px">${foto.data}</span></div>
@@ -1139,47 +1215,47 @@ function renderizarGaleria() {
                 <button class="btn-foto btn-danger foto-delete" data-id="${foto.id}">🗑️</button>
             </div>
         `;
-        galeria.appendChild(div);
-    });
-    
-    galeria.querySelectorAll('.foto-zoom').forEach(btn => {
-        btn.addEventListener('click', () => abrirFotoGrande(btn.dataset.url));
-    });
-    galeria.querySelectorAll('.foto-delete').forEach(btn => {
-        btn.addEventListener('click', () => removerFoto(parseInt(btn.dataset.id)));
-    });
+    galeria.appendChild(div);
+  });
+
+  galeria.querySelectorAll('.foto-zoom').forEach(btn => {
+    btn.addEventListener('click', () => abrirFotoGrande(btn.dataset.url));
+  });
+  galeria.querySelectorAll('.foto-delete').forEach(btn => {
+    btn.addEventListener('click', () => removerFoto(parseInt(btn.dataset.id)));
+  });
 }
 
 function salvarLegenda(id, texto) {
-    const foto = fotosVeiculo.find(f => f.id === id);
-    if (foto) {
-        foto.legenda = texto;
-        salvarLocalStorage('fotosVeiculo', fotosVeiculo); // ✅ Usando wrapper
-    }
+  const foto = fotosVeiculo.find(f => f.id === id);
+  if (foto) {
+    foto.legenda = texto;
+    salvarLocalStorage('fotosVeiculo', fotosVeiculo); // ✅ Usando wrapper
+  }
 }
 
 function removerFoto(id) {
-    fotosVeiculo = fotosVeiculo.filter(f => f.id !== id);
-    salvarLocalStorage('fotosVeiculo', fotosVeiculo); // ✅ Usando wrapper
-    renderizarGaleria();
+  fotosVeiculo = fotosVeiculo.filter(f => f.id !== id);
+  salvarLocalStorage('fotosVeiculo', fotosVeiculo); // ✅ Usando wrapper
+  renderizarGaleria();
 }
 
 function limparFotos() {
-    if (confirm('🗑️ Limpar TODAS as fotos?')) {
-        fotosVeiculo = [];
-        localStorage.removeItem('fotosVeiculo');
-        renderizarGaleria();
-    }
+  if (confirm('🗑️ Limpar TODAS as fotos?')) {
+    fotosVeiculo = [];
+    localStorage.removeItem('fotosVeiculo');
+    renderizarGaleria();
+  }
 }
 
 function abrirFotoGrande(dataURL) {
-    const modal = document.createElement('div');
-    modal.style.cssText = `
+  const modal = document.createElement('div');
+  modal.style.cssText = `
         position:fixed; top:0; left:0; width:100vw; height:100vh; 
         background:rgba(0,0,0,0.95); z-index:9999; display:flex; 
         align-items:center; justify-content:center; padding:20px;
     `;
-    modal.innerHTML = `
+  modal.innerHTML = `
         <img src="${dataURL}" style="max-width:95%; max-height:95%; border-radius:8px; box-shadow:0 0 50px rgba(255,255,255,0.3);">
         <button onclick="this.parentElement.remove()" style="
             position:absolute; top:20px; right:20px; background:#e41616; 
@@ -1187,28 +1263,30 @@ function abrirFotoGrande(dataURL) {
             height:50px; font-size:20px; cursor:pointer;
         ">✕</button>
     `;
-    document.body.appendChild(modal);
-    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+  document.body.appendChild(modal);
+  modal.onclick = e => {
+    if (e.target === modal) modal.remove();
+  };
 }
 
 function gerarPDFFotos() {
-    if (!fotosVeiculo || fotosVeiculo.length === 0) {
-        alert('📭 Sem fotos para gerar PDF');
-        return;
-    }
+  if (!fotosVeiculo || fotosVeiculo.length === 0) {
+    alert('📭 Sem fotos para gerar PDF');
+    return;
+  }
 
-    const placa  = document.getElementById('placa')?.value  || 'SEM_PLACA';
-    const modelo = document.getElementById('modelo')?.value || 'SEM_MODELO';
-    const chassi = document.getElementById('chassi')?.value || 'SEM_CHASSI';
+  const placa = document.getElementById('placa')?.value || 'SEM_PLACA';
+  const modelo = document.getElementById('modelo')?.value || 'SEM_MODELO';
+  const chassi = document.getElementById('chassi')?.value || 'SEM_CHASSI';
 
-    const MAXFOTOS = 16;
-    const fotosUsar = fotosVeiculo.slice(0, MAXFOTOS);
+  const MAXFOTOS = 16;
+  const fotosUsar = fotosVeiculo.slice(0, MAXFOTOS);
 
-    let html = '';
+  let html = '';
 
-    for (let i = 0; i < fotosUsar.length; i += 4) {
-        const isLastGroup = i + 4 >= fotosUsar.length;
-        html += `
+  for (let i = 0; i < fotosUsar.length; i += 4) {
+    const isLastGroup = i + 4 >= fotosUsar.length;
+    html += `
             <div style="width: 100%; min-height: 100vh; box-sizing: border-box; padding: 20px; font-family: Arial, sans-serif; ${isLastGroup ? '' : 'page-break-after: always;'}">
                 <div style="background: #f5f5f5; border: 2px solid #e41616; border-radius: 6px; padding: 10px 15px; margin-bottom: 15px; font-size: 11px; line-height: 1.5;">
                     <div style="font-weight: bold; color: #e41616; font-size: 12px; margin-bottom: 5px;">- INSPEÇÃO DE FOTOS</div>
@@ -1219,10 +1297,10 @@ function gerarPDFFotos() {
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
         `;
 
-        for (let j = 0; j < 4 && (i + j) < fotosUsar.length; j++) {
-            const foto = fotosUsar[i + j];
-            const num = i + j + 1;
-            html += `
+    for (let j = 0; j < 4 && i + j < fotosUsar.length; j++) {
+      const foto = fotosUsar[i + j];
+      const num = i + j + 1;
+      html += `
                 <div style="text-align: center;">
                     <img src="${foto.dataURL}" style="width: 100%; max-width: 260px; max-height: 260px; height: auto; border-radius: 6px; border: 1px solid #e41616;">
                     <div style="font-size: 9px; margin-top: 5px; color: #555;">
@@ -1230,17 +1308,20 @@ function gerarPDFFotos() {
                     </div>
                 </div>
             `;
-        }
-        html += `</div></div>`;
     }
+    html += `</div></div>`;
+  }
 
-    html2pdf().set({
-        filename: `Fotos-${placa}.pdf`,
-        margin: 0,
-        image: { type: 'jpeg', quality: 0.9 },
-        html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
-        jsPDF: { format: 'a4', orientation: 'portrait', unit: 'pt' }
-    }).from(html).save();
+  html2pdf()
+    .set({
+      filename: `Fotos-${placa}.pdf`,
+      margin: 0,
+      image: { type: 'jpeg', quality: 0.9 },
+      html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+      jsPDF: { format: 'a4', orientation: 'portrait', unit: 'pt' },
+    })
+    .from(html)
+    .save();
 }
 
 // ==========================================
@@ -1248,76 +1329,102 @@ function gerarPDFFotos() {
 // ==========================================
 
 function atualizarBarraOS() {
-    const os = gerarNumeroOS();
-    const el = document.getElementById('barraFixaOS');
-    if (el) el.textContent = os;
+  const os = gerarNumeroOS();
+  const el = document.getElementById('barraFixaOS');
+  if (el) el.textContent = os;
 }
 
 function atualizarResumoOS() {
-    const logoSrc = document.getElementById('logo-oficina')?.src;
-    if (logoSrc) document.getElementById('logoResumo').src = logoSrc;
-    
-    document.getElementById('nomeOficinaResumo').textContent = document.getElementById('nome-oficina')?.textContent || 'OFICINA';
-    document.getElementById('enderecoOficinaResumo').textContent = document.getElementById('endereco-oficina')?.textContent || '';
-    document.getElementById('telefoneOficinaResumo').textContent = document.getElementById('telefone-oficina')?.textContent || '';
-    document.getElementById('cnpjOficinaResumo').textContent = document.getElementById('cnpj-oficina')?.textContent || '';
-    document.getElementById('osNumero').textContent = gerarNumeroOS();
+  const logoSrc = document.getElementById('logo-oficina')?.src;
+  if (logoSrc) document.getElementById('logoResumo').src = logoSrc;
 
-    document.getElementById('rNomeCliente').textContent = document.getElementById('nome_cliente')?.value || '-';
-    document.getElementById('rCpfCnpj').textContent = document.getElementById('cpf_cnpj')?.value || '-';
-    document.getElementById('rCelular').textContent = document.getElementById('celular_cliente')?.value || '-';
-    document.getElementById('rModelo').textContent = document.getElementById('modelo')?.value || '-';
-    document.getElementById('rPlaca').textContent = (document.getElementById('placa')?.value || '-').toUpperCase();
-    document.getElementById('rChassi').textContent = document.getElementById('chassi')?.value || '-';
-    document.getElementById('rKmEntrada').textContent = (document.getElementById('km_entrada')?.value || '') + ' km';
-    
-    let combSelect = document.getElementById('combustivel');
-    let combTexto = combSelect && combSelect.selectedIndex >= 0 ? combSelect.options[combSelect.selectedIndex].text : '-';
-    document.getElementById('rCombustivel').textContent = combTexto;
+  document.getElementById('nomeOficinaResumo').textContent =
+    document.getElementById('nome-oficina')?.textContent || 'OFICINA';
+  document.getElementById('enderecoOficinaResumo').textContent =
+    document.getElementById('endereco-oficina')?.textContent || '';
+  document.getElementById('telefoneOficinaResumo').textContent =
+    document.getElementById('telefone-oficina')?.textContent || '';
+  document.getElementById('cnpjOficinaResumo').textContent =
+    document.getElementById('cnpj-oficina')?.textContent || '';
+  document.getElementById('osNumero').textContent = gerarNumeroOS();
 
-    let dataVal = document.getElementById('data')?.value;
-    let horaVal = document.getElementById('hora')?.value;
-    let dataFmt = dataVal ? dataVal.split('-').reverse().join('/') : '--/--/----';
-    document.getElementById('rEntradaDataHora').textContent = `${dataFmt} às ${horaVal || '--:--'}`;
-    
-    document.getElementById('rServicos').textContent = document.getElementById('servicos')?.value || '-';
-    document.getElementById('rObsInspecao').textContent = document.getElementById('obsInspecao')?.value || '-';
+  document.getElementById('rNomeCliente').textContent =
+    document.getElementById('nome_cliente')?.value || '-';
+  document.getElementById('rCpfCnpj').textContent =
+    document.getElementById('cpf_cnpj')?.value || '-';
+  document.getElementById('rCelular').textContent =
+    document.getElementById('celular_cliente')?.value || '-';
+  document.getElementById('rModelo').textContent = document.getElementById('modelo')?.value || '-';
+  document.getElementById('rPlaca').textContent = (
+    document.getElementById('placa')?.value || '-'
+  ).toUpperCase();
+  document.getElementById('rChassi').textContent = document.getElementById('chassi')?.value || '-';
+  document.getElementById('rKmEntrada').textContent =
+    (document.getElementById('km_entrada')?.value || '') + ' km';
 
-    const areaBadges = document.getElementById('rChecklistBadges');
-    areaBadges.innerHTML = ''; 
-    const checkboxesMarcados = document.querySelectorAll('#checklistForm input[type="checkbox"]:checked');
+  let combSelect = document.getElementById('combustivel');
+  let combTexto =
+    combSelect && combSelect.selectedIndex >= 0
+      ? combSelect.options[combSelect.selectedIndex].text
+      : '-';
+  document.getElementById('rCombustivel').textContent = combTexto;
 
-    if (checkboxesMarcados.length === 0) {
-        areaBadges.innerHTML = '<span style="color:#999; font-size:11px;">Nenhum item inspecionado/marcado.</span>';
-    } else {
-        checkboxesMarcados.forEach(cb => {
-            let textoLabel = cb.value;
-            let labelTag = document.querySelector(`label[for="${cb.id}"]`);
-            if (labelTag) textoLabel = labelTag.textContent;
-            
-            let span = document.createElement('span');
-            const palavrasRuim = ['TRINCADO', 'AMASSADO', 'RISCADO', 'QUEBRADO', 'DANIFICADO', 'FALTANDO', 'RUIM'];
-            const ehRuim = palavrasRuim.some(p => textoLabel.toUpperCase().includes(p));
+  let dataVal = document.getElementById('data')?.value;
+  let horaVal = document.getElementById('hora')?.value;
+  let dataFmt = dataVal ? dataVal.split('-').reverse().join('/') : '--/--/----';
+  document.getElementById('rEntradaDataHora').textContent = `${dataFmt} às ${horaVal || '--:--'}`;
 
-            span.className = ehRuim ? 'os-badge no' : 'os-badge ok';
-            span.innerHTML = ehRuim ? `⚠️ ${textoLabel}` : `✅ ${textoLabel}`;
-            areaBadges.appendChild(span);
-        });
-    }
+  document.getElementById('rServicos').textContent =
+    document.getElementById('servicos')?.value || '-';
+  document.getElementById('rObsInspecao').textContent =
+    document.getElementById('obsInspecao')?.value || '-';
 
-    renderizarGaleriaResumo();
+  const areaBadges = document.getElementById('rChecklistBadges');
+  areaBadges.innerHTML = '';
+  const checkboxesMarcados = document.querySelectorAll(
+    '#checklistForm input[type="checkbox"]:checked'
+  );
 
-    const containerTabelas = document.getElementById('containerTabelasOrcamento');
-    containerTabelas.innerHTML = '';
-    
-    const pecasTodas = itensOrcamento.filter(i => i.tipo !== 'servico');
-    const servicosTodos = itensOrcamento.filter(i => i.tipo === 'servico');
-    
-    const divGrid = document.createElement('div');
-    divGrid.className = 'os-grid-2 mt-10';
-    divGrid.style.gap = '18px';
-    
-    const geraTabela = (titulo, itens, cor) => `
+  if (checkboxesMarcados.length === 0) {
+    areaBadges.innerHTML =
+      '<span style="color:#999; font-size:11px;">Nenhum item inspecionado/marcado.</span>';
+  } else {
+    checkboxesMarcados.forEach(cb => {
+      let textoLabel = cb.value;
+      let labelTag = document.querySelector(`label[for="${cb.id}"]`);
+      if (labelTag) textoLabel = labelTag.textContent;
+
+      let span = document.createElement('span');
+      const palavrasRuim = [
+        'TRINCADO',
+        'AMASSADO',
+        'RISCADO',
+        'QUEBRADO',
+        'DANIFICADO',
+        'FALTANDO',
+        'RUIM',
+      ];
+      const ehRuim = palavrasRuim.some(p => textoLabel.toUpperCase().includes(p));
+
+      span.className = ehRuim ? 'os-badge no' : 'os-badge ok';
+      span.innerHTML = ehRuim ? `⚠️ ${textoLabel}` : `✅ ${textoLabel}`;
+      areaBadges.appendChild(span);
+    });
+  }
+
+  renderizarGaleriaResumo();
+
+  const containerTabelas = document.getElementById('containerTabelasOrcamento');
+  containerTabelas.innerHTML = '';
+
+  const pecasTodas = itensOrcamento.filter(i => i.tipo !== 'servico');
+  const servicosTodos = itensOrcamento.filter(i => i.tipo === 'servico');
+
+  const divGrid = document.createElement('div');
+  divGrid.className = 'os-grid-2 mt-10';
+  divGrid.style.gap = '18px';
+
+  const geraTabela = (titulo, itens, cor) => `
         <div class="os-table-header" style="border-bottom: 2px solid ${cor}">${titulo}</div>
         <table class="os-table" style="border: 2px solid ${cor}; border-radius: 6px; width:100%; border-collapse:collapse;">
             <thead><tr><th style="text-align:left;border-bottom:2px solid ${cor};padding:6px;font-size:11px;">DESCRIÇÃO</th><th style="text-align:right;border-bottom:2px solid ${cor};padding:6px;font-size:11px;width:90px;">VALOR</th></tr></thead>
@@ -1325,76 +1432,77 @@ function atualizarResumoOS() {
         </table>
         <div style="display:flex;justify-content:space-between;margin-top:8px;padding:8px 10px;border:1px solid ${cor};border-radius:6px;">
             <strong style="color:${cor};">TOTAL ${titulo}</strong>
-            <span style="font-weight:700;color:${cor};">R$ ${itens.reduce((a,b)=>a+b.valor,0).toFixed(2)}</span>
+            <span style="font-weight:700;color:${cor};">R$ ${itens.reduce((a, b) => a + b.valor, 0).toFixed(2)}</span>
         </div>
     `;
 
-    const divPecas = document.createElement('div');
-    divPecas.innerHTML = geraTabela('PEÇAS', pecasTodas, '#0056b3');
-    const divServicos = document.createElement('div');
-    divServicos.innerHTML = geraTabela('SERVIÇOS', servicosTodos, '#e41616');
+  const divPecas = document.createElement('div');
+  divPecas.innerHTML = geraTabela('PEÇAS', pecasTodas, '#0056b3');
+  const divServicos = document.createElement('div');
+  divServicos.innerHTML = geraTabela('SERVIÇOS', servicosTodos, '#e41616');
 
-    divGrid.appendChild(divPecas);
-    divGrid.appendChild(divServicos);
-    containerTabelas.appendChild(divGrid);
+  divGrid.appendChild(divPecas);
+  divGrid.appendChild(divServicos);
+  containerTabelas.appendChild(divGrid);
 
-    const textoRodape = `Checklist gerado por ${document.getElementById('nome-oficina')?.textContent || 'Oficina'} CNPJ ${document.getElementById('cnpj-oficina')?.textContent || ''} - ${new Date().toLocaleString('pt-BR')}`;
-    const rod1 = document.getElementById('rodape-texto-1');
-    const rod2 = document.getElementById('rodape-texto-2');
-    if (rod1) rod1.textContent = textoRodape;
-    if (rod2) rod2.textContent = textoRodape;
-    
-    const headerPag2 = document.getElementById('header-pag2');
-    if(headerPag2) headerPag2.innerHTML = document.getElementById('template-cabecalho').innerHTML;
+  const textoRodape = `Checklist gerado por ${document.getElementById('nome-oficina')?.textContent || 'Oficina'} CNPJ ${document.getElementById('cnpj-oficina')?.textContent || ''} - ${new Date().toLocaleString('pt-BR')}`;
+  const rod1 = document.getElementById('rodape-texto-1');
+  const rod2 = document.getElementById('rodape-texto-2');
+  if (rod1) rod1.textContent = textoRodape;
+  if (rod2) rod2.textContent = textoRodape;
+
+  const headerPag2 = document.getElementById('header-pag2');
+  if (headerPag2) headerPag2.innerHTML = document.getElementById('template-cabecalho').innerHTML;
 }
 
 function renderizarGaleriaResumo() {
-    let galeriaExistente = document.getElementById('galeriaFotosResumo');
-    if (galeriaExistente) galeriaExistente.remove();
+  let galeriaExistente = document.getElementById('galeriaFotosResumo');
+  if (galeriaExistente) galeriaExistente.remove();
 
-    if (!fotosVeiculo || fotosVeiculo.length === 0) return;
+  if (!fotosVeiculo || fotosVeiculo.length === 0) return;
 
-    const fotosParaResumo = fotosVeiculo.slice(0, 5);
+  const fotosParaResumo = fotosVeiculo.slice(0, 5);
 
-    const galeriaDiv = document.createElement('div');
-    galeriaDiv.id = 'galeriaFotosResumo';
-    galeriaDiv.className = 'os-box mt-10';
-    galeriaDiv.innerHTML = '<div class="os-box-title" style="font-size: 10px; padding: 4px 8px;">📸 FOTOS DO VEÍCULO</div>';
+  const galeriaDiv = document.createElement('div');
+  galeriaDiv.id = 'galeriaFotosResumo';
+  galeriaDiv.className = 'os-box mt-10';
+  galeriaDiv.innerHTML =
+    '<div class="os-box-title" style="font-size: 10px; padding: 4px 8px;">📸 FOTOS DO VEÍCULO</div>';
 
-    const gridFotos = document.createElement('div');
-    gridFotos.style.cssText = `display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-top: 6px; padding: 6px;`;
+  const gridFotos = document.createElement('div');
+  gridFotos.style.cssText = `display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-top: 6px; padding: 6px;`;
 
-    fotosParaResumo.forEach((foto, index) => {
-        const fotoContainer = document.createElement('div');
-        fotoContainer.style.cssText = `position: relative; cursor: pointer; border: 1px solid #e41616; border-radius: 4px; overflow: hidden; aspect-ratio: 1;`;
+  fotosParaResumo.forEach((foto, index) => {
+    const fotoContainer = document.createElement('div');
+    fotoContainer.style.cssText = `position: relative; cursor: pointer; border: 1px solid #e41616; border-radius: 4px; overflow: hidden; aspect-ratio: 1;`;
 
-        const img = document.createElement('img');
-        img.src = foto.dataURL;
-        img.alt = `Foto ${index + 1}`;
-        img.style.cssText = `width: 100%; height: 100%; object-fit: cover;`;
+    const img = document.createElement('img');
+    img.src = foto.dataURL;
+    img.alt = `Foto ${index + 1}`;
+    img.style.cssText = `width: 100%; height: 100%; object-fit: cover;`;
 
-        fotoContainer.onclick = () => abrirFotoGrande(foto.dataURL);
+    fotoContainer.onclick = () => abrirFotoGrande(foto.dataURL);
 
-        const zoomIcon = document.createElement('div');
-        zoomIcon.innerHTML = '🔍';
-        zoomIcon.style.cssText = `position: absolute; bottom: 2px; right: 2px; background: rgba(0,0,0,0.7); color: white; padding: 2px 4px; border-radius: 3px; font-size: 8px;`;
+    const zoomIcon = document.createElement('div');
+    zoomIcon.innerHTML = '🔍';
+    zoomIcon.style.cssText = `position: absolute; bottom: 2px; right: 2px; background: rgba(0,0,0,0.7); color: white; padding: 2px 4px; border-radius: 3px; font-size: 8px;`;
 
-        fotoContainer.appendChild(img);
-        fotoContainer.appendChild(zoomIcon);
-        gridFotos.appendChild(fotoContainer);
-    });
+    fotoContainer.appendChild(img);
+    fotoContainer.appendChild(zoomIcon);
+    gridFotos.appendChild(fotoContainer);
+  });
 
-    galeriaDiv.appendChild(gridFotos);
+  galeriaDiv.appendChild(gridFotos);
 
-    const assinaturas = document.getElementById('template-assinaturas');
-    if (assinaturas && assinaturas.parentNode) {
-        assinaturas.parentNode.insertBefore(galeriaDiv, assinaturas);
-    }
+  const assinaturas = document.getElementById('template-assinaturas');
+  if (assinaturas && assinaturas.parentNode) {
+    assinaturas.parentNode.insertBefore(galeriaDiv, assinaturas);
+  }
 }
 
 function gerarPDFResumo() {
   atualizarResumoOS();
-  document.querySelectorAll('.no-pdf').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.no-pdf').forEach(el => (el.style.display = 'none'));
   const elemento = document.getElementById('resumoContainer');
 
   const opt = {
@@ -1403,154 +1511,184 @@ function gerarPDFResumo() {
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, scrollY: 0, backgroundColor: '#ffffff' },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    pagebreak: { mode: ['css', 'legacy'] }
+    pagebreak: { mode: ['css', 'legacy'] },
   };
 
-  html2pdf().set(opt).from(elemento).save()
-    .then(() => { document.querySelectorAll('.no-pdf').forEach(el => el.style.display = ''); })
-    .catch(() => { document.querySelectorAll('.no-pdf').forEach(el => el.style.display = ''); });
+  html2pdf()
+    .set(opt)
+    .from(elemento)
+    .save()
+    .then(() => {
+      document.querySelectorAll('.no-pdf').forEach(el => (el.style.display = ''));
+    })
+    .catch(() => {
+      document.querySelectorAll('.no-pdf').forEach(el => (el.style.display = ''));
+    });
 }
 
 function gerarPDF() {
-    const elemento = document.querySelector('.container');
-    const originalBodyOverflow = document.body.style.overflow;
-    const originalBodyPadding = document.body.style.padding;
-    const originalContainerMargin = elemento.style.margin;
-    const originalContainerBoxShadow = elemento.style.boxShadow;
+  const elemento = document.querySelector('.container');
+  const originalBodyOverflow = document.body.style.overflow;
+  const originalBodyPadding = document.body.style.padding;
+  const originalContainerMargin = elemento.style.margin;
+  const originalContainerBoxShadow = elemento.style.boxShadow;
 
-    window.scrollTo(0, 0);
-    document.body.style.overflow = 'visible';
-    document.body.style.padding = '0';
-    elemento.style.margin = '0 auto';
-    elemento.style.boxShadow = 'none';
+  window.scrollTo(0, 0);
+  document.body.style.overflow = 'visible';
+  document.body.style.padding = '0';
+  elemento.style.margin = '0 auto';
+  elemento.style.boxShadow = 'none';
 
-    const botoes = document.querySelectorAll('button, .tabs, .header-badge, .action-buttons');
-    botoes.forEach(btn => btn.style.display = 'none');
-    
-    const rodape = document.querySelector('.os-footer');
-    rodape.style.display = 'block !important';
+  const botoes = document.querySelectorAll('button, .tabs, .header-badge, .action-buttons');
+  botoes.forEach(btn => (btn.style.display = 'none'));
 
-    const opt = {
-        margin: [10, 15, 10, 15],
-        filename: 'Checklist-' + document.getElementById('placa').value + '.pdf',
-        image: { type: 'jpeg', quality: 0.95 },
-        html2canvas: { scale: 1.5, useCORS: true, letterRendering: true, allowTaint: true, width: 794, height: 1123 },
-        jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-    };
+  const rodape = document.querySelector('.os-footer');
+  rodape.style.display = 'block !important';
 
-    html2pdf().set(opt).from(elemento).save().then(() => {
-        botoes.forEach(btn => btn.style.display = '');
-        document.querySelector('.tabs').style.display = 'flex';
-        document.querySelector('.header-badge').style.display = 'block';
-        document.querySelectorAll('.action-buttons').forEach(ab => ab.style.display = 'flex');
-        document.body.style.overflow = originalBodyOverflow;
-        document.body.style.padding = originalBodyPadding;
-        elemento.style.margin = originalContainerMargin;
-        elemento.style.boxShadow = originalContainerBoxShadow;
-    }).catch(err => {
-        console.error(err);
-        alert("Erro ao gerar PDF.");
-        botoes.forEach(btn => btn.style.display = '');
-        document.body.style.overflow = originalBodyOverflow;
+  const opt = {
+    margin: [10, 15, 10, 15],
+    filename: 'Checklist-' + document.getElementById('placa').value + '.pdf',
+    image: { type: 'jpeg', quality: 0.95 },
+    html2canvas: {
+      scale: 1.5,
+      useCORS: true,
+      letterRendering: true,
+      allowTaint: true,
+      width: 794,
+      height: 1123,
+    },
+    jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
+  };
+
+  html2pdf()
+    .set(opt)
+    .from(elemento)
+    .save()
+    .then(() => {
+      botoes.forEach(btn => (btn.style.display = ''));
+      document.querySelector('.tabs').style.display = 'flex';
+      document.querySelector('.header-badge').style.display = 'block';
+      document.querySelectorAll('.action-buttons').forEach(ab => (ab.style.display = 'flex'));
+      document.body.style.overflow = originalBodyOverflow;
+      document.body.style.padding = originalBodyPadding;
+      elemento.style.margin = originalContainerMargin;
+      elemento.style.boxShadow = originalContainerBoxShadow;
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Erro ao gerar PDF.');
+      botoes.forEach(btn => (btn.style.display = ''));
+      document.body.style.overflow = originalBodyOverflow;
     });
 }
 
 function showStep(stepNumber) {
-    document.querySelectorAll('.wizard-step').forEach(el => el.classList.remove('active'));
-    document.getElementById('step' + stepNumber).classList.add('active');
-    document.querySelectorAll('.step-indicator').forEach(el => {
-        el.classList.remove('active');
-        if (el.dataset.step == stepNumber) el.classList.add('active');
-    });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  document.querySelectorAll('.wizard-step').forEach(el => el.classList.remove('active'));
+  document.getElementById('step' + stepNumber).classList.add('active');
+  document.querySelectorAll('.step-indicator').forEach(el => {
+    el.classList.remove('active');
+    if (el.dataset.step == stepNumber) el.classList.add('active');
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function nextStep(step) {
-    if (step === 2) {
-        const placa = document.getElementById('placa').value;
-        if (!placa) {
-            alert('⚠️ Por favor, digite a PLACA antes de continuar.');
-            document.getElementById('placa').focus();
-            return;
-        }
+  if (step === 2) {
+    const placa = document.getElementById('placa').value;
+    if (!placa) {
+      alert('⚠️ Por favor, digite a PLACA antes de continuar.');
+      document.getElementById('placa').focus();
+      return;
     }
-    showStep(step);
+  }
+  showStep(step);
 }
 
-function prevStep(step) { showStep(step); }
+function prevStep(step) {
+  showStep(step);
+}
 
 // ==========================================
 // 🆕 PREENCHER DATA/HORA AUTOMÁTICO
 // ==========================================
 
 function preencherDataHoraAtual() {
-    const agora = new Date();
-    
-    // Data no formato YYYY-MM-DD (input date)
-    const ano = agora.getFullYear();
-    const mes = String(agora.getMonth() + 1).padStart(2, '0');
-    const dia = String(agora.getDate()).padStart(2, '0');
-    const dataFormatada = `${ano}-${mes}-${dia}`;
-    
-    // Hora no formato HH:MM (input time)
-    const hora = String(agora.getHours()).padStart(2, '0');
-    const minuto = String(agora.getMinutes()).padStart(2, '0');
-    const horaFormatada = `${hora}:${minuto}`;
-    
-    // Preencher campos
-    const campoData = document.getElementById('data');
-    const campoHora = document.getElementById('hora');
-    
-    if (campoData && !campoData.value) {
-        campoData.value = dataFormatada;
-    }
-    
-    if (campoHora && !campoHora.value) {
-        campoHora.value = horaFormatada;
-    }
-    
-    // Atualizar resumos e barra OS
-    atualizarResumoVeiculo();
-    atualizarBarraOS();
+  const agora = new Date();
+
+  // Data no formato YYYY-MM-DD (input date)
+  const ano = agora.getFullYear();
+  const mes = String(agora.getMonth() + 1).padStart(2, '0');
+  const dia = String(agora.getDate()).padStart(2, '0');
+  const dataFormatada = `${ano}-${mes}-${dia}`;
+
+  // Hora no formato HH:MM (input time)
+  const hora = String(agora.getHours()).padStart(2, '0');
+  const minuto = String(agora.getMinutes()).padStart(2, '0');
+  const horaFormatada = `${hora}:${minuto}`;
+
+  // Preencher campos
+  const campoData = document.getElementById('data');
+  const campoHora = document.getElementById('hora');
+
+  if (campoData && !campoData.value) {
+    campoData.value = dataFormatada;
+  }
+
+  if (campoHora && !campoHora.value) {
+    campoHora.value = horaFormatada;
+  }
+
+  // Atualizar resumos e barra OS
+  atualizarResumoVeiculo();
+  atualizarBarraOS();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   // 🆕 PREENCHER DATA/HORA AUTOMATICAMENTE AO CARREGAR
   preencherDataHoraAtual();
-  
+
   renderizarGaleria();
   atualizarBarraOS();
 
-  const descricaoItem = document.getElementById("descricaoItem");
-  const valorItem = document.getElementById("valorItem");
+  const descricaoItem = document.getElementById('descricaoItem');
+  const valorItem = document.getElementById('valorItem');
 
   if (descricaoItem) {
-    descricaoItem.addEventListener("keydown", function (event) {
-      if (event.key !== "Enter" || event.shiftKey) return;
+    descricaoItem.addEventListener('keydown', function (event) {
+      if (event.key !== 'Enter' || event.shiftKey) return;
       event.preventDefault();
       if (valorItem) valorItem.focus();
     });
   }
 
   if (valorItem) {
-    valorItem.addEventListener("keydown", function (event) {
-      if (event.key !== "Enter") return;
+    valorItem.addEventListener('keydown', function (event) {
+      if (event.key !== 'Enter') return;
       event.preventDefault();
       adicionarItemManual();
       setTimeout(() => descricaoItem && descricaoItem.focus(), 0);
     });
   }
-  
-  const camposMonitorados = ['placa', 'modelo', 'chassi', 'km_entrada', 'data', 'hora', 'combustivel', 'complexidade'];
+
+  const camposMonitorados = [
+    'placa',
+    'modelo',
+    'chassi',
+    'km_entrada',
+    'data',
+    'hora',
+    'combustivel',
+    'complexidade',
+  ];
   camposMonitorados.forEach(id => {
-      const el = document.getElementById(id);
-      if(el) el.addEventListener('input', atualizarResumoVeiculo);
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', atualizarResumoVeiculo);
   });
-  
+
   document.getElementById('placa')?.addEventListener('input', atualizarBarraOS);
   document.getElementById('data')?.addEventListener('input', atualizarBarraOS);
-  
+
   // ✅ Log de inicialização
   console.log('🔥 Sistema Multi-tenant inicializado');
   console.log('📍 Oficina ID:', OFICINA_ID);

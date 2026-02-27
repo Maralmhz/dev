@@ -2,7 +2,6 @@
   if (window.__gestaoV2Loaded) return;
   window.__gestaoV2Loaded = true;
 
-
   const ETAPAS_PADRAO = [
     'mecanica',
     'lanternagem',
@@ -14,7 +13,6 @@
   ];
   let inicializado = false;
   let rafId = null;
-
 
   function obterOS() {
     return typeof window.carregarOS === 'function' ? window.carregarOS() : [];
@@ -88,7 +86,13 @@
         info.appendChild(progress);
       }
       card.title = `Cliente: ${os.nome_cliente || '-'}\nPlaca: ${os.placa || '-'}\nEntrada: ${new Date(os.data_prevista_entrada).toLocaleString('pt-BR')}`;
-      card.addEventListener('dblclick', () => abrirModalAcompanhamento(os.id), { once: true });
+      card.addEventListener('click', () => {
+        if (window.editarOS) {
+          window.editarOS(os.id);
+          return;
+        }
+        abrirModalAcompanhamento(os.id);
+      });
     });
   }
 

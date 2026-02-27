@@ -19,13 +19,13 @@ const ETAPAS = [
   { id: 'pintura', nome: 'Pintura', icon: '🖌️' },
   { id: 'eletrica', nome: 'Elétrica', icon: '⚡' },
   { id: 'montagem', nome: 'Montagem', icon: '🔩' },
-  { id: 'finalizacao', nome: 'Finalização', icon: '✅' }
+  { id: 'finalizacao', nome: 'Finalização', icon: '✅' },
 ];
 
 const PRIORIDADES = {
   urgente: { nome: 'Urgente', cor: '🔴', class: 'prioridade-urgente' },
   normal: { nome: 'Normal', cor: '🟡', class: 'prioridade-normal' },
-  baixa: { nome: 'Baixa', cor: '🟢', class: 'prioridade-baixa' }
+  baixa: { nome: 'Baixa', cor: '🟢', class: 'prioridade-baixa' },
 };
 
 let visualizacaoAtual = 'hoje'; // hoje, semana, mes, ano
@@ -83,16 +83,15 @@ function novoOS(placa = '', cliente = '') {
       parcelado: false,
       num_parcelas: 1,
       valor_parcela: 0,
-      historico_pagamentos: []
+      historico_pagamentos: [],
     },
     observacoes: '',
     checklist_id: null,
     atrasado: false,
     nao_compareceu: false,
-    historico_etapas: [] // [{etapa, data, usuario}]
+    historico_etapas: [], // [{etapa, data, usuario}]
   };
 }
-
 
 function normalizarIdOS(valor) {
   if (window.CoreUtils?.normalizeId) return window.CoreUtils.normalizeId(valor);
@@ -120,11 +119,12 @@ function buscarChecklistRecentePorPlaca(placa) {
   const chave = `checklists_${oficinaId}`;
   const lista = JSON.parse(localStorage.getItem(chave) || '[]');
 
-  return lista
-    .filter(item => (item.placa || '').toUpperCase().trim() === placaNormalizada)
-    .sort((a, b) => new Date(b.data_criacao || 0) - new Date(a.data_criacao || 0))[0] || null;
+  return (
+    lista
+      .filter(item => (item.placa || '').toUpperCase().trim() === placaNormalizada)
+      .sort((a, b) => new Date(b.data_criacao || 0) - new Date(a.data_criacao || 0))[0] || null
+  );
 }
-
 
 function buscarChecklistRecentePorCampo(campo, valor) {
   const valorBusca = normalizarIdOS(valor);
@@ -134,9 +134,11 @@ function buscarChecklistRecentePorCampo(campo, valor) {
   const chave = `checklists_${oficinaId}`;
   const lista = JSON.parse(localStorage.getItem(chave) || '[]');
 
-  return lista
-    .filter(item => normalizarIdOS(item[campo]) === valorBusca)
-    .sort((a, b) => new Date(b.data_criacao || 0) - new Date(a.data_criacao || 0))[0] || null;
+  return (
+    lista
+      .filter(item => normalizarIdOS(item[campo]) === valorBusca)
+      .sort((a, b) => new Date(b.data_criacao || 0) - new Date(a.data_criacao || 0))[0] || null
+  );
 }
 
 // ==========================================
@@ -162,30 +164,30 @@ function salvarOSInternal(os) {
     os.id = gerarIdOS();
   }
   const idx = lista.findIndex(o => normalizarIdOS(o.id) === normalizarIdOS(os.id));
-  
+
   if (idx > -1) {
     lista[idx] = os;
   } else {
     lista.unshift(os);
   }
-  
+
   localStorage.setItem(OS_AGENDA_KEY, JSON.stringify(lista));
   atualizarBadgeAlertas();
 }
 
 function carregarOSInternal(filtro = null) {
   let lista = JSON.parse(localStorage.getItem(OS_AGENDA_KEY) || '[]');
-  
+
   if (filtro) {
     return lista.filter(filtro);
   }
-  
+
   return lista;
 }
 
 function excluirOSInternal(id) {
   if (!confirm('🗑️ Tem certeza que deseja excluir esta OS?')) return;
-  
+
   let lista = carregarOSInternal().filter(o => normalizarIdOS(o.id) !== normalizarIdOS(id));
   localStorage.setItem(OS_AGENDA_KEY, JSON.stringify(lista));
   renderizarVisao();
@@ -198,59 +200,59 @@ function excluirOSInternal(id) {
 
 // Função para buscar e destacar OS específica (ex: vinda do calendário ou semana)
 function abrirDetalhesOSInternal(placaOuId) {
-    mudarVisualizacaoInternal('hoje');
+  mudarVisualizacaoInternal('hoje');
 
-    setTimeout(() => {
-        let card = null;
-        const idNormalizado = normalizarIdOS(placaOuId);
-        card = document.querySelector(`.os-card[data-id="${idNormalizado}"]`);
+  setTimeout(() => {
+    let card = null;
+    const idNormalizado = normalizarIdOS(placaOuId);
+    card = document.querySelector(`.os-card[data-id="${idNormalizado}"]`);
 
-        if (!card) {
-            const placaBusca = String(placaOuId || '').toUpperCase();
-            const cards = document.querySelectorAll('.os-card');
-            for (let c of cards) {
-                if (c.textContent.toUpperCase().includes(placaBusca)) {
-                    card = c;
-                    break;
-                }
-            }
+    if (!card) {
+      const placaBusca = String(placaOuId || '').toUpperCase();
+      const cards = document.querySelectorAll('.os-card');
+      for (let c of cards) {
+        if (c.textContent.toUpperCase().includes(placaBusca)) {
+          card = c;
+          break;
         }
+      }
+    }
 
-        if (card) {
-            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            card.style.transition = 'all 0.3s ease';
-            card.style.transform = 'scale(1.05)';
-            card.style.boxShadow = '0 0 20px var(--color-primary)';
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.style.transition = 'all 0.3s ease';
+      card.style.transform = 'scale(1.05)';
+      card.style.boxShadow = '0 0 20px var(--color-primary)';
 
-            setTimeout(() => {
-                card.style.transform = 'scale(1)';
-                card.style.boxShadow = '';
-            }, 1500);
-        } else {
-            mostrarNotificacao(`OS ${placaOuId} não encontrada na visão de hoje.`, 'warning');
-        }
-    }, 120);
+      setTimeout(() => {
+        card.style.transform = 'scale(1)';
+        card.style.boxShadow = '';
+      }, 1500);
+    } else {
+      mostrarNotificacao(`OS ${placaOuId} não encontrada na visão de hoje.`, 'warning');
+    }
+  }, 120);
 }
 
 // Navegação rápida ao clicar nos blocos de resumo do topo
 function irParaColunaKanbanInternal(tipo) {
-    filtroKanbanAtivo = tipo === 'todos' ? null : tipo;
-    mudarVisualizacaoInternal('hoje');
+  filtroKanbanAtivo = tipo === 'todos' ? null : tipo;
+  mudarVisualizacaoInternal('hoje');
 
-    setTimeout(() => {
-        if (tipo === 'atrasados' || tipo === 'nao_chegaram') {
-            const cardProblema = document.querySelector('.os-card.atrasado, .os-card.nao-chegou');
-            if (cardProblema) {
-                cardProblema.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                return;
-            }
-        }
+  setTimeout(() => {
+    if (tipo === 'atrasados' || tipo === 'nao_chegaram') {
+      const cardProblema = document.querySelector('.os-card.atrasado, .os-card.nao-chegou');
+      if (cardProblema) {
+        cardProblema.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+    }
 
-        const mapa = { agendado: 'agendados', em_andamento: 'em_andamento', finalizado: 'finalizados' };
-        const alvoId = mapa[tipo];
-        const coluna = alvoId ? document.getElementById(alvoId) : null;
-        if (coluna) coluna.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 120);
+    const mapa = { agendado: 'agendados', em_andamento: 'em_andamento', finalizado: 'finalizados' };
+    const alvoId = mapa[tipo];
+    const coluna = alvoId ? document.getElementById(alvoId) : null;
+    if (coluna) coluna.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 120);
 }
 
 // ==========================================
@@ -260,9 +262,10 @@ function irParaColunaKanbanInternal(tipo) {
 function calcularAlertas(os) {
   const agora = new Date();
   const previstaSaida = new Date(os.data_prevista_saida);
-  
-  os.atrasado = os.status_geral !== 'finalizado' && os.status_geral !== 'cancelado' && agora > previstaSaida;
-  
+
+  os.atrasado =
+    os.status_geral !== 'finalizado' && os.status_geral !== 'cancelado' && agora > previstaSaida;
+
   if (os.status_geral === 'agendado') {
     const previstaEntrada = new Date(os.data_prevista_entrada);
     const atrasoEntrada = agora.getTime() - previstaEntrada.getTime();
@@ -270,7 +273,7 @@ function calcularAlertas(os) {
   } else {
     os.nao_compareceu = false;
   }
-  
+
   return os;
 }
 
@@ -279,22 +282,24 @@ function calcularEstatisticas(listaOS) {
   const finalizados = listaOS.filter(os => os.status_geral === 'finalizado').length;
   const atrasados = listaOS.filter(os => os.atrasado).length;
   const emAndamento = listaOS.filter(os => os.status_geral === 'em_andamento').length;
-  
+
   const temposMedios = {};
   ETAPAS.forEach(etapa => {
     const osEtapa = listaOS.filter(os => os.etapa_atual === etapa.id && os.tempo_real_min);
     if (osEtapa.length > 0) {
-      temposMedios[etapa.id] = Math.round(osEtapa.reduce((acc, os) => acc + os.tempo_real_min, 0) / osEtapa.length);
+      temposMedios[etapa.id] = Math.round(
+        osEtapa.reduce((acc, os) => acc + os.tempo_real_min, 0) / osEtapa.length
+      );
     }
   });
-  
+
   return {
     total,
     finalizados,
     atrasados,
     emAndamento,
     taxaConclusao: total > 0 ? Math.round((finalizados / total) * 100) : 0,
-    temposMedios
+    temposMedios,
   };
 }
 
@@ -303,44 +308,45 @@ function calcularEstatisticas(listaOS) {
 // ==========================================
 
 function buscarOSPorPlaca(placa) {
-  return carregarOSInternal(os => 
-    os.placa === placa.toUpperCase() && 
-    (os.status_geral === 'agendado' || os.status_geral === 'em_andamento')
+  return carregarOSInternal(
+    os =>
+      os.placa === placa.toUpperCase() &&
+      (os.status_geral === 'agendado' || os.status_geral === 'em_andamento')
   )[0];
 }
 
 async function vincularChecklistOS(osId, checklistId) {
   const os = carregarOSInternal().find(o => normalizarIdOS(o.id) === normalizarIdOS(osId));
   if (!os) return;
-  
+
   os.checklist_id = checklistId;
   if (os.status_geral === 'agendado') {
     os.status_geral = 'em_andamento';
     os.data_entrada_real = new Date().toISOString();
   }
-  
+
   await persistirOS(os);
 }
 
 // Hook no formulário de checklist (adicionar no app.js)
 if (typeof window !== 'undefined') {
-  window.verificarOSExistente = function(placa) {
+  window.verificarOSExistente = function (placa) {
     const os = buscarOSPorPlaca(placa);
     if (os) {
       const vincular = confirm(
         `🔗 Encontramos uma OS para esta placa:\n\n` +
-        `Cliente: ${os.nome_cliente}\n` +
-        `Status: ${os.status_geral}\n` +
-        `Etapa: ${formatarEtapa(os.etapa_atual)}\n\n` +
-        `Deseja vincular ao checklist?`
+          `Cliente: ${os.nome_cliente}\n` +
+          `Status: ${os.status_geral}\n` +
+          `Etapa: ${formatarEtapa(os.etapa_atual)}\n\n` +
+          `Deseja vincular ao checklist?`
       );
-      
+
       if (vincular) {
         // Preencher dados automaticamente
         if (os.nome_cliente) document.getElementById('nome_cliente').value = os.nome_cliente;
         if (os.telefone) document.getElementById('celular_cliente').value = os.telefone;
         if (os.modelo) document.getElementById('modelo').value = os.modelo;
-        
+
         return os.id;
       }
     }
@@ -355,7 +361,7 @@ if (typeof window !== 'undefined') {
 function renderizarPainelControle() {
   const container = document.getElementById('painel-controle');
   if (!container) return;
-  
+
   container.innerHTML = `
     <div class="painel-botoes">
       <button class="btn-painel ${visualizacaoAtual === 'hoje' ? 'active' : ''}" onclick="mudarVisualizacao('hoje')">
@@ -412,35 +418,35 @@ function renderizarKanban() {
   if (['agendado', 'em_andamento', 'finalizado'].includes(filtroKanbanAtivo)) {
     osHoje = osHoje.filter(os => os.status_geral === filtroKanbanAtivo);
   }
-  
+
   const kanbanContainer = document.getElementById('kanban-view');
   if (!kanbanContainer) return;
-  
+
   kanbanContainer.style.display = 'flex';
   document.getElementById('semana-view')?.remove();
   document.getElementById('mes-view')?.remove();
   document.getElementById('ano-view')?.remove();
-  
+
   const statusMap = {
-    'agendado': { id: 'agendados', titulo: '📅 Agendados Hoje' },
-    'em_andamento': { id: 'em_andamento', titulo: '🔧 Em Andamento' },
-    'finalizado': { id: 'finalizados', titulo: '✅ Finalizados Hoje' }
+    agendado: { id: 'agendados', titulo: '📅 Agendados Hoje' },
+    em_andamento: { id: 'em_andamento', titulo: '🔧 Em Andamento' },
+    finalizado: { id: 'finalizados', titulo: '✅ Finalizados Hoje' },
   };
-  
+
   Object.entries(statusMap).forEach(([status, config]) => {
     const container = document.getElementById(config.id);
     if (!container) return;
-    
+
     const filtrados = osHoje.filter(os => os.status_geral === status);
-    
+
     if (filtrados.length === 0) {
       container.innerHTML = '<div class="empty-card">📭 Vazio</div>';
       return;
     }
-    
+
     container.innerHTML = filtrados.map(os => renderizarCardOS(os)).join('');
   });
-  
+
   atualizarResumoTopo(osHoje);
 }
 
@@ -448,12 +454,12 @@ function renderizarCardOS(os) {
   // ✅ FIX: Validação robusta da prioridade
   const prioridadeKey = os.prioridade || 'normal';
   const prioridade = PRIORIDADES[prioridadeKey] || PRIORIDADES['normal'];
-  
+
   if (!prioridade) {
     console.error(`❌ Prioridade inválida: ${os.prioridade}`, os);
     return '<div class="os-card error">❌ Erro ao renderizar OS</div>';
   }
-  
+
   return `
     <div class="os-card ${os.atrasado ? 'atrasado' : ''} ${os.nao_compareceu ? 'nao-chegou' : ''} ${prioridade.class}" data-id="${normalizarIdOS(os.id)}">
       <div class="os-header" style="cursor:pointer;" onclick="editarOS(${buildOnclickId(os.id)})" title="Clique para editar">
@@ -464,19 +470,21 @@ function renderizarCardOS(os) {
       <div class="os-info" style="cursor:pointer;" onclick="editarOS(${buildOnclickId(os.id)})" title="Clique para editar">
         <div class="os-cliente">👤 ${os.nome_cliente || 'Cliente não informado'}</div>
         ${os.modelo ? `<div class="os-modelo">🚗 ${os.modelo}</div>` : ''}
-        <div class="os-horario">⏰ ${new Date(os.data_prevista_entrada).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}</div>
+        <div class="os-horario">⏰ ${new Date(os.data_prevista_entrada).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
         
         <div class="os-etapa-selector" onclick="event.stopPropagation();">
           <button class="btn-etapa" onclick="toggleDropdownEtapa(${buildOnclickId(os.id)}, event)">
             ${obterIconeEtapa(os.etapa_atual)} ${formatarEtapa(os.etapa_atual)} ▼
           </button>
           <div class="dropdown-etapas" id="dropdown-${os.id}" style="display: none;">
-            ${ETAPAS.map(etapa => `
+            ${ETAPAS.map(
+              etapa => `
               <div class="dropdown-item ${os.etapa_atual === etapa.id ? 'active' : ''}" 
                    onclick="mudarEtapa(${buildOnclickId(os.id)}, '${etapa.id}')">
                 ${etapa.icon} ${etapa.nome}
               </div>
-            `).join('')}
+            `
+            ).join('')}
           </div>
         </div>
         
@@ -506,15 +514,15 @@ function formatarEtapa(etapaId) {
 // Dropdown de etapas
 function toggleDropdownEtapaInternal(osId, event) {
   event.stopPropagation();
-  
+
   const dropdown = document.getElementById(`dropdown-${osId}`);
   const todosDropdowns = document.querySelectorAll('.dropdown-etapas');
-  
+
   // Fechar outros
   todosDropdowns.forEach(d => {
     if (d.id !== `dropdown-${osId}`) d.style.display = 'none';
   });
-  
+
   // Toggle atual
   dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
 }
@@ -522,17 +530,17 @@ function toggleDropdownEtapaInternal(osId, event) {
 async function mudarEtapaInternal(osId, novaEtapa) {
   const os = carregarOSInternal().find(o => normalizarIdOS(o.id) === normalizarIdOS(osId));
   if (!os) return;
-  
+
   os.etapa_atual = novaEtapa;
   os.historico_etapas.push({
     etapa: novaEtapa,
-    data: new Date().toISOString()
+    data: new Date().toISOString(),
   });
-  
+
   await persistirOS(os);
   renderizarVisao();
   mostrarNotificacao(`🔄 Movido para ${formatarEtapa(novaEtapa)}`, 'info');
-  
+
   // Fechar dropdown
   document.getElementById(`dropdown-${osId}`).style.display = 'none';
 }
@@ -540,7 +548,7 @@ async function mudarEtapaInternal(osId, novaEtapa) {
 // Fechar dropdowns ao clicar fora
 if (typeof document !== 'undefined') {
   document.addEventListener('click', () => {
-    document.querySelectorAll('.dropdown-etapas').forEach(d => d.style.display = 'none');
+    document.querySelectorAll('.dropdown-etapas').forEach(d => (d.style.display = 'none'));
   });
 }
 
@@ -551,36 +559,36 @@ if (typeof document !== 'undefined') {
 function renderizarPainelSemana() {
   const kanban = document.getElementById('kanban-view');
   if (kanban) kanban.style.display = 'none';
-  
+
   let semanaView = document.getElementById('semana-view');
   if (!semanaView) {
     semanaView = document.createElement('div');
     semanaView.id = 'semana-view';
     document.getElementById('gestao-oficina').querySelector('.content')?.appendChild(semanaView);
   }
-  
+
   const hoje = new Date();
   const diasSemana = [];
-  
+
   for (let i = 0; i < 7; i++) {
     const dia = new Date(hoje);
     dia.setDate(hoje.getDate() - hoje.getDay() + i);
     diasSemana.push(dia);
   }
-  
+
   let html = '<div class="painel-semana">';
-  
+
   diasSemana.forEach(dia => {
-    const osdia = carregarOSInternal().filter(os => 
-      new Date(os.data_prevista_entrada).toDateString() === dia.toDateString()
-    ).map(calcularAlertas);
-    
+    const osdia = carregarOSInternal()
+      .filter(os => new Date(os.data_prevista_entrada).toDateString() === dia.toDateString())
+      .map(calcularAlertas);
+
     // Ocultar dias passados se estiverem vazios para economizar espaço
     const isPassado = dia < hoje && dia.toDateString() !== hoje.toDateString();
     if (isPassado && osdia.length === 0) return; // Pula este dia do loop
-    
+
     const isHoje = dia.toDateString() === hoje.toDateString();
-    
+
     html += `
       <div class="dia-card ${isHoje ? 'dia-hoje' : ''}">
         <div class="dia-header" ${isHoje ? 'style="cursor:pointer;" onclick="mudarVisualizacao(\'hoje\')"' : ''}>
@@ -597,16 +605,21 @@ function renderizarPainelSemana() {
             <span class="stat-label">⚠️</span>
           </div>
         </div>
-        ${osdia.slice(0, 3).map(os => `
+        ${osdia
+          .slice(0, 3)
+          .map(
+            os => `
           <div class="dia-os-mini" style="cursor:pointer;" onclick='abrirDetalhesOS(${buildOnclickId(os.id)})' title="Ir para OS">
             ${os.placa} ${os.atrasado ? '🔴' : ''}
           </div>
-        `).join('')}
+        `
+          )
+          .join('')}
         ${osdia.length > 3 ? `<div class="dia-mais" style="cursor:pointer;" onclick='abrirDetalhesOS(${buildOnclickId(osdia[3].id)})'>+${osdia.length - 3} mais</div>` : ''}
       </div>
     `;
   });
-  
+
   html += '</div>';
   semanaView.innerHTML = html;
 }
@@ -618,30 +631,32 @@ function renderizarPainelSemana() {
 function renderizarPainelMes() {
   const kanban = document.getElementById('kanban-view');
   if (kanban) kanban.style.display = 'none';
-  
+
   let mesView = document.getElementById('mes-view');
   if (!mesView) {
     mesView = document.createElement('div');
     mesView.id = 'mes-view';
     document.getElementById('gestao-oficina').querySelector('.content')?.appendChild(mesView);
   }
-  
+
   const hoje = new Date();
   const ano = hoje.getFullYear();
   const mes = hoje.getMonth();
-  
+
   const primeiroDia = new Date(ano, mes, 1);
   const ultimoDia = new Date(ano, mes + 1, 0);
   const diasNoMes = ultimoDia.getDate();
   const diaSemanaInicio = primeiroDia.getDay();
-  
-  const osMes = carregarOSInternal().filter(os => {
-    const dataOS = new Date(os.data_prevista_entrada);
-    return dataOS.getMonth() === mes && dataOS.getFullYear() === ano;
-  }).map(calcularAlertas);
-  
+
+  const osMes = carregarOSInternal()
+    .filter(os => {
+      const dataOS = new Date(os.data_prevista_entrada);
+      return dataOS.getMonth() === mes && dataOS.getFullYear() === ano;
+    })
+    .map(calcularAlertas);
+
   const stats = calcularEstatisticas(osMes);
-  
+
   let calendario = '<div class="calendario-mes">';
   calendario += `
     <div class="mes-header">
@@ -663,17 +678,15 @@ function renderizarPainelMes() {
       <div class="dia-semana">Sex</div>
       <div class="dia-semana">Sáb</div>
   `;
-  
+
   for (let i = 0; i < diaSemanaInicio; i++) {
     calendario += '<div class="dia-vazio"></div>';
   }
-  
+
   for (let dia = 1; dia <= diasNoMes; dia++) {
     const data = new Date(ano, mes, dia);
-    const osDia = osMes.filter(os => 
-      new Date(os.data_prevista_entrada).getDate() === dia
-    );
-    
+    const osDia = osMes.filter(os => new Date(os.data_prevista_entrada).getDate() === dia);
+
     const isHoje = data.toDateString() === hoje.toDateString();
     const temOS = osDia.length > 0;
 
@@ -682,7 +695,11 @@ function renderizarPainelMes() {
       continue;
     }
 
-    const onclickDia = temOS ? `onclick='abrirDetalhesOS(${buildOnclickId(osDia[0].id)})'` : (isHoje ? "onclick=\"mudarVisualizacao('hoje')\"" : '');
+    const onclickDia = temOS
+      ? `onclick='abrirDetalhesOS(${buildOnclickId(osDia[0].id)})'`
+      : isHoje
+        ? 'onclick="mudarVisualizacao(\'hoje\')"'
+        : '';
 
     calendario += `
       <div class="dia-calendario ${isHoje ? 'hoje' : ''} ${temOS ? 'tem-os' : ''}"
@@ -692,7 +709,7 @@ function renderizarPainelMes() {
       </div>
     `;
   }
-  
+
   calendario += '</div></div>';
   mesView.innerHTML = calendario;
 }
@@ -704,41 +721,45 @@ function renderizarPainelMes() {
 function renderizarPainelAno() {
   const kanban = document.getElementById('kanban-view');
   if (kanban) kanban.style.display = 'none';
-  
+
   let anoView = document.getElementById('ano-view');
   if (!anoView) {
     anoView = document.createElement('div');
     anoView.id = 'ano-view';
     document.getElementById('gestao-oficina').querySelector('.content')?.appendChild(anoView);
   }
-  
+
   const anoAtual = new Date().getFullYear();
   const meses = [];
-  
+
   for (let mes = 0; mes < 12; mes++) {
-    const osMes = carregarOSInternal().filter(os => {
-      const data = new Date(os.data_prevista_entrada);
-      return data.getMonth() === mes && data.getFullYear() === anoAtual;
-    }).map(calcularAlertas);
-    
+    const osMes = carregarOSInternal()
+      .filter(os => {
+        const data = new Date(os.data_prevista_entrada);
+        return data.getMonth() === mes && data.getFullYear() === anoAtual;
+      })
+      .map(calcularAlertas);
+
     const stats = calcularEstatisticas(osMes);
-    
+
     meses.push({
       nome: new Date(anoAtual, mes, 1).toLocaleDateString('pt-BR', { month: 'short' }),
       total: stats.total,
       finalizados: stats.finalizados,
       atrasados: stats.atrasados,
-      taxa: stats.taxaConclusao
+      taxa: stats.taxaConclusao,
     });
   }
-  
+
   const maxTotal = Math.max(...meses.map(m => m.total), 1);
-  
+
   anoView.innerHTML = `
     <div class="painel-ano">
       <h3>📈 Visão Anual ${anoAtual}</h3>
       <div class="grafico-barras">
-        ${meses.map(mes => `
+        ${meses
+          .map(
+            mes => `
           <div class="barra-container" style="cursor:pointer;" onclick="mudarVisualizacao('mes')" title="Abrir Mês">
             <div class="barra" style="height: ${(mes.total / maxTotal) * 200}px">
               <div class="barra-fill"></div>
@@ -746,7 +767,9 @@ function renderizarPainelAno() {
             <div class="barra-valor">${mes.total}</div>
             <div class="barra-label">${mes.nome}</div>
           </div>
-        `).join('')}
+        `
+          )
+          .join('')}
       </div>
       <div class="ano-resumo">
         <div class="resumo-item">📊 Total Ano: <strong>${meses.reduce((a, m) => a + m.total, 0)}</strong></div>
@@ -764,15 +787,15 @@ function renderizarPainelAno() {
 function atualizarResumoTopo(osHoje) {
   const resumo = document.getElementById('resumoTopo');
   if (!resumo) return;
-  
+
   const counts = {
     agendado: osHoje.filter(o => o.status_geral === 'agendado').length,
     em_andamento: osHoje.filter(o => o.status_geral === 'em_andamento').length,
     atrasados: osHoje.filter(o => o.atrasado).length,
     nao_chegaram: osHoje.filter(o => o.nao_compareceu).length,
-    total: osHoje.length
+    total: osHoje.length,
   };
-  
+
   resumo.innerHTML = `
     <div class="resumo-card" style="cursor:pointer;" onclick="irParaColunaKanban('agendado')" title="Ver agendados">
       <div class="resumo-icon">📅</div>
@@ -809,7 +832,9 @@ function atualizarResumoTopo(osHoje) {
         <div class="resumo-valor">${counts.total}</div>
       </div>
     </div>
-    ${filtroKanbanAtivo ? `
+    ${
+      filtroKanbanAtivo
+        ? `
       <div class="resumo-card" style="cursor:pointer;" onclick="irParaColunaKanban('todos')" title="Limpar filtro">
         <div class="resumo-icon">🧹</div>
         <div class="resumo-info">
@@ -817,7 +842,9 @@ function atualizarResumoTopo(osHoje) {
           <div class="resumo-valor">${filtroKanbanAtivo}</div>
         </div>
       </div>
-    ` : ''}
+    `
+        : ''
+    }
   `;
 }
 
@@ -843,10 +870,14 @@ function editarOSInternal(id) {
 function abrirModalOS(os = null) {
   modalOS = document.createElement('div');
   modalOS.className = 'modal-overlay';
-  
-  const dataEntrada = os ? os.data_prevista_entrada.substring(0, 16) : new Date().toISOString().substring(0, 16);
-  const dataSaida = os ? os.data_prevista_saida.substring(0, 16) : new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().substring(0, 16);
-  
+
+  const dataEntrada = os
+    ? os.data_prevista_entrada.substring(0, 16)
+    : new Date().toISOString().substring(0, 16);
+  const dataSaida = os
+    ? os.data_prevista_saida.substring(0, 16)
+    : new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().substring(0, 16);
+
   modalOS.innerHTML = `
     <div class="modal">
       <h3>${os ? '✏️ Editar' : '➕ Nova'} OS</h3>
@@ -879,11 +910,11 @@ function abrirModalOS(os = null) {
       </div>
     </div>
   `;
-  
+
   document.body.appendChild(modalOS);
   document.getElementById('modal_placa').focus();
-  
-  modalOS.onclick = (e) => {
+
+  modalOS.onclick = e => {
     if (e.target === modalOS) fecharModalInternal();
   };
 }
@@ -903,17 +934,20 @@ async function autocompletarNovaOSInternal() {
   const oficinaAtual = getOficinaAtualId();
   const osLocal = carregarOSInternal().filter(o => (o.oficina_id || 'default') === oficinaAtual);
 
-  const osExistente = osLocal.find(o => (o.placa || '').toUpperCase() === placa) ||
+  const osExistente =
+    osLocal.find(o => (o.placa || '').toUpperCase() === placa) ||
     osLocal.find(o => normalizarIdOS(o.cliente_id) === normalizarIdOS(clienteId)) ||
     osLocal.find(o => normalizarIdOS(o.veiculo_id) === normalizarIdOS(veiculoId));
 
-  const checklistRecente = buscarChecklistRecentePorPlaca(placa) ||
+  const checklistRecente =
+    buscarChecklistRecentePorPlaca(placa) ||
     buscarChecklistRecentePorCampo('cliente_id', clienteId) ||
     buscarChecklistRecentePorCampo('veiculo_id', veiculoId);
 
-  const historico = window.debugOSFirebase?.historicoVeiculo && placa
-    ? await window.debugOSFirebase.historicoVeiculo(placa)
-    : null;
+  const historico =
+    window.debugOSFirebase?.historicoVeiculo && placa
+      ? await window.debugOSFirebase.historicoVeiculo(placa)
+      : null;
 
   const dados = osExistente || checklistRecente || historico;
   if (!dados) return;
@@ -925,26 +959,28 @@ async function autocompletarNovaOSInternal() {
   if (cliente && !cliente.value && dados.nome_cliente) cliente.value = dados.nome_cliente;
   if (telefone && !telefone.value && dados.telefone) telefone.value = dados.telefone;
   if (modelo && !modelo.value && dados.modelo) modelo.value = dados.modelo;
-  if (inputClienteId && !inputClienteId.value && dados.cliente_id) inputClienteId.value = dados.cliente_id;
-  if (inputVeiculoId && !inputVeiculoId.value && dados.veiculo_id) inputVeiculoId.value = dados.veiculo_id;
+  if (inputClienteId && !inputClienteId.value && dados.cliente_id)
+    inputClienteId.value = dados.cliente_id;
+  if (inputVeiculoId && !inputVeiculoId.value && dados.veiculo_id)
+    inputVeiculoId.value = dados.veiculo_id;
 }
 
 async function salvarNovoOSInternal() {
   const placa = document.getElementById('modal_placa').value.trim();
   const cliente = document.getElementById('modal_cliente').value.trim();
-  
+
   if (!placa || !cliente) {
     alert('⚠️ Placa e Nome são obrigatórios!');
     return;
   }
-  
+
   let os;
   if (osEditando) {
     os = osEditando;
   } else {
     os = novoOS(placa, cliente);
   }
-  
+
   os.placa = placa.toUpperCase();
   os.nome_cliente = cliente;
   os.cliente_id = document.getElementById('modal_cliente_id')?.value.trim() || '';
@@ -955,15 +991,27 @@ async function salvarNovoOSInternal() {
   os.data_prevista_entrada = new Date(document.getElementById('modal_entrada').value).toISOString();
   os.data_prevista_saida = new Date(document.getElementById('modal_saida').value).toISOString();
   os.observacoes = document.getElementById('modal_obs').value.trim();
-  
+
+  if (window.FirebaseV2?.upsertClienteAuto) {
+    window.FirebaseV2.upsertClienteAuto({
+      nome: os.nome_cliente,
+      telefone: os.telefone,
+      email: os.email || '',
+      cpf_cnpj: os.cpf_cnpj || '',
+    }).catch(error => console.warn('⚠️ Auto cadastro cliente falhou:', error));
+  }
+
   const resultadoPersistencia = await persistirOS(os);
 
   const modoEdicao = Boolean(osEditando);
   fecharModalInternal();
   renderizarVisao();
-  
+
   if (resultadoPersistencia && resultadoPersistencia.ok) {
-    mostrarNotificacao(modoEdicao ? '✅ OS atualizada e salva!' : '✅ OS criada e salva!', 'success');
+    mostrarNotificacao(
+      modoEdicao ? '✅ OS atualizada e salva!' : '✅ OS criada e salva!',
+      'success'
+    );
   } else {
     mostrarNotificacao('⚠️ OS salva localmente. Verifique sincronização com Firebase.', 'warning');
   }
@@ -988,9 +1036,9 @@ async function acaoOSInternal(id, acao) {
     console.error('OS não encontrada:', id);
     return;
   }
-  
+
   console.log('Ação:', acao, 'OS antes:', os.status_geral);
-  
+
   switch (acao) {
     case 'entrada':
       os.data_entrada_real = new Date().toISOString();
@@ -999,30 +1047,30 @@ async function acaoOSInternal(id, acao) {
         acao: 'entrada',
         data: new Date().toISOString(),
         status_anterior: 'agendado',
-        status_novo: 'em_andamento'
+        status_novo: 'em_andamento',
       });
       console.log('OS depois da entrada:', os.status_geral);
       await persistirOS(os);
       mostrarNotificacao(`🚗 Entrada registrada: ${os.placa}`, 'success');
       break;
-      
+
     case 'finalizar':
       if (confirm(`✅ Finalizar ${os.placa}?`)) {
         os.data_saida_real = new Date().toISOString();
         os.status_geral = 'finalizado';
         os.etapa_atual = 'finalizacao';
-        
+
         if (os.data_entrada_real) {
           const diff = new Date(os.data_saida_real) - new Date(os.data_entrada_real);
           os.tempo_real_min = Math.round(diff / (1000 * 60));
         }
-        
+
         os.historico_etapas.push({
           acao: 'finalizacao',
           data: new Date().toISOString(),
-          tempo_total_min: os.tempo_real_min
+          tempo_total_min: os.tempo_real_min,
         });
-        
+
         await persistirOS(os);
         mostrarNotificacao(`✅ ${os.placa} finalizado!`, 'success');
       } else {
@@ -1030,7 +1078,7 @@ async function acaoOSInternal(id, acao) {
       }
       break;
   }
-  
+
   // Forçar re-renderização completa
   setTimeout(() => {
     console.log('Re-renderizando visão...');
@@ -1051,15 +1099,15 @@ function mostrarNotificacao(mensagem, tipo = 'info') {
   const notif = document.createElement('div');
   notif.className = `notificacao notif-${tipo}`;
   notif.textContent = mensagem;
-  
+
   document.body.appendChild(notif);
   setTimeout(() => notif.classList.add('show'), 10);
-  
+
   // Som de alerta para tipos importantes
   if (tipo === 'warning' || tipo === 'danger') {
     tocarSomAlerta();
   }
-  
+
   setTimeout(() => {
     notif.classList.remove('show');
     setTimeout(() => notif.remove(), 300);
@@ -1070,16 +1118,16 @@ function tocarSomAlerta() {
   const audioContext = new (window.AudioContext || window.webkitAudioContext)();
   const oscillator = audioContext.createOscillator();
   const gainNode = audioContext.createGain();
-  
+
   oscillator.connect(gainNode);
   gainNode.connect(audioContext.destination);
-  
+
   oscillator.frequency.value = 800;
   oscillator.type = 'sine';
-  
+
   gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
   gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-  
+
   oscillator.start(audioContext.currentTime);
   oscillator.stop(audioContext.currentTime + 0.5);
 }
@@ -1088,9 +1136,9 @@ function atualizarBadgeAlertas() {
   const osHoje = carregarOSInternal()
     .filter(os => new Date(os.data_prevista_entrada).toDateString() === new Date().toDateString())
     .map(calcularAlertas);
-  
+
   const totalAlertas = osHoje.filter(os => os.atrasado || os.nao_compareceu).length;
-  
+
   // Atualizar badge na aba
   const tabButton = document.querySelector('[onclick*="gestao-oficina"]');
   if (tabButton) {
@@ -1115,7 +1163,7 @@ function iniciarGestaoOficinaInternal() {
   renderizarPainelControle();
   renderizarVisao();
   atualizarBadgeAlertas();
-  
+
   // Atualizar alertas a cada 1 minuto
   setInterval(() => {
     if (document.getElementById('gestao-oficina')?.classList.contains('active')) {
@@ -1159,7 +1207,7 @@ if (typeof window !== 'undefined') {
   window.salvarNovoOS = salvarNovoOSInternal;
   window.fecharModal = fecharModalInternal;
   window.autocompletarNovaOS = autocompletarNovaOSInternal;
-  
+
   // ✅ FUNÇÕES CRÍTICAS PARA FIREBASE
   window.salvarOS = salvarOSInternal;
   window.carregarOS = carregarOSInternal;
