@@ -1,0 +1,18 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "ordens_servico",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "dataInicio", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "clientes",
+      "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "telefone", "order": "ASCENDING" }]
+    }
+  ],
+  "fieldOverrides": []
+}
