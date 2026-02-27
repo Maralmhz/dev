@@ -5,6 +5,7 @@
   const FORMAS = ['dinheiro', 'pix', 'cartao_debito', 'cartao_credito', 'faturado'];
   let inicializado = false;
 
+
   function obterOS() {
     return typeof window.carregarOS === 'function' ? window.carregarOS() : [];
   }
@@ -18,6 +19,7 @@
   }
 
   function normalizarFinanceiro(os) {
+
     const base = {
       custo_pecas: 0,
       custo_mao_obra: 0,
@@ -41,6 +43,7 @@
       historico_pagamentos: [],
     };
     os.financeiro = { ...base, ...(os.financeiro || {}) };
+
     return os;
   }
 
@@ -98,6 +101,7 @@
       <div class="modal-actions">
         <button class="btn-primary" id="f-salvar">💾 Salvar</button>
         <button class="btn-success" id="f-recibo">🧾 Gerar Recibo</button>
+
         <button class="btn-secondary" id="f-cancelar">Cancelar</button>
       </div>
     </div>`;
@@ -125,6 +129,7 @@
     function persistirFinanceiro() {
       atualizarResumo();
       os.financeiro.historico_pagamentos = os.financeiro.historico_pagamentos || [];
+
       os.financeiro.historico_pagamentos.push({
         data: new Date().toISOString(),
         valor: os.financeiro.valor_total,
@@ -156,6 +161,7 @@
     modal
       .querySelector('#f-cancelar')
       ?.addEventListener('click', () => modal.remove(), { once: true });
+
     modal.addEventListener('click', e => {
       if (e.target === modal) modal.remove();
     });
@@ -165,6 +171,7 @@
   function renderizarPainelFinanceiro() {
     const secao = document.getElementById('financeiro-v2');
     if (!secao) return;
+
     const listaOS = obterOS().map(os => normalizarFinanceiro(os));
     const receitaMes = listaOS.reduce((acc, os) => acc + os.financeiro.valor_total, 0);
     const custosMes = listaOS.reduce(
@@ -183,6 +190,7 @@
     secao.querySelector('.financeiro-cards').innerHTML =
       `<div class="resumo-v2-grid"><div class="resumo-v2-card"><strong>${moeda(receitaMes)}</strong><span>Receita mês</span></div><div class="resumo-v2-card"><strong>${moeda(custosMes)}</strong><span>Custos mês</span></div><div class="resumo-v2-card"><strong>${moeda(lucroMes)}</strong><span>Lucro líquido</span></div><div class="resumo-v2-card"><strong>${moeda(pendente)}</strong><span>A receber</span></div></div>`;
 
+
     secao.querySelector('.financeiro-lista').innerHTML =
       listaOS
         .map(
@@ -190,16 +198,7 @@
             `<div class="atrasado-item"><div><strong>${os.placa}</strong> · ${os.nome_cliente || '-'}<br><small>${moeda(os.financeiro.valor_total)} · ${os.financeiro.forma_pagamento || 'sem forma'}</small></div><div><button class="btn-mini" data-fin-os="${os.id}">Editar</button></div></div>`
         )
         .join('') || '<p class="empty-state">Nenhuma OS para exibir.</p>';
-    secao
-      .querySelectorAll('[data-fin-os]')
-      .forEach(btn => btn.addEventListener('click', () => abrirModalFinanceiro(btn.dataset.finOs)));
-    const btnRelatorio = secao.querySelector('#gerar-relatorio-financeiro');
-    if (btnRelatorio && !btnRelatorio.dataset.boundRelatorio) {
-      btnRelatorio.dataset.boundRelatorio = '1';
-      btnRelatorio.addEventListener('click', () =>
-        window.GestaoOficinaRecibos?.gerarRelatorioFinanceiro()
-      );
-    }
+
   }
 
   function init() {
@@ -227,7 +226,7 @@
     document
       .querySelector('[data-tab-gestao]')
       ?.addEventListener('click', () => setTimeout(tentar, 80));
-    window.addEventListener('gestao-oficina:activated', tentar);
+
   }
 
   window.GestaoOficinaFinanceiro = {
@@ -242,5 +241,6 @@
     document.addEventListener('DOMContentLoaded', initQuandoAbaAtiva, { once: true });
   } else {
     initQuandoAbaAtiva();
+
   }
 })();

@@ -2,6 +2,7 @@
   if (window.__gestaoV2Loaded) return;
   window.__gestaoV2Loaded = true;
 
+
   const ETAPAS_PADRAO = [
     'mecanica',
     'lanternagem',
@@ -14,6 +15,7 @@
   let inicializado = false;
   let rafId = null;
 
+
   function obterOS() {
     return typeof window.carregarOS === 'function' ? window.carregarOS() : [];
   }
@@ -23,6 +25,7 @@
       .trim()
       .split(/\s+/)
       .filter(Boolean)
+
       .slice(0, 2)
       .map(p => p[0].toUpperCase())
       .join('');
@@ -66,10 +69,12 @@
       const os = obterOS().find(item => String(item.id) === String(card.dataset.id));
       if (!os) return;
       card.dataset.v2Enhanced = '1';
+
       const faixa = document.createElement('div');
       faixa.className = 'os-priority-strip';
       faixa.style.background = tipoServicoCor(os.tipo_servico);
       card.prepend(faixa);
+
       const header = card.querySelector('.os-header');
       if (header) {
         const avatar = document.createElement('span');
@@ -95,10 +100,12 @@
     if (!container) {
       container = document.createElement('section');
       container.id = 'clientes-atrasados-v2';
+
       container.className = 'painel-v2';
       container.innerHTML = '<h3>⚠️ Clientes Atrasados</h3><div class="conteudo"></div>';
       document.querySelector('#gestao-oficina .content')?.appendChild(container);
     }
+
     const agora = new Date();
     const atrasados = obterOS().filter(
       os => os.status_geral === 'agendado' && new Date(os.data_prevista_entrada) < agora
@@ -111,6 +118,7 @@
           )
           .join('')
       : '<p class="empty-state">🟢 Nenhum cliente atrasado no momento.</p>';
+
   }
 
   function renderizarVeiculosNaOficina() {
@@ -128,6 +136,7 @@
         .map(
           os =>
             `<article class="veiculo-card-v2"><div class="veiculo-foto">🚘</div><h4>${os.placa} · ${os.modelo || 'Modelo não informado'}</h4><p>Etapa: <strong>${os.etapa_atual || '-'}</strong></p><p>Saída prevista: ${new Date(os.data_prevista_saida).toLocaleString('pt-BR')}</p><div class="os-progress-bar"><span style="width:${progressoOS(os)}%"></span></div></article>`
+
         )
         .join('') || '<p class="empty-state">Sem veículos em andamento.</p>';
   }
@@ -167,7 +176,7 @@
     document
       .querySelector('[data-tab-gestao]')
       ?.addEventListener('click', () => setTimeout(tentar, 80));
-    window.addEventListener('gestao-oficina:activated', tentar);
+
   }
 
   window.GestaoOficinaV2 = { init, abrirModalAcompanhamento, atualizarUIV2 };
@@ -175,5 +184,6 @@
     document.addEventListener('DOMContentLoaded', initQuandoAbaAtiva, { once: true });
   } else {
     initQuandoAbaAtiva();
+
   }
 })();
