@@ -1,322 +1,770 @@
+/* ===================================================================
+   GESTÃO OFICINA V2 - VISUAL REDESIGN (Fev 2026)
+   Melhorias: Cards modernos, calendário otimizado, cores harmônicas
+   =================================================================== */
+
 :root {
   --go-primary: #2563eb;
+  --go-primary-light: #3b82f6;
+  --go-primary-dark: #1e40af;
   --go-success: #10b981;
+  --go-success-light: #34d399;
   --go-warning: #f59e0b;
+  --go-warning-light: #fbbf24;
   --go-danger: #ef4444;
+  --go-danger-light: #f87171;
   --go-gray: #64748b;
-  --go-radius: 12px;
-  --go-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+  --go-gray-light: #94a3b8;
+  --go-gray-bg: #f8fafc;
+  --go-radius: 16px;
+  --go-radius-sm: 12px;
+  --go-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+  --go-shadow-lg: 0 10px 40px rgba(15, 23, 42, 0.12);
+  --go-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .gestao-v2-enabled {
-  font-family:
-    Inter,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+/* ==================== RESUMO CARDS (TOPO) ==================== */
 
 .resumo-v2-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
 .resumo-v2-card {
+  position: relative;
   border: 0;
   border-radius: var(--go-radius);
-  padding: 12px;
-  background: linear-gradient(145deg, #ffffff, #eff6ff);
+  padding: 20px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   box-shadow: var(--go-shadow);
-  text-align: left;
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
+  transition: var(--go-transition);
+  overflow: hidden;
+}
+
+.resumo-v2-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--go-primary), var(--go-primary-light));
+  opacity: 0;
+  transition: var(--go-transition);
 }
 
 .resumo-v2-card:hover {
-  transform: scale(1.02);
-  box-shadow: 0 14px 30px rgba(37, 99, 235, 0.2);
+  transform: translateY(-4px);
+  box-shadow: var(--go-shadow-lg);
+}
+
+.resumo-v2-card:hover::before {
+  opacity: 1;
+}
+
+.resumo-v2-card .card-icon {
+  font-size: 32px;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.resumo-v2-card .card-label {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--go-gray);
+  margin-bottom: 8px;
+}
+
+.resumo-v2-card .card-value {
+  font-size: 36px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.resumo-v2-card .card-trend {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.resumo-v2-card .card-trend.up {
+  background: #dcfce7;
+  color: var(--go-success);
+}
+
+.resumo-v2-card .card-trend.down {
+  background: #fee2e2;
+  color: var(--go-danger);
 }
 
 .sparkline polyline {
   fill: none;
   stroke: var(--go-primary);
-  stroke-width: 2;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-.resumo-variacao {
-  grid-column: 1 / -1;
-  color: var(--go-gray);
-  font-weight: 600;
+/* ==================== KANBAN CARDS (STATUS) ==================== */
+
+.kanban-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  margin-top: 24px;
+}
+
+.kanban-coluna {
+  background: var(--go-gray-bg);
+  border-radius: var(--go-radius);
+  padding: 20px;
+  min-height: 400px;
+}
+
+.kanban-coluna h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e2e8f0;
+  color: #0f172a;
+}
+
+.cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.os-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--go-radius-sm);
+  padding: 16px;
+  transition: var(--go-transition);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.os-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--go-shadow);
+  border-color: var(--go-primary);
 }
 
 .os-priority-strip {
-  height: 6px;
-  border-radius: 12px 12px 0 0;
-  margin: -12px -12px 8px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: var(--go-radius-sm) var(--go-radius-sm) 0 0;
+}
+
+.os-priority-strip.baixa { background: var(--go-success); }
+.os-priority-strip.normal { background: var(--go-warning); }
+.os-priority-strip.urgente { background: var(--go-danger); }
+
+.os-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-top: 4px;
 }
 
 .cliente-avatar {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background: var(--go-primary);
+  background: linear-gradient(135deg, var(--go-primary), var(--go-primary-light));
   color: #fff;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.os-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.os-card-placa {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.os-card-cliente {
+  font-size: 13px;
+  color: var(--go-gray);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.os-card-meta {
+  display: flex;
+  gap: 12px;
   font-size: 12px;
+  color: var(--go-gray);
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.os-card-meta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .os-progress-wrap {
-  margin-top: 8px;
+  margin-top: 12px;
 }
+
 .os-progress-label {
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 600;
   color: var(--go-gray);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: space-between;
 }
+
 .os-progress-bar {
   width: 100%;
-  height: 8px;
+  height: 6px;
   border-radius: 999px;
   background: #e2e8f0;
   overflow: hidden;
 }
+
 .os-progress-bar > span {
   display: block;
   height: 100%;
-  background: var(--go-primary);
+  background: linear-gradient(90deg, var(--go-primary), var(--go-primary-light));
+  border-radius: 999px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.painel-v2 {
-  margin-top: 16px;
-  background: #fff;
-  border-radius: var(--go-radius);
-  box-shadow: var(--go-shadow);
-  padding: 16px;
-}
+/* ==================== CALENDÁRIO ==================== */
 
-.empty-state {
-  color: var(--go-gray);
-  padding: 8px 0;
-}
-.atrasado-item {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  border-top: 1px solid #e2e8f0;
-  padding: 10px 0;
-}
-.btn-mini {
-  border: 0;
-  background: #dbeafe;
-  color: #1d4ed8;
-  border-radius: 8px;
-  padding: 8px 10px;
-  min-height: 44px;
-  text-decoration: none;
-}
-
-.agenda-header {
+.agenda-header-v2 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-}
-.agenda-grid {
-  margin-top: 12px;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-  gap: 8px;
-  max-height: 320px;
-  overflow: auto;
-}
-.slot {
-  border: 1px solid #cbd5e1;
-  border-radius: 10px;
-  min-height: 44px;
-  background: #fff;
-  cursor: pointer;
-}
-.slot-ocupado {
-  background: #fee2e2;
-  border-color: #fca5a5;
-}
-.slot-ocupado.rapida {
-  background: #dcfce7;
-  border-color: #86efac;
-}
-.slot-ocupado.media {
-  background: #fef3c7;
-  border-color: #fde68a;
-}
-.slot-ocupado.complexa {
-  background: #fee2e2;
-  border-color: #fca5a5;
-}
-
-.timeline-wrap {
-  display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin: 14px 0;
-}
-.timeline-step {
-  background: #e2e8f0;
-  border-radius: 999px;
-  padding: 6px 10px;
-  font-size: 12px;
-}
-.timeline-step.done {
-  background: #dcfce7;
-}
-.timeline-step.current {
-  background: #dbeafe;
-  animation: pulse 1.2s infinite;
-}
-.timeline-arrow {
-  color: #94a3b8;
-  align-self: center;
-}
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.65;
-  }
-}
-
-.veiculos-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 12px;
-}
-.veiculo-card-v2 {
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 10px;
-}
-.veiculo-foto {
-  font-size: 30px;
+  margin-bottom: 20px;
 }
 
-.painel-financeiro-resumo .ok {
-  color: var(--go-success);
-}
-.painel-financeiro-resumo .warn {
-  color: var(--go-warning);
-}
-.painel-financeiro-resumo .danger {
-  color: var(--go-danger);
+.agenda-header-v2 h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
 }
 
-@media (max-width: 640px) {
-  .resumo-v2-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-.agenda-header-v2 {
-  flex-wrap: wrap;
-}
 .agenda-actions {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
 }
+
 .agenda-data {
   font-weight: 600;
   color: var(--go-gray);
+  font-size: 14px;
+  padding: 0 12px;
 }
+
 .agenda-views {
   display: flex;
-  gap: 8px;
-  margin-top: 10px;
-  margin-bottom: 10px;
+  gap: 6px;
+  background: var(--go-gray-bg);
+  padding: 4px;
+  border-radius: var(--go-radius-sm);
+  margin: 12px 0;
 }
+
+.agenda-views .btn-mini {
+  border: 0;
+  background: transparent;
+  color: var(--go-gray);
+  border-radius: 8px;
+  padding: 8px 12px;
+  min-height: 36px;
+  font-weight: 600;
+  font-size: 13px;
+  transition: var(--go-transition);
+}
+
+.agenda-views .btn-mini:hover {
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--go-primary);
+}
+
 .agenda-views .btn-mini.active {
   background: var(--go-primary);
   color: #fff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
 }
+
+/* ==================== CALENDÁRIO - VISTA DIA ==================== */
+
+.agenda-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 10px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.slot {
+  border: 2px solid #e2e8f0;
+  border-radius: var(--go-radius-sm);
+  min-height: 52px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: var(--go-transition);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--go-gray);
+}
+
+.slot:hover {
+  border-color: var(--go-primary);
+  background: #eff6ff;
+  transform: scale(1.05);
+}
+
+.slot-ocupado {
+  cursor: default;
+  border-width: 2px;
+  font-size: 12px;
+}
+
+.slot-ocupado strong {
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.slot-ocupado.rapida {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  border-color: var(--go-success);
+  color: #15803d;
+}
+
+.slot-ocupado.media {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-color: var(--go-warning);
+  color: #92400e;
+}
+
+.slot-ocupado.complexa {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border-color: var(--go-danger);
+  color: #991b1b;
+}
+
+/* ==================== CALENDÁRIO - VISTA SEMANA ==================== */
 
 .agenda-semana {
   display: grid;
-  grid-template-columns: repeat(7, minmax(140px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(7, minmax(160px, 1fr));
+  gap: 12px;
   overflow-x: auto;
+  padding-bottom: 8px;
 }
+
 .dia-semana {
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 8px;
-  min-height: 180px;
+  border: 2px solid #e2e8f0;
+  border-radius: var(--go-radius);
+  padding: 12px;
+  min-height: 200px;
+  background: #ffffff;
+  transition: var(--go-transition);
 }
+
+.dia-semana:hover {
+  border-color: var(--go-primary-light);
+  box-shadow: var(--go-shadow);
+}
+
+.dia-semana h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #f1f5f9;
+  text-transform: capitalize;
+}
+
 .evento-semana {
   width: 100%;
   border: 0;
   border-radius: 8px;
-  background: #eff6ff;
-  margin-bottom: 6px;
-  padding: 8px;
+  margin-bottom: 8px;
+  padding: 10px;
   text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--go-transition);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
+
+.evento-semana:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
 .evento-semana.rapida {
-  background: #dcfce7;
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+  color: #15803d;
 }
+
 .evento-semana.media {
-  background: #fef3c7;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #92400e;
 }
+
 .evento-semana.complexa {
-  background: #fee2e2;
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  color: #991b1b;
+}
+
+/* ==================== CALENDÁRIO - VISTA MÊS ==================== */
+
+.agenda-mes {
+  background: #ffffff;
+  border-radius: var(--go-radius);
+  padding: 16px;
 }
 
 .agenda-mes-head {
-  color: var(--go-gray);
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
   margin-bottom: 8px;
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--go-gray);
+  text-align: center;
+  text-transform: uppercase;
 }
+
 .agenda-mes-grid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(70px, 1fr));
+  grid-template-columns: repeat(7, minmax(80px, 1fr));
   gap: 8px;
 }
+
 .dia-mes {
-  min-height: 70px;
-  border: 1px solid #cbd5e1;
-  border-radius: 10px;
-  background: #fff;
-  padding: 6px;
+  min-height: 80px;
+  border: 2px solid #e2e8f0;
+  border-radius: var(--go-radius-sm);
+  background: #ffffff;
+  padding: 8px;
   text-align: left;
+  font-size: 13px;
+  cursor: pointer;
+  transition: var(--go-transition);
 }
-.dia-mes.com-evento {
+
+.dia-mes:hover:not(.vazio) {
   border-color: var(--go-primary);
   background: #eff6ff;
 }
+
+.dia-mes.com-evento {
+  border-color: var(--go-primary);
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  font-weight: 700;
+}
+
 .dia-mes.vazio {
   border: 0;
   background: transparent;
+  cursor: default;
 }
+
+.dia-mes-numero {
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.dia-mes-badge {
+  font-size: 10px;
+  background: var(--go-primary);
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 6px;
+  display: inline-block;
+  margin-top: 4px;
+}
+
+/* ==================== CALENDÁRIO - VISTA ANO ==================== */
 
 .ano-bars {
   display: grid;
-  grid-template-columns: repeat(12, minmax(54px, 1fr));
+  grid-template-columns: repeat(12, minmax(60px, 1fr));
   align-items: end;
-  gap: 8px;
-  min-height: 180px;
+  gap: 12px;
+  min-height: 200px;
+  padding: 20px;
+  background: var(--go-gray-bg);
+  border-radius: var(--go-radius);
 }
+
 .ano-bar {
   border: 0;
   border-radius: 8px 8px 0 0;
-  background: linear-gradient(180deg, #93c5fd, #2563eb);
+  background: linear-gradient(180deg, var(--go-primary-light), var(--go-primary));
   color: #fff;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: 6px;
+  align-items: center;
+  padding: 12px 8px;
+  transition: var(--go-transition);
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.ano-bar:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
+}
+
+.ano-bar-mes {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+.ano-bar-total {
+  font-size: 18px;
+  font-weight: 700;
+  margin-top: 8px;
+}
+
+/* ==================== PAINEL V2 ==================== */
+
+.painel-v2 {
+  margin-top: 20px;
+  background: #ffffff;
+  border-radius: var(--go-radius);
+  box-shadow: var(--go-shadow);
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+}
+
+.painel-v2 h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 16px 0;
+}
+
+/* ==================== BOTÕES ==================== */
+
+.btn-mini {
+  border: 0;
+  background: #e2e8f0;
+  color: var(--go-gray);
+  border-radius: 8px;
+  padding: 8px 12px;
+  min-height: 36px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: var(--go-transition);
+}
+
+.btn-mini:hover {
+  background: #cbd5e1;
+  color: #0f172a;
+  transform: translateY(-1px);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--go-primary), var(--go-primary-light));
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--go-primary-dark), var(--go-primary));
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+  transform: translateY(-2px);
+}
+
+/* ==================== EMPTY STATES ==================== */
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--go-gray);
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.empty-state-text {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ==================== TIMELINE ==================== */
+
+.timeline-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.timeline-step {
+  background: #e2e8f0;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--go-gray);
+  transition: var(--go-transition);
+}
+
+.timeline-step.done {
+  background: #dcfce7;
+  color: var(--go-success);
+}
+
+.timeline-step.current {
+  background: var(--go-primary);
+  color: #fff;
+  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.timeline-arrow {
+  color: var(--go-gray-light);
+  align-self: center;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+/* ==================== FINANCEIRO ==================== */
+
+.painel-financeiro-resumo .ok { color: var(--go-success); }
+.painel-financeiro-resumo .warn { color: var(--go-warning); }
+.painel-financeiro-resumo .danger { color: var(--go-danger); }
+
+/* ==================== RESPONSIVE ==================== */
+
+@media (max-width: 1024px) {
+  .resumo-v2-grid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+  
+  .kanban-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .agenda-semana {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .resumo-v2-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .resumo-v2-card .card-value {
+    font-size: 28px;
+  }
+  
+  .agenda-grid {
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  }
+  
+  .agenda-mes-grid {
+    grid-template-columns: repeat(7, minmax(50px, 1fr));
+  }
+  
+  .dia-mes {
+    min-height: 60px;
+    font-size: 11px;
+  }
+  
+  .ano-bars {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+/* ==================== SCROLLBAR STYLING ==================== */
+
+.agenda-grid::-webkit-scrollbar,
+.agenda-semana::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.agenda-grid::-webkit-scrollbar-track,
+.agenda-semana::-webkit-scrollbar-track {
+  background: var(--go-gray-bg);
+  border-radius: 999px;
+}
+
+.agenda-grid::-webkit-scrollbar-thumb,
+.agenda-semana::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+.agenda-grid::-webkit-scrollbar-thumb:hover,
+.agenda-semana::-webkit-scrollbar-thumb:hover {
+  background: var(--go-gray);
 }
