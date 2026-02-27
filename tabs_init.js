@@ -6,6 +6,15 @@
 (function () {
   'use strict';
 
+  const DEBUG = false;
+
+  function debug(...args) {
+    if (DEBUG) {
+      // eslint-disable-next-line no-console
+      console.log(...args);
+    }
+  }
+
   if (window.__tabsInitV2Loaded) return;
   window.__tabsInitV2Loaded = true;
 
@@ -40,14 +49,14 @@
   }
 
   async function inicializarAbas() {
-    console.log('🔄 Aguardando carregamento das funções...');
+    debug('🔄 Aguardando carregamento das funções...');
     await esperarFuncoes();
-    console.log('✅ Funções carregadas! Inicializando abas...');
+    debug('✅ Funções carregadas! Inicializando abas...');
 
     // ✅ Inicializar aba Gestão Oficina com data-tab-gestao
     const abaGestaoOficina = document.querySelector('[data-tab-gestao]');
     if (abaGestaoOficina) {
-      console.log('🔍 Botão Gestão Oficina encontrado!');
+      debug('🔍 Botão Gestão Oficina encontrado!');
 
       // Remover onclick inline se existir
       abaGestaoOficina.removeAttribute('onclick');
@@ -57,13 +66,13 @@
         abaGestaoOficina.dataset.boundGestaoTab = '1';
         abaGestaoOficina.addEventListener('click', function (e) {
           e.preventDefault();
-          console.log('👆 Clique na aba Gestão Oficina');
+          debug('👆 Clique na aba Gestão Oficina');
 
           // 1. Trocar de aba
           if (typeof window.switchTab === 'function') {
             window.switchTab('gestao-oficina');
             window.dispatchEvent(new CustomEvent('gestao-oficina:activated'));
-            console.log('✅ Aba trocada para gestao-oficina');
+            debug('✅ Aba trocada para gestao-oficina');
           } else {
             console.error('❌ switchTab não está disponível');
           }
@@ -76,7 +85,7 @@
             // Iniciar Dashboard
             if (typeof window.iniciarDashboardFirestore === 'function') {
               window.iniciarDashboardFirestore();
-              console.log('🔥 Dashboard iniciado!');
+              debug('🔥 Dashboard iniciado!');
             } else {
               console.warn('⚠️ iniciarDashboardFirestore não disponível');
             }
@@ -84,7 +93,7 @@
             // Iniciar Kanban
             if (typeof window.iniciarKanban === 'function') {
               window.iniciarKanban();
-              console.log('🎯 Kanban iniciado!');
+              debug('🎯 Kanban iniciado!');
             } else {
               console.warn('⚠️ iniciarKanban não disponível');
             }
@@ -92,7 +101,7 @@
         });
       }
 
-      console.log('✅ Aba Gestão Oficina inicializada');
+      debug('✅ Aba Gestão Oficina inicializada');
     } else {
       console.error('❌ Botão [data-tab-gestao] não encontrado no DOM');
     }
@@ -112,7 +121,7 @@
             window.abrirModalNovoOS();
           }
         });
-        console.log('✅ Botão Nova OS inicializado');
+        debug('✅ Botão Nova OS inicializado');
       }
     };
 
@@ -126,7 +135,7 @@
       setTimeout(ativarGestaoV2, 50);
     }
 
-    console.log('🎉 Inicialização de abas concluída!');
+    debug('🎉 Inicialização de abas concluída!');
   }
 
   /**
@@ -145,19 +154,19 @@
           // Parar dashboard
           if (typeof window.pararDashboardFirestore === 'function') {
             window.pararDashboardFirestore();
-            console.log('🛑 Dashboard parado');
+            debug('🛑 Dashboard parado');
           }
 
           // Parar kanban
           if (typeof window.pararKanban === 'function') {
             window.pararKanban();
-            console.log('🛑 Kanban parado');
+            debug('🛑 Kanban parado');
           }
         }
       });
     });
 
-    console.log('✅ Interceptador de aba configurado');
+    debug('✅ Interceptador de aba configurado');
   }
 
   window.ativarGestaoV2 = ativarGestaoV2;
