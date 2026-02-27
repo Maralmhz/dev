@@ -22,6 +22,10 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.token.role == 'admin';
     }
 
+    function isModeloAnonRead(oficinaId) {
+      return request.auth == null && oficinaId == 'modelo';
+    }
+
     function isValidString(field, max) {
       return field is string && field.size() > 0 && field.size() <= max;
     }
@@ -40,7 +44,7 @@ service cloud.firestore {
 
     match /oficinas/{oficinaId} {
       // Apenas leitura da oficina em si
-      allow read: if pertenceOficina(oficinaId);
+      allow read: if pertenceOficina(oficinaId) || isAdmin() || isModeloAnonRead(oficinaId);
       allow write: if isAdmin() && pertenceOficina(oficinaId);
 
       // ==========================================
@@ -49,29 +53,15 @@ service cloud.firestore {
 
       match /ordens_servico/{osId} {
         // ISOLAMENTO: Só acessa se o oficinaId do PATH == oficinaId do TOKEN
-        allow read: if pertenceOficina(oficinaId);
+        allow read: if pertenceOficina(oficinaId) || isAdmin() || isModeloAnonRead(oficinaId);
 
-        allow create: if pertenceOficina(oficinaId) &&
-          isValidString(request.resource.data.numero_os, 50) &&
-          isValidString(request.resource.data.cliente_id, 100) &&
-          isValidString(request.resource.data.veiculo_id, 100) &&
-          isValidNumber(request.resource.data.financeiro.total) &&
-          request.resource.data.version == 1 &&
-          // Validações financeiras críticas
-          request.resource.data.financeiro.valor_pago == 0 &&
-          request.resource.data.financeiro.desconto >= 0;
+        allow create: if (pertenceOficina(oficinaId) || isAdmin()) &&
+          request.resource.data.numero_os is string;
 
-        allow update: if pertenceOficina(oficinaId) &&
-          versionIncremented() &&
-          // Campos read-only (não podem mudar)
-          request.resource.data.numero_os == resource.data.numero_os &&
-          request.resource.data.data_entrada == resource.data.data_entrada &&
-          request.resource.data.cliente_id == resource.data.cliente_id &&
-          request.resource.data.veiculo_id == resource.data.veiculo_id &&
-          // Valor total não pode ser alterado diretamente
-          request.resource.data.financeiro.total == resource.data.financeiro.total;
+        allow update: if (pertenceOficina(oficinaId) || isAdmin()) &&
+          request.resource.data.status is string;
 
-        allow delete: if false; // Bloqueado - usar status: 'cancelado'
+        allow delete: if isAdmin() && pertenceOficina(oficinaId);
       }
 
       // ==========================================
@@ -79,17 +69,15 @@ service cloud.firestore {
       // ==========================================
 
       match /clientes/{clienteId} {
-        allow read: if pertenceOficina(oficinaId);
+        allow read: if pertenceOficina(oficinaId) || isAdmin() || isModeloAnonRead(oficinaId);
 
-        allow create: if pertenceOficina(oficinaId) &&
+        allow create: if (pertenceOficina(oficinaId) || isAdmin()) &&
           isValidString(request.resource.data.nome, 200) &&
-          isValidString(request.resource.data.cpf_cnpj, 20);
+          (request.resource.data.telefone is string || request.resource.data.cpf_cnpj is string);
 
-        allow update: if pertenceOficina(oficinaId) &&
-          // CPF/CNPJ não pode mudar
-          request.resource.data.cpf_cnpj == resource.data.cpf_cnpj;
+        allow update: if (pertenceOficina(oficinaId) || isAdmin());
 
-        allow delete: if false; // Bloqueado - usar ativo: false
+        allow delete: if isAdmin() && pertenceOficina(oficinaId);
       }
 
       // ==========================================
