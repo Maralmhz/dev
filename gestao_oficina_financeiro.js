@@ -10,7 +10,10 @@
   }
 
   function salvar(os) {
-    if (typeof window.salvarOS === 'function') window.salvarOS(os);
+    if (typeof window.salvarOS === 'function') {
+      window.salvarOS(os);
+      console.log('✅ OS salva:', os.id, 'Financeiro:', os.financeiro?.valor_total);
+    }
   }
 
   function moeda(valor) {
@@ -67,8 +70,12 @@
   }
 
   function abrirModalFinanceiro(osId) {
-    const os = obterOS().find(item => String(item.id) === String(osId));
-    if (!os) return;
+    const listaOS = obterOS();
+    const os = listaOS.find(item => String(item.id) === String(osId));
+    if (!os) {
+      console.error('❌ OS não encontrada:', osId);
+      return;
+    }
     normalizarFinanceiro(os);
 
     const modal = document.createElement('div');
@@ -123,7 +130,13 @@
     }
 
     function persistirFinanceiro() {
+      // 🔥 FIX PRINCIPAL: Atualizar o objeto OS antes de salvar
+      console.log('💾 Salvando financeiro da OS:', os.id);
+      
+      // 1. Atualizar os valores do formulário no objeto
       atualizarResumo();
+      
+      // 2. Adicionar ao histórico
       os.financeiro.historico_pagamentos = os.financeiro.historico_pagamentos || [];
       os.financeiro.historico_pagamentos.push({
         data: new Date().toISOString(),
@@ -131,10 +144,27 @@
         forma: os.financeiro.forma_pagamento,
         usuario: 'sistema_local',
       });
+      
+      // 3. ✅ CRITICAL: Atualizar data de última modificação
+      os.data_modificacao = new Date().toISOString();
+      
+      // 4. Salvar no localStorage/Firestore
       salvar(os);
-      window.renderizarVisao?.();
+      
+      // 5. Atualizar UI
+      if (typeof window.renderizarVisao === 'function') {
+        window.renderizarVisao();
+      }
       renderizarPainelFinanceiro();
+      
+      // 6. Notificar usuário
       window.mostrarNotificacao?.('Financeiro salvo com sucesso.', 'success');
+      
+      console.log('✅ Financeiro salvo:', {
+        os_id: os.id,
+        valor_total: os.financeiro.valor_total,
+        forma_pagamento: os.financeiro.forma_pagamento
+      });
     }
 
     modal
@@ -144,15 +174,29 @@
 
     modal
       .querySelector('#f-salvar')
-      ?.addEventListener('click', persistirFinanceiro, { once: true });
+      ?.addEventListener('click', () => {
+        persistirFinanceiro();
+        modal.remove();
+      }, { once: true });
+      
     modal.querySelector('#f-recibo')?.addEventListener(
       'click',
       () => {
         persistirFinanceiro();
-        window.GestaoOficinaRecibos?.gerarRecibo(os.id);
+        // ✅ Aguardar 500ms para garantir que salvou antes de gerar recibo
+        setTimeout(() => {
+          if (window.GestaoOficinaRecibos?.gerarRecibo) {
+            window.GestaoOficinaRecibos.gerarRecibo(os.id);
+          } else {
+            console.error('❌ Módulo de recibos não carregado');
+            window.mostrarNotificacao?.('Erro: Módulo de recibos não disponível', 'error');
+          }
+        }, 500);
+        modal.remove();
       },
       { once: true }
     );
+    
     modal
       .querySelector('#f-cancelar')
       ?.addEventListener('click', () => modal.remove(), { once: true });
@@ -211,7 +255,7 @@
       secao = document.createElement('section');
       secao.id = 'financeiro-v2';
       secao.className = 'painel-v2';
-      secao.innerHTML = `<div class="agenda-header"><h3>💰 Financeiro</h3><button class="btn-primary" id="gerar-relatorio-financeiro">📊 Gerar Relatório</button></div><div class="financeiro-cards"></div><div class="financeiro-lista"></div>`;
+      secao.innerHTML = `<div class="agenda-header"><h3>💰 Financeiro</h3><button class="btn-primary" id="gerar-relatorio-financeiro">📈 Gerar Relatório</button></div><div class="financeiro-cards"></div><div class="financeiro-lista"></div>`;
       host.appendChild(secao);
     }
     inicializado = true;
@@ -243,4 +287,6 @@
   } else {
     initQuandoAbaAtiva();
   }
+  
+  console.log('✅ Módulo Financeiro V2 carregado');
 })();
