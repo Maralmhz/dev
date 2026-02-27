@@ -321,13 +321,6 @@
 
   function enviarLembrete(os, janela) {
     console.log(`[lembrete] ${janela} para ${os.placa}`);
-    const mensagem = window.FirebaseV2?.criarMensagemLembreteWhatsApp
-      ? window.FirebaseV2.criarMensagemLembreteWhatsApp(os, janela === '72h' ? 3 : 1)
-      : `Lembrete ${janela} - OS ${os.placa}`;
-    const tel = String(os.telefone || '').replace(/\D/g, '');
-    os.lembrete_whatsapp_url = tel
-      ? `https://wa.me/55${tel}?text=${encodeURIComponent(mensagem)}`
-      : '';
     window.mostrarNotificacao?.(`⏰ Lembrete ${janela}: ${os.placa}`, 'info');
   }
 
@@ -337,11 +330,6 @@
       if (os.status_geral !== 'agendado') return;
       const entrada = new Date(os.data_prevista_entrada);
       const horas = (entrada - agora) / 36e5;
-      if (horas >= 71 && horas <= 73 && !os.lembrete_3dias_enviado) {
-        enviarLembrete(os, '72h');
-        os.lembrete_3dias_enviado = true;
-        salvar(os);
-      }
       if (horas >= 47 && horas <= 49 && !os.lembrete_2dias_enviado) {
         enviarLembrete(os, '48h');
         os.lembrete_2dias_enviado = true;

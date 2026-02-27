@@ -83,7 +83,7 @@ function novoOS(placa = '', cliente = '') {
       parcelado: false,
       num_parcelas: 1,
       valor_parcela: 0,
-      historico_pagamentos: [],
+      historico_pagamentos: []
     },
     observacoes: '',
     checklist_id: null,

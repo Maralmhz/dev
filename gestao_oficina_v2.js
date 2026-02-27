@@ -86,13 +86,7 @@
         info.appendChild(progress);
       }
       card.title = `Cliente: ${os.nome_cliente || '-'}\nPlaca: ${os.placa || '-'}\nEntrada: ${new Date(os.data_prevista_entrada).toLocaleString('pt-BR')}`;
-      card.addEventListener('click', () => {
-        if (window.editarOS) {
-          window.editarOS(os.id);
-          return;
-        }
-        abrirModalAcompanhamento(os.id);
-      });
+      card.addEventListener('dblclick', () => abrirModalAcompanhamento(os.id), { once: true });
     });
   }
 
