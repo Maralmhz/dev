@@ -8,7 +8,7 @@ let irParaColunaKanban, toggleCalendarioCompacto, iniciarGestaoOficina;
 let salvarNovoOS, fecharModal, autocompletarNovaOS;
 
 // ==========================================
-// GESTÃO DA OFICINA - Módulo Completo V2.2.1
+// GESTÃO DA OFICINA - Módulo Completo V2.3.0 - BUGFIX CRITICAL
 // ==========================================
 
 const OS_AGENDA_KEY = 'os_agenda_oficina';
@@ -167,8 +167,10 @@ function salvarOSInternal(os) {
 
   if (idx > -1) {
     lista[idx] = os;
+    console.log('✅ OS atualizada:', os.id);
   } else {
     lista.unshift(os);
+    console.log('✅ OS criada:', os.id);
   }
 
   localStorage.setItem(OS_AGENDA_KEY, JSON.stringify(lista));
@@ -186,12 +188,22 @@ function carregarOSInternal(filtro = null) {
 }
 
 function excluirOSInternal(id) {
-  if (!confirm('🗑️ Tem certeza que deseja excluir esta OS?')) return;
+  const os = carregarOSInternal().find(o => normalizarIdOS(o.id) === normalizarIdOS(id));
+  if (!os) {
+    console.error('❌ OS não encontrada:', id);
+    return;
+  }
+
+  if (!confirm(`🗑️ Tem certeza que deseja excluir a OS ${os.placa}?\n\nCliente: ${os.nome_cliente || '-'}\nStatus: ${os.status_geral}`)) {
+    return;
+  }
 
   let lista = carregarOSInternal().filter(o => normalizarIdOS(o.id) !== normalizarIdOS(id));
   localStorage.setItem(OS_AGENDA_KEY, JSON.stringify(lista));
+  
+  console.log('✅ OS excluída:', id);
   renderizarVisao();
-  mostrarNotificacao('OS excluída!', 'success');
+  mostrarNotificacao('🗑️ OS excluída com sucesso!', 'success');
 }
 
 // ==========================================
@@ -440,7 +452,7 @@ function renderizarKanban() {
     const filtrados = osHoje.filter(os => os.status_geral === status);
 
     if (filtrados.length === 0) {
-      container.innerHTML = '<div class="empty-card">📭 Vazio</div>';
+      container.innerHTML = '<div class="empty-card">📭vazio</div>';
       return;
     }
 
@@ -492,10 +504,10 @@ function renderizarCardOS(os) {
         ${os.observacoes ? `<div class="os-obs">💬 ${os.observacoes}</div>` : ''}
       </div>
       <div class="os-actions">
-        ${os.status_geral === 'agendado' ? `<button onclick="acaoOS(${buildOnclickId(os.id)}, 'entrada')" class="btn-acao">🚗 Entrada</button>` : ''}
-        ${os.status_geral !== 'finalizado' ? `<button onclick="acaoOS(${buildOnclickId(os.id)}, 'finalizar')" class="btn-acao btn-success">✅ Finalizar</button>` : ''}
-        <button onclick="editarOS(${buildOnclickId(os.id)})" class="btn-acao btn-edit">✏️</button>
-        <button onclick="excluirOS(${buildOnclickId(os.id)})" class="btn-acao btn-delete">🗑️</button>
+        ${os.status_geral === 'agendado' ? `<button onclick="acaoOS(${buildOnclickId(os.id)}, 'entrada')" class="btn-acao" title="Registrar entrada">🚗 Entrada</button>` : ''}
+        ${os.status_geral !== 'finalizado' ? `<button onclick="acaoOS(${buildOnclickId(os.id)}, 'finalizar')" class="btn-acao btn-success" title="Finalizar OS">✅ Finalizar</button>` : ''}
+        <button onclick="editarOS(${buildOnclickId(os.id)})" class="btn-acao btn-edit" title="Editar OS">✏️ Editar</button>
+        <button onclick="excluirOS(${buildOnclickId(os.id)})" class="btn-acao btn-delete" title="Excluir OS">🗑️ Excluir</button>
       </div>
     </div>
   `;
@@ -858,13 +870,19 @@ let osEditando = null;
 function abrirModalNovoOSInternal() {
   osEditando = null;
   abrirModalOS();
+  console.log('🆕 Modal Nova OS aberto');
 }
 
 function editarOSInternal(id) {
   const os = carregarOSInternal().find(o => normalizarIdOS(o.id) === normalizarIdOS(id));
-  if (!os) return;
+  if (!os) {
+    console.error('❌ OS não encontrada para edição:', id);
+    mostrarNotificacao('❌ OS não encontrada!', 'error');
+    return;
+  }
   osEditando = os;
   abrirModalOS(os);
+  console.log('✏️ Modal Editar OS aberto:', os.id);
 }
 
 function abrirModalOS(os = null) {
@@ -905,7 +923,7 @@ function abrirModalOS(os = null) {
         <textarea id="modal_obs" placeholder="Observações" rows="3">${os?.observacoes || ''}</textarea>
       </div>
       <div class="modal-actions">
-        <button class="btn-primary" onclick="salvarNovoOS()">${os ? '💾 Salvar' : '➕ Criar'}</button>
+        <button class="btn-primary" onclick="salvarNovoOS()">${os ? '💾 Salvar Alterações' : '➕ Criar OS'}</button>
         <button class="btn-secondary" onclick="fecharModal()">❌ Cancelar</button>
       </div>
     </div>
@@ -1189,7 +1207,7 @@ if (document.readyState === 'loading') {
 }
 
 // ==========================================
-// ✅ EXPOR FUNÇÕES AO ESCOPO GLOBAL (window)
+// ✅ EXPOR FUNÇÕES AO ESCOPO GLOBAL (window) - CRITICAL BUGFIX
 // ==========================================
 if (typeof window !== 'undefined') {
   // Funções de UI
@@ -1216,6 +1234,13 @@ if (typeof window !== 'undefined') {
   window.renderizarVisao = renderizarVisao;
   window.mostrarNotificacao = mostrarNotificacao;
   window.atualizarBadgeAlertas = atualizarBadgeAlertas;
+  
+  console.log('✅ gestao_oficina.js v2.3.0 carregado');
+  console.log('✅ Funções expostas:', {
+    abrirModalNovoOS: typeof window.abrirModalNovoOS,
+    editarOS: typeof window.editarOS,
+    excluirOS: typeof window.excluirOS,
+    salvarOS: typeof window.salvarOS,
+    carregarOS: typeof window.carregarOS
+  });
 }
-
-console.log('✅ gestao_oficina.js v2.2.1 carregado');
