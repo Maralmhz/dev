@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Sessões Ativas</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .status {
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: 600;
+        }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        .status.info { background: #d1ecf1; color: #0c5460; }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        .device-list {
+            margin-top: 20px;
+        }
+        .device-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+        .device-item.current {
+            border-left-color: #28a745;
+            background: #e8f5e9;
+        }
+        pre {
+            background: #272822;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>📱 Teste de Sessões Ativas</h1>
+        <p>Use esta página para testar o sistema de limitação de dispositivos.</p>
+        
+        <div id="authStatus" class="status info">
+            ⏳ Verificando autenticação...
+        </div>
+        
+        <div id="userInfo" style="display:none;">
+            <strong>Usuário logado:</strong> <span id="userEmail"></span><br>
+            <strong>Device ID:</strong> <span id="deviceId"></span>
+        </div>
+        
+        <div>
+            <button onclick="listarSessoes()">Listar Sessões Ativas</button>
+            <button onclick="registrarSessao()">Registrar Sessão</button>
+            <button onclick="limparMinhasSessoes()">Limpar Minhas Sessões</button>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h2>📊 Dispositivos Ativos</h2>
+        <div id="deviceCount" class="status info">
+            0 dispositivos ativos
+        </div>
+        <div id="deviceList" class="device-list"></div>
+    </div>
+    
+    <div class="card">
+        <h2>📦 Debug - Dados Brutos</h2>
+        <pre id="debugOutput">Clique em "Listar Sessões Ativas" para ver os dados...</pre>
+    </div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <!-- Config -->
+    <script src="config.js"></script>
+    
+    <!-- Session Manager -->
+    <script src="session-manager.js"></script>
+    
+    <script>
+        // Inicializar Firebase
+        if (window.FIREBASE_CONFIG && !firebase.apps.length) {
+            firebase.initializeApp(window.FIREBASE_CONFIG);
+            console.log('✅ Firebase inicializado');
+        }
+        
+        let currentUser = null;
+        
+        // Verificar autenticação
+        firebase.auth().onAuthStateChanged((user) => {
+            const authStatus = document.getElementById('authStatus');
+            const userInfo = document.getElementById('userInfo');
+            
+            if (user) {
+                currentUser = user;
+                authStatus.className = 'status success';
+                authStatus.textContent = '✅ Usuário autenticado!';
+                userInfo.style.display = 'block';
+                document.getElementById('userEmail').textContent = user.email;
+                document.getElementById('deviceId').textContent = window.sessionManager.currentDeviceId;
+                
+                // Listar sessões automaticamente
+                setTimeout(() => listarSessoes(), 500);
+            } else {
+                authStatus.className = 'status error';
+                authStatus.textContent = '❌ Não autenticado. Faça login primeiro em index.html';
+                userInfo.style.display = 'none';
+            }
+        });
+        
+        // Listar sessões ativas
+        async function listarSessoes() {
+            if (!currentUser) {
+                alert('❌ Faça login primeiro!');
+                return;
+            }
+            
+            try {
+                const sessions = await window.sessionManager.getActiveSessions(currentUser.email);
+                const count = Object.keys(sessions).length;
+                const currentDevice = window.sessionManager.currentDeviceId;
+                
+                // Atualizar contador
+                const deviceCount = document.getElementById('deviceCount');
+                deviceCount.className = count >= 2 ? 'status error' : 'status success';
+                deviceCount.textContent = `${count} dispositivo(s) ativo(s) / 2 permitidos`;
+                
+                // Listar dispositivos
+                const deviceList = document.getElementById('deviceList');
+                deviceList.innerHTML = '';
+                
+                if (count === 0) {
+                    deviceList.innerHTML = '<p style="color:#999;">Nenhum dispositivo ativo encontrado.</p>';
+                } else {
+                    for (const [deviceId, info] of Object.entries(sessions)) {
+                        const isCurrent = deviceId === currentDevice;
+                        const div = document.createElement('div');
+                        div.className = isCurrent ? 'device-item current' : 'device-item';
+                        
+                        const lastActive = new Date(info.lastActive).toLocaleString('pt-BR');
+                        
+                        div.innerHTML = `
+                            <strong>${isCurrent ? '➡️ Este Dispositivo' : '📱 Outro Dispositivo'}</strong><br>
+                            <small>
+                                <strong>ID:</strong> ${deviceId.substring(0, 20)}...<br>
+                                <strong>Browser:</strong> ${info.browser || 'Desconhecido'}<br>
+                                <strong>Última atividade:</strong> ${lastActive}
+                            </small>
+                        `;
+                        
+                        deviceList.appendChild(div);
+                    }
+                }
+                
+                // Debug output
+                document.getElementById('debugOutput').textContent = JSON.stringify(sessions, null, 2);
+                
+            } catch (error) {
+                console.error('❌ Erro ao listar sessões:', error);
+                alert('❌ Erro: ' + error.message);
+                document.getElementById('debugOutput').textContent = 'ERRO: ' + error.message;
+            }
+        }
+        
+        // Registrar sessão manualmente
+        async function registrarSessao() {
+            if (!currentUser) {
+                alert('❌ Faça login primeiro!');
+                return;
+            }
+            
+            try {
+                await window.sessionManager.registerSession(currentUser.email);
+                alert('✅ Sessão registrada com sucesso!');
+                await listarSessoes();
+            } catch (error) {
+                console.error('❌ Erro ao registrar sessão:', error);
+                alert('❌ Erro: ' + error.message);
+            }
+        }
+        
+        // Limpar todas as sessões do usuário atual
+        async function limparMinhasSessoes() {
+            if (!currentUser) {
+                alert('❌ Faça login primeiro!');
+                return;
+            }
+            
+            if (!confirm('Tem certeza que deseja limpar TODAS as suas sessões?')) {
+                return;
+            }
+            
+            try {
+                const userEmail = currentUser.email.replace(/[.@]/g, '_');
+                await firebase.database().ref(`sessions/${userEmail}`).remove();
+                alert('✅ Todas as sessões foram limpas!');
+                await listarSessoes();
+            } catch (error) {
+                console.error('❌ Erro ao limpar sessões:', error);
+                alert('❌ Erro: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
