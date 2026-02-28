@@ -5,12 +5,12 @@
 /* BOTÃO HAMBÚRGUER */
 .hamburger-btn {
     position: fixed;
-    top: 20px;
+    top: 65px; /* Abaixo do badge v3.4 PRO */
     right: 20px;
     z-index: 10000;
-    width: 50px;
-    height: 50px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    width: 42px; /* Menor */
+    height: 42px; /* Menor */
+    background: linear-gradient(135deg, var(--color-primary, #667eea) 0%, var(--color-secondary, #764ba2) 100%);
     border: none;
     border-radius: 50%;
     cursor: pointer;
@@ -18,14 +18,14 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 5px;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    gap: 4px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     transition: all 0.3s ease;
 }
 
 .hamburger-btn:hover {
     transform: scale(1.1);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 
 .hamburger-btn:active {
@@ -33,8 +33,8 @@
 }
 
 .hamburger-btn span {
-    width: 24px;
-    height: 3px;
+    width: 20px; /* Menor */
+    height: 2.5px;
     background: #fff;
     border-radius: 3px;
     transition: all 0.3s ease;
@@ -42,7 +42,7 @@
 
 /* ANIMAÇÃO DO X */
 .hamburger-btn.active span:nth-child(1) {
-    transform: rotate(45deg) translate(7px, 7px);
+    transform: rotate(45deg) translate(6px, 6px);
 }
 
 .hamburger-btn.active span:nth-child(2) {
@@ -50,7 +50,7 @@
 }
 
 .hamburger-btn.active span:nth-child(3) {
-    transform: rotate(-45deg) translate(7px, -7px);
+    transform: rotate(-45deg) translate(6px, -6px);
 }
 
 /* OVERLAY */
@@ -93,10 +93,10 @@
     right: 0;
 }
 
-/* HEADER DO MENU */
+/* HEADER DO MENU - USA CORES DINÂMICAS */
 .sidebar-header {
     padding: 30px 20px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--color-primary, #667eea) 0%, var(--color-secondary, #764ba2) 100%);
     color: #fff;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -165,7 +165,7 @@
 .sidebar-nav-item:hover {
     background: rgba(255, 255, 255, 0.05);
     color: #fff;
-    border-left-color: #667eea;
+    border-left-color: var(--color-primary, #667eea);
 }
 
 .sidebar-nav-item i {
@@ -185,7 +185,7 @@
     margin: 10px 20px;
 }
 
-/* BOTÃO LOGOUT */
+/* BOTÃO LOGOUT - USA COR DINÂMICA */
 .sidebar-logout {
     padding: 20px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -220,7 +220,7 @@
 
 /* BADGE DE NOTIFICAÇÃO */
 .sidebar-badge {
-    background: #ff6b6b;
+    background: var(--color-primary, #667eea);
     color: #fff;
     font-size: 10px;
     padding: 2px 6px;
@@ -232,10 +232,14 @@
 /* RESPONSIVO */
 @media (max-width: 768px) {
     .hamburger-btn {
-        width: 45px;
-        height: 45px;
-        top: 15px;
+        width: 40px;
+        height: 40px;
+        top: 60px; /* Ajustado para mobile */
         right: 15px;
+    }
+    
+    .hamburger-btn span {
+        width: 18px;
     }
     
     .sidebar-menu {
