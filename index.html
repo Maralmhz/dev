@@ -529,6 +529,13 @@
             rememberMe.checked = true;
         }
 
+        // 💬 MOSTRAR MENSAGEM DE LOGOUT AUTOMÁTICO
+        const logoutMessage = sessionStorage.getItem('logoutMessage');
+        if (logoutMessage) {
+            showError(logoutMessage);
+            sessionStorage.removeItem('logoutMessage');
+        }
+
         function hideAlerts() {
             alertSuccess.style.display = 'none';
             alertError.style.display = 'none';
