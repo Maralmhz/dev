@@ -1,0 +1,74 @@
+/* ==============================================
+   LOGOUT BUTTON STYLES
+   ============================================== */
+
+.user-info-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.user-email-badge {
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid rgba(102, 126, 234, 0.3);
+}
+
+.user-email-badge::before {
+    content: '👤';
+    font-size: 14px;
+}
+
+.btn-logout {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+    color: #ffffff;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+}
+
+.btn-logout:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.5);
+}
+
+.btn-logout:active {
+    transform: translateY(0);
+}
+
+.btn-logout::before {
+    content: '🚪';
+    font-size: 14px;
+}
+
+/* RESPONSIVO MOBILE */
+@media (max-width: 768px) {
+    .user-info-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .user-email-badge,
+    .btn-logout {
+        font-size: 12px;
+        padding: 6px 14px;
+    }
+}
