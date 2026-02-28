@@ -1,6 +1,6 @@
 /**
  * MONITOR DE STATUS EM TEMPO REAL
- * Verifica se o usuário foi bloqueado/rejeitado e desloga automaticamente
+ * Verifica se o usuario foi bloqueado/rejeitado e desloga automaticamente
  */
 
 let statusMonitorInterval = null;
@@ -8,7 +8,7 @@ let lastKnownStatus = null;
 
 // Iniciar monitoramento
 function iniciarMonitoramentoStatus() {
-    console.log('🔍 Monitor de status iniciado');
+    console.log('[STATUS MONITOR] Iniciado');
 
     firebase.auth().onAuthStateChanged(async (user) => {
         if (!user) {
@@ -26,49 +26,49 @@ function iniciarMonitoramentoStatus() {
     });
 }
 
-// Verificar status do usuário
+// Verificar status do usuario
 async function verificarStatusUsuario(user) {
     try {
         const userDoc = await firebase.firestore().collection('usuarios').doc(user.uid).get();
 
         if (!userDoc.exists) {
-            console.warn('⚠️ Usuário não encontrado no Firestore');
-            await deslogarUsuario('❌ Conta não encontrada');
+            console.warn('[STATUS MONITOR] Usuario nao encontrado no Firestore');
+            await deslogarUsuario('[BLOQUEIO] Conta nao encontrada');
             return;
         }
 
         const userData = userDoc.data();
         const status = userData.status || 'ativo';
 
-        // Detectar mudança de status
+        // Detectar mudanca de status
         if (lastKnownStatus && lastKnownStatus !== status) {
-            console.log(`🔄 Status mudou: ${lastKnownStatus} → ${status}`);
+            console.log('[STATUS MONITOR] Status mudou: ' + lastKnownStatus + ' -> ' + status);
         }
 
         lastKnownStatus = status;
 
-        // Ações baseadas no status
+        // Acoes baseadas no status
         if (status === 'bloqueado') {
-            console.warn('🔒 Conta bloqueada! Deslogando...');
-            await deslogarUsuario('🔒 Sua conta foi bloqueada pelo administrador');
+            console.warn('[STATUS MONITOR] Conta bloqueada! Deslogando...');
+            await deslogarUsuario('[BLOQUEIO] Sua conta foi bloqueada pelo administrador');
         } else if (status === 'rejeitado') {
-            console.warn('❌ Conta rejeitada! Deslogando...');
-            await deslogarUsuario('❌ Seu acesso foi rejeitado');
+            console.warn('[STATUS MONITOR] Conta rejeitada! Deslogando...');
+            await deslogarUsuario('[BLOQUEIO] Seu acesso foi rejeitado');
         } else if (status === 'pendente') {
-            console.warn('⏳ Conta pendente! Deslogando...');
-            await deslogarUsuario('⏳ Aguardando aprovação do administrador');
+            console.warn('[STATUS MONITOR] Conta pendente! Deslogando...');
+            await deslogarUsuario('[BLOQUEIO] Aguardando aprovacao do administrador');
         }
 
     } catch (error) {
-        console.error('❌ Erro ao verificar status:', error);
+        console.error('[STATUS MONITOR] Erro ao verificar status:', error);
     }
 }
 
-// Deslogar usuário e mostrar mensagem
+// Deslogar usuario e mostrar mensagem
 async function deslogarUsuario(mensagem) {
     pararMonitoramentoStatus();
 
-    // Salvar mensagem para mostrar na próxima página
+    // Salvar mensagem para mostrar na proxima pagina
     sessionStorage.setItem('logoutMessage', mensagem);
 
     // Deslogar do Firebase
@@ -83,7 +83,7 @@ function pararMonitoramentoStatus() {
     if (statusMonitorInterval) {
         clearInterval(statusMonitorInterval);
         statusMonitorInterval = null;
-        console.log('🛑 Monitor de status parado');
+        console.log('[STATUS MONITOR] Parado');
     }
 }
 
@@ -91,7 +91,7 @@ function pararMonitoramentoStatus() {
 if (typeof firebase !== 'undefined') {
     iniciarMonitoramentoStatus();
 } else {
-    console.warn('⚠️ Firebase não carregado ainda');
+    console.warn('[STATUS MONITOR] Firebase nao carregado ainda');
     window.addEventListener('load', () => {
         if (typeof firebase !== 'undefined') {
             iniciarMonitoramentoStatus();
