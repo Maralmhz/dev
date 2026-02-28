@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Gestão de Oficinas</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* BACKGROUND ANIMADO */
+        .background {
+            position: fixed;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* PARTÍCULAS FLUTUANTES */
+        .particles {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            animation: float linear infinite;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) scale(0);
+                opacity: 0;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) scale(1);
+                opacity: 0;
+            }
+        }
+
+        /* CONTAINER PRINCIPAL */
+        .login-container {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* CARD GLASSMORPHISM */
+        .login-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            padding: 50px 40px;
+            width: 100%;
+            max-width: 440px;
+            animation: slideUp 0.8s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* LOGO */
+        .logo-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo-container img {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        /* TÍTULO */
+        .welcome-text {
+            text-align: center;
+            color: #ffffff;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 14px;
+            margin-bottom: 35px;
+            font-weight: 400;
+        }
+
+        /* FORMULÁRIO */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 18px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            color: #ffffff;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        input:focus {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* CHECKBOX LEMBRAR */
+        .remember-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .remember-container input[type="checkbox"] {
+            width: auto;
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
+        .remember-container label {
+            margin: 0;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        /* BOTÃO PRINCIPAL */
+        .btn-login {
+            width: 100%;
+            padding: 16px;
+            border-radius: 15px;
+            border: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        /* LINKS */
+        .links-container {
+            margin-top: 25px;
+            text-align: center;
+        }
+
+        .link {
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-block;
+            padding: 8px 0;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .link:hover {
+            transform: translateY(-2px);
+            text-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .divider {
+            margin: 0 15px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* ALERTAS */
+        .alert {
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            display: none;
+            animation: slideDown 0.4s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .alert-success {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid rgba(76, 175, 80, 0.5);
+            color: #ffffff;
+        }
+
+        .alert-error {
+            background: rgba(244, 67, 54, 0.2);
+            border: 1px solid rgba(244, 67, 54, 0.5);
+            color: #ffffff;
+        }
+
+        /* LOADING */
+        .loading {
+            display: none;
+            text-align: center;
+            color: #ffffff;
+            margin-top: 15px;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid #ffffff;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* RESPONSIVO */
+        @media (max-width: 500px) {
+            .login-card {
+                padding: 40px 30px;
+            }
+            
+            .welcome-text {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- BACKGROUND ANIMADO -->
+    <div class="background"></div>
+
+    <!-- PARTÍCULAS -->
+    <div class="particles" id="particles"></div>
+
+    <!-- CONTAINER LOGIN -->
+    <div class="login-container">
+        <div class="login-card">
+            <!-- LOGO -->
+            <div class="logo-container">
+                <img src="logo.png" alt="Logo" id="logoLogin">
+            </div>
+
+            <!-- TÍTULO -->
+            <h1 class="welcome-text">Seu negócio merece o melhor</h1>
+            <p class="subtitle">Gestão profissional ao seu alcance</p>
+
+            <!-- ALERTAS -->
+            <div id="alertSuccess" class="alert alert-success"></div>
+            <div id="alertError" class="alert alert-error"></div>
+
+            <!-- FORMULÁRIO -->
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">E-mail</label>
+                    <input type="email" id="email" name="email" placeholder="seu@email.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="senha">Senha</label>
+                    <input type="password" id="senha" name="senha" placeholder="••••••••" required>
+                </div>
+
+                <div class="remember-container">
+                    <input type="checkbox" id="rememberMe" name="rememberMe">
+                    <label for="rememberMe">Lembrar neste dispositivo</label>
+                </div>
+
+                <button type="submit" class="btn-login">Entrar</button>
+            </form>
+
+            <!-- LOADING -->
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 10px; font-size: 13px;">Carregando...</p>
+            </div>
+
+            <!-- LINKS -->
+            <div class="links-container">
+                <a href="#" class="link" id="btnCriarConta">Criar conta</a>
+                <span class="divider">|</span>
+                <a href="#" class="link" id="btnEsqueciSenha">Esqueci a senha</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- FIREBASE SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <!-- CONFIG FIREBASE -->
+    <script src="config.js"></script>
+
+    <script>
+        // INICIALIZAR FIREBASE
+        if (window.FIREBASE_CONFIG && !firebase.apps.length) {
+            firebase.initializeApp(window.FIREBASE_CONFIG);
+        }
+
+        // GERAR PARTÍCULAS
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                const size = Math.random() * 60 + 20;
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                particle.style.animationDelay = Math.random() * 5 + 's';
+                container.appendChild(particle);
+            }
+        }
+        createParticles();
+
+        // ELEMENTOS
+        const form = document.getElementById('loginForm');
+        const emailInput = document.getElementById('email');
+        const senhaInput = document.getElementById('senha');
+        const rememberMe = document.getElementById('rememberMe');
+        const alertSuccess = document.getElementById('alertSuccess');
+        const alertError = document.getElementById('alertError');
+        const loading = document.getElementById('loading');
+        const btnCriarConta = document.getElementById('btnCriarConta');
+        const btnEsqueciSenha = document.getElementById('btnEsqueciSenha');
+
+        // VERIFICAR SE JÁ ESTÁ LOGADO
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                window.location.href = 'index.html';
+            }
+        });
+
+        // CARREGAR EMAIL SALVO
+        const savedEmail = localStorage.getItem('rememberedEmail');
+        if (savedEmail) {
+            emailInput.value = savedEmail;
+            rememberMe.checked = true;
+        }
+
+        // FUNÇÕES DE ALERTA
+        function showSuccess(msg) {
+            alertError.style.display = 'none';
+            alertSuccess.textContent = msg;
+            alertSuccess.style.display = 'block';
+        }
+
+        function showError(msg) {
+            alertSuccess.style.display = 'none';
+            alertError.textContent = msg;
+            alertError.style.display = 'block';
+        }
+
+        // LOGIN
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = emailInput.value.trim();
+            const senha = senhaInput.value;
+
+            loading.style.display = 'block';
+            alertSuccess.style.display = 'none';
+            alertError.style.display = 'none';
+
+            try {
+                await firebase.auth().signInWithEmailAndPassword(email, senha);
+                
+                // SALVAR EMAIL SE MARCADO
+                if (rememberMe.checked) {
+                    localStorage.setItem('rememberedEmail', email);
+                } else {
+                    localStorage.removeItem('rememberedEmail');
+                }
+
+                showSuccess('✅ Login realizado! Redirecionando...');
+                
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1500);
+
+            } catch (error) {
+                loading.style.display = 'none';
+                
+                let msgErro = '❌ Erro ao fazer login';
+                
+                if (error.code === 'auth/user-not-found') {
+                    msgErro = '❌ Usuário não encontrado';
+                } else if (error.code === 'auth/wrong-password') {
+                    msgErro = '❌ Senha incorreta';
+                } else if (error.code === 'auth/invalid-email') {
+                    msgErro = '❌ E-mail inválido';
+                } else if (error.code === 'auth/too-many-requests') {
+                    msgErro = '❌ Muitas tentativas. Tente novamente mais tarde';
+                }
+                
+                showError(msgErro);
+            }
+        });
+
+        // CRIAR CONTA
+        btnCriarConta.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            const email = prompt('Digite seu e-mail para criar conta:');
+            if (!email) return;
+
+            const senha = prompt('Digite uma senha (mínimo 6 caracteres):');
+            if (!senha || senha.length < 6) {
+                alert('❌ Senha deve ter no mínimo 6 caracteres!');
+                return;
+            }
+
+            const nome = prompt('Digite seu nome completo:');
+            if (!nome) return;
+
+            loading.style.display = 'block';
+
+            firebase.auth().createUserWithEmailAndPassword(email, senha)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+                    
+                    return firebase.firestore().collection('usuarios').doc(user.uid).set({
+                        email: user.email,
+                        nome: nome,
+                        role: 'admin',
+                        oficinaId: null,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                })
+                .then(() => {
+                    loading.style.display = 'none';
+                    showSuccess('✅ Conta criada com sucesso! Faça login.');
+                })
+                .catch((error) => {
+                    loading.style.display = 'none';
+                    
+                    let msgErro = '❌ Erro ao criar conta';
+                    if (error.code === 'auth/email-already-in-use') {
+                        msgErro = '❌ Este e-mail já está cadastrado';
+                    } else if (error.code === 'auth/invalid-email') {
+                        msgErro = '❌ E-mail inválido';
+                    }
+                    
+                    showError(msgErro);
+                });
+        });
+
+        // ESQUECI SENHA
+        btnEsqueciSenha.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            const email = prompt('Digite seu e-mail para recuperação de senha:');
+            if (!email) return;
+
+            loading.style.display = 'block';
+
+            firebase.auth().sendPasswordResetEmail(email)
+                .then(() => {
+                    loading.style.display = 'none';
+                    showSuccess('✅ E-mail de recuperação enviado! Verifique sua caixa de entrada.');
+                })
+                .catch((error) => {
+                    loading.style.display = 'none';
+                    
+                    let msgErro = '❌ Erro ao enviar e-mail';
+                    if (error.code === 'auth/user-not-found') {
+                        msgErro = '❌ Usuário não encontrado';
+                    } else if (error.code === 'auth/invalid-email') {
+                        msgErro = '❌ E-mail inválido';
+                    }
+                    
+                    showError(msgErro);
+                });
+        });
+    </script>
+</body>
+</html>
