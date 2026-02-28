@@ -234,7 +234,7 @@
     .hamburger-btn {
         width: 40px;
         height: 40px;
-        top: 60px; /* Ajustado para mobile */
+        top: 95px; /* AUMENTADO - Agora fica bem abaixo do badge no mobile */
         right: 15px;
     }
     
@@ -245,6 +245,13 @@
     .sidebar-menu {
         width: 280px;
         right: -280px;
+    }
+}
+
+/* MOBILE MUITO PEQUENO */
+@media (max-width: 480px) {
+    .hamburger-btn {
+        top: 85px; /* Ajuste fino para telas menores */
     }
 }
 
