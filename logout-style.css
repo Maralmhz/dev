@@ -2,15 +2,27 @@
    LOGOUT BUTTON STYLES - ATUALIZADO
    ============================================== */
 
-/* OCULTAR BOTÃO ANTIGO DO HEADER */
+/* OCULTAR COMPLETAMENTE BOTÃO ANTIGO DO HEADER */
 .user-info-container {
     display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
 }
 
 .user-email-badge {
     display: none !important;
+    visibility: hidden !important;
 }
 
 .btn-logout {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* GARANTIR QUE NADA APAREÇA */
+#userEmail {
     display: none !important;
 }
