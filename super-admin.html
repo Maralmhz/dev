@@ -308,7 +308,7 @@
                 <h1>👑 Super Admin - Painel de Controle</h1>
                 <p id="adminUserEmail">Carregando...</p>
             </div>
-            <button class="btn-logout" onclick="logout()">🚺 Sair</button>
+            <button class="btn-logout" onclick="logout()">🚪 Sair</button>
         </div>
 
         <div class="container">
@@ -381,7 +381,7 @@
             }
         }
 
-        // LOGIN DO SUPER ADMIN
+        // LOGIN DO SUPER ADMIN (COM FIREBASE AUTH)
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -392,6 +392,9 @@
             errorDiv.style.display = 'none';
 
             try {
+                console.log('🔄 Validando credenciais no Firestore...');
+                
+                // 1. Validar no Firestore (super_admins)
                 const adminDoc = await firebase.firestore()
                     .collection('super_admins')
                     .doc(email.replace(/[.@]/g, '_'))
@@ -408,6 +411,26 @@
                     throw new Error('Senha incorreta');
                 }
 
+                console.log('✅ Credenciais validadas no Firestore');
+
+                // 2. Fazer login no Firebase Auth
+                console.log('🔄 Fazendo login no Firebase Auth...');
+                try {
+                    // Tentar logar
+                    await firebase.auth().signInWithEmailAndPassword(email, password);
+                    console.log('✅ Login no Firebase Auth realizado');
+                } catch (authError) {
+                    if (authError.code === 'auth/user-not-found') {
+                        // Criar usuário no Firebase Auth
+                        console.log('🆕 Criando usuário no Firebase Auth...');
+                        await firebase.auth().createUserWithEmailAndPassword(email, password);
+                        console.log('✅ Usuário criado e logado no Firebase Auth');
+                    } else {
+                        throw authError;
+                    }
+                }
+
+                // 3. Sucesso!
                 currentAdminEmail = email;
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('adminScreen').style.display = 'block';
@@ -438,7 +461,8 @@
             }
         });
 
-        function logout() {
+        async function logout() {
+            await firebase.auth().signOut();
             sessionStorage.removeItem('superAdminAuth');
             location.reload();
         }
