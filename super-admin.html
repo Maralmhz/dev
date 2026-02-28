@@ -192,24 +192,25 @@
         }
 
         .btn {
-            padding: 10px 20px;
+            padding: 8px 16px;
             border: none;
-            border-radius: 8px;
-            font-size: 14px;
+            border-radius: 6px;
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
-            margin-right: 10px;
-            margin-bottom: 10px;
+            transition: all 0.2s;
+            margin-right: 6px;
         }
 
         .btn-primary { background: #667eea; color: white; }
         .btn-danger { background: #e74c3c; color: white; }
         .btn-success { background: #27ae60; color: white; }
+        .btn-warning { background: #f39c12; color: white; }
+        .btn-secondary { background: #95a5a6; color: white; }
 
         .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transform: translateY(-1px);
+            opacity: 0.9;
         }
 
         table {
@@ -234,12 +235,16 @@
             display: inline-block;
             padding: 4px 10px;
             border-radius: 12px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
         }
 
         .badge-admin { background: #d4edda; color: #155724; }
         .badge-user { background: #cce5ff; color: #004085; }
+        .badge-ativo { background: #d4edda; color: #155724; }
+        .badge-pendente { background: #fff3cd; color: #856404; }
+        .badge-bloqueado { background: #f8d7da; color: #721c24; }
+        .badge-rejeitado { background: #e2e3e5; color: #383d41; }
 
         input[type="number"], input[type="email"], select {
             width: 100%;
@@ -247,6 +252,12 @@
             border: 2px solid #e0e0e0;
             border-radius: 8px;
             font-size: 14px;
+        }
+
+        .actions-group {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
         }
     </style>
 </head>
@@ -280,7 +291,7 @@
                 <h1>👑 Super Admin - Painel de Controle</h1>
                 <p id="adminUserEmail">Carregando...</p>
             </div>
-            <button class="btn-logout" onclick="logout()">🚪 Sair</button>
+            <button class="btn-logout" onclick="logout()">🚺 Sair</button>
         </div>
 
         <div class="container">
@@ -291,12 +302,12 @@
                     <div class="stat-label">Usuários Totais</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-number" id="totalSessions">0</div>
-                    <div class="stat-label">Sessões Ativas</div>
+                    <div class="stat-number" id="totalPendentes">0</div>
+                    <div class="stat-label">Aguardando Aprovação</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-number" id="totalChecklists">0</div>
-                    <div class="stat-label">Checklists (Firestore)</div>
+                    <div class="stat-number" id="totalSessions">0</div>
+                    <div class="stat-label">Sessões Ativas</div>
                 </div>
             </div>
 
@@ -313,20 +324,6 @@
                 <button class="btn btn-primary" onclick="listarTodasSessoes()">🔄 Atualizar Sessões</button>
                 <button class="btn btn-danger" onclick="limparTodasSessoes()">🗑️ Limpar TODAS Sessões</button>
                 <div id="sessionsList" style="margin-top: 20px;"></div>
-            </div>
-
-            <!-- CONFIGURAÇÕES DE LIMITE -->
-            <div class="card">
-                <h2>⚙️ Configurar Limites de Sessões</h2>
-                <div class="form-group">
-                    <label>Email do Usuário:</label>
-                    <input type="email" id="userEmailLimit" placeholder="usuario@email.com">
-                </div>
-                <div class="form-group">
-                    <label>Novo Limite de Dispositivos:</label>
-                    <input type="number" id="newLimit" value="2" min="1" max="10">
-                </div>
-                <button class="btn btn-success" onclick="atualizarLimite()">✅ Atualizar Limite</button>
             </div>
 
             <!-- BACKUP & DADOS -->
@@ -364,7 +361,6 @@
             errorDiv.style.display = 'none';
 
             try {
-                // Verificar se é Super Admin no Firestore
                 const adminDoc = await firebase.firestore()
                     .collection('super_admins')
                     .doc(email.replace(/[.@]/g, '_'))
@@ -375,28 +371,22 @@
                 }
 
                 const adminData = adminDoc.data();
-
-                // Verificar senha (hash simples - melhorar em produção)
-                const passwordHash = btoa(password); // Base64 simples
+                const passwordHash = btoa(password);
 
                 if (adminData.passwordHash !== passwordHash) {
                     throw new Error('Senha incorreta');
                 }
 
-                // Login bem-sucedido
                 currentAdminEmail = email;
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('adminScreen').style.display = 'block';
                 document.getElementById('adminUserEmail').textContent = email;
 
-                // Carregar dashboard
                 await carregarDashboard();
-
-                // Salvar sessão
                 sessionStorage.setItem('superAdminAuth', btoa(email + ':' + password));
 
             } catch (error) {
-                console.error('❌ Erro no login:', error);
+                console.error('❌ Erro:', error);
                 errorDiv.textContent = '❌ ' + (error.message || 'Acesso negado');
                 errorDiv.style.display = 'block';
             }
@@ -405,7 +395,6 @@
         // Verificar se já está logado
         window.addEventListener('DOMContentLoaded', async () => {
             const savedAuth = sessionStorage.getItem('superAdminAuth');
-            
             if (savedAuth) {
                 try {
                     const [email, password] = atob(savedAuth).split(':');
@@ -418,7 +407,6 @@
             }
         });
 
-        // Logout
         function logout() {
             sessionStorage.removeItem('superAdminAuth');
             location.reload();
@@ -430,6 +418,12 @@
                 const usersSnapshot = await firebase.firestore().collection('usuarios').get();
                 document.getElementById('totalUsers').textContent = usersSnapshot.size;
 
+                let pendentes = 0;
+                usersSnapshot.forEach(doc => {
+                    if (doc.data().status === 'pendente') pendentes++;
+                });
+                document.getElementById('totalPendentes').textContent = pendentes;
+
                 const sessionsSnapshot = await firebase.database().ref('sessions').once('value');
                 const sessions = sessionsSnapshot.val() || {};
                 let totalSessions = 0;
@@ -438,11 +432,8 @@
                 }
                 document.getElementById('totalSessions').textContent = totalSessions;
 
-                const checklistsSnapshot = await firebase.firestore().collection('checklists').get();
-                document.getElementById('totalChecklists').textContent = checklistsSnapshot.size;
-
             } catch (error) {
-                console.error('❌ Erro ao carregar dashboard:', error);
+                console.error('❌ Erro:', error);
             }
         }
 
@@ -459,19 +450,43 @@
                     return;
                 }
 
-                let html = '<table><thead><tr><th>Nome</th><th>Email</th><th>Role</th><th>Ações</th></tr></thead><tbody>';
+                let html = '<table><thead><tr><th>Nome</th><th>Email</th><th>Status</th><th>Role</th><th>Ações</th></tr></thead><tbody>';
 
                 snapshot.forEach(doc => {
                     const data = doc.data();
+                    const status = data.status || 'ativo';
                     const role = data.role || 'user';
+                    
+                    let acoes = '';
+                    
+                    if (status === 'pendente') {
+                        acoes = `
+                            <button class="btn btn-success" onclick="aprovarUsuario('${doc.id}', '${data.email}')">✅ Aprovar</button>
+                            <button class="btn btn-danger" onclick="rejeitarUsuario('${doc.id}', '${data.email}')">❌ Rejeitar</button>
+                        `;
+                    } else if (status === 'ativo') {
+                        acoes = `
+                            <button class="btn btn-warning" onclick="bloquearUsuario('${doc.id}', '${data.email}')">🔒 Bloquear</button>
+                            <button class="btn btn-danger" onclick="removerUsuario('${doc.id}', '${data.email}')">🗑️ Remover</button>
+                        `;
+                    } else if (status === 'bloqueado') {
+                        acoes = `
+                            <button class="btn btn-success" onclick="desbloquearUsuario('${doc.id}', '${data.email}')">🔓 Desbloquear</button>
+                            <button class="btn btn-danger" onclick="removerUsuario('${doc.id}', '${data.email}')">🗑️ Remover</button>
+                        `;
+                    } else {
+                        acoes = `
+                            <button class="btn btn-danger" onclick="removerUsuario('${doc.id}', '${data.email}')">🗑️ Remover</button>
+                        `;
+                    }
+
                     html += `
                         <tr>
                             <td>${data.nome || '-'}</td>
                             <td>${data.email}</td>
-                            <td><span class="badge badge-${role === 'admin' ? 'admin' : 'user'}">${role}</span></td>
-                            <td>
-                                <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="removerUsuario('${doc.id}', '${data.email}')">🗑️ Remover</button>
-                            </td>
+                            <td><span class="badge badge-${status}">${status}</span></td>
+                            <td><span class="badge badge-${role === 'admin' || role === 'platform_admin' ? 'admin' : 'user'}">${role}</span></td>
+                            <td><div class="actions-group">${acoes}</div></td>
                         </tr>
                     `;
                 });
@@ -482,6 +497,77 @@
             } catch (error) {
                 console.error('❌ Erro:', error);
                 usersList.innerHTML = '<p style="color:red;">❌ Erro ao carregar usuários</p>';
+            }
+        }
+
+        // APROVAR USUÁRIO
+        async function aprovarUsuario(uid, email) {
+            if (!confirm(`✅ Aprovar ${email}?`)) return;
+            try {
+                await firebase.firestore().collection('usuarios').doc(uid).update({
+                    status: 'ativo',
+                    approvedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    approvedBy: currentAdminEmail
+                });
+                alert('✅ Usuário aprovado!');
+                await listarUsuarios();
+                await carregarDashboard();
+            } catch (error) {
+                alert('❌ Erro ao aprovar');
+            }
+        }
+
+        // REJEITAR USUÁRIO
+        async function rejeitarUsuario(uid, email) {
+            if (!confirm(`❌ Rejeitar ${email}?`)) return;
+            try {
+                await firebase.firestore().collection('usuarios').doc(uid).update({
+                    status: 'rejeitado',
+                    rejectedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    rejectedBy: currentAdminEmail
+                });
+                alert('❌ Usuário rejeitado!');
+                await listarUsuarios();
+                await carregarDashboard();
+            } catch (error) {
+                alert('❌ Erro ao rejeitar');
+            }
+        }
+
+        // BLOQUEAR USUÁRIO
+        async function bloquearUsuario(uid, email) {
+            if (!confirm(`🔒 Bloquear ${email}?`)) return;
+            try {
+                await firebase.firestore().collection('usuarios').doc(uid).update({
+                    status: 'bloqueado',
+                    blockedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    blockedBy: currentAdminEmail
+                });
+                // Deslogar de todos os dispositivos
+                const userEmail = email.replace(/[.@]/g, '_');
+                await firebase.database().ref(`sessions/${userEmail}`).remove();
+                alert('🔒 Usuário bloqueado!');
+                await listarUsuarios();
+                await carregarDashboard();
+            } catch (error) {
+                alert('❌ Erro ao bloquear');
+            }
+        }
+
+        // DESBLOQUEAR USUÁRIO
+        async function desbloquearUsuario(uid, email) {
+            if (!confirm(`🔓 Desbloquear ${email}?`)) return;
+            try {
+                await firebase.firestore().collection('usuarios').doc(uid).update({
+                    status: 'ativo',
+                    unblockedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    unblockedBy: currentAdminEmail
+                });
+                alert('🔓 Usuário desbloqueado!');
+                await listarUsuarios();
+                await carregarDashboard();
+            } catch (error) {
+                alert('❌ Erro ao desbloquear');
             }
         }
 
@@ -539,38 +625,13 @@
             }
         }
 
-        // Atualizar limite
-        async function atualizarLimite() {
-            const email = document.getElementById('userEmailLimit').value.trim();
-            const newLimit = parseInt(document.getElementById('newLimit').value);
-
-            if (!email) {
-                alert('⚠️ Digite o email');
-                return;
-            }
-
-            try {
-                const userEmail = email.replace(/[.@]/g, '_');
-                await firebase.database().ref(`users/${userEmail}/config`).update({
-                    maxSessions: newLimit,
-                    updatedAt: Date.now(),
-                    updatedBy: currentAdminEmail
-                });
-                alert(`✅ Limite atualizado para ${newLimit}!`);
-                document.getElementById('userEmailLimit').value = '';
-            } catch (error) {
-                alert('❌ Erro');
-            }
-        }
-
         // Exportar dados
         async function exportarTodosDados() {
             try {
                 const data = {
                     exportDate: new Date().toISOString(),
                     users: [],
-                    sessions: null,
-                    checklists: []
+                    sessions: null
                 };
 
                 const usersSnapshot = await firebase.firestore().collection('usuarios').get();
@@ -578,9 +639,6 @@
 
                 const sessionsSnapshot = await firebase.database().ref('sessions').once('value');
                 data.sessions = sessionsSnapshot.val();
-
-                const checklistsSnapshot = await firebase.firestore().collection('checklists').get();
-                checklistsSnapshot.forEach(doc => data.checklists.push({ id: doc.id, ...doc.data() }));
 
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
