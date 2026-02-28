@@ -416,15 +416,28 @@
                 // 2. Fazer login no Firebase Auth
                 console.log('🔄 Fazendo login no Firebase Auth...');
                 try {
-                    // Tentar logar
                     await firebase.auth().signInWithEmailAndPassword(email, password);
                     console.log('✅ Login no Firebase Auth realizado');
                 } catch (authError) {
-                    if (authError.code === 'auth/user-not-found') {
-                        // Criar usuário no Firebase Auth
+                    console.log('⚠️ Erro ao fazer login:', authError.code);
+                    
+                    // Se der qualquer erro, tenta criar usuário
+                    if (authError.code === 'auth/user-not-found' || 
+                        authError.code === 'auth/invalid-login-credentials' ||
+                        authError.code === 'auth/wrong-password') {
+                        
                         console.log('🆕 Criando usuário no Firebase Auth...');
-                        await firebase.auth().createUserWithEmailAndPassword(email, password);
-                        console.log('✅ Usuário criado e logado no Firebase Auth');
+                        try {
+                            await firebase.auth().createUserWithEmailAndPassword(email, password);
+                            console.log('✅ Usuário criado e logado no Firebase Auth');
+                        } catch (createError) {
+                            // Se erro for 'email-already-in-use', força reset de senha
+                            if (createError.code === 'auth/email-already-in-use') {
+                                console.log('⚠️ Email já existe, mas senha diferente. Enviando reset...');
+                                throw new Error('Conta existe mas senha está incorreta. Entre em contato com o administrador.');
+                            }
+                            throw createError;
+                        }
                     } else {
                         throw authError;
                     }
