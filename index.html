@@ -2,8 +2,10 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Sistema de Gestão</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Login - Gestão de Oficinas</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    
     <style>
         * {
             margin: 0;
@@ -12,94 +14,156 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 20px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .background {
+            position: fixed;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .particles {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            animation: float linear infinite;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) scale(0);
+                opacity: 0;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) scale(1);
+                opacity: 0;
+            }
         }
 
         .login-container {
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
-            max-width: 420px;
+            position: relative;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            padding: 40px 35px;
             width: 100%;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 420px;
+            animation: slideUp 0.8s ease-out;
         }
 
-        .logo {
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo-container {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
         }
 
-        .logo h1 {
-            font-size: 28px;
-            color: #333;
+        .logo-container img {
+            width: 70px;
+            height: 70px;
+            border-radius: 18px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            animation: pulse 2s ease-in-out infinite;
+            object-fit: cover;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .welcome-text {
+            text-align: center;
+            color: #ffffff;
+            font-size: 22px;
+            font-weight: 700;
             margin-bottom: 8px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            line-height: 1.3;
         }
 
-        .logo p {
-            color: #666;
-            font-size: 14px;
-        }
-
-        .alert {
-            padding: 12px 16px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            display: none;
-        }
-
-        .alert.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .alert.warning {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeeba;
-        }
-
-        .alert.info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
+        .subtitle {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 13px;
+            margin-bottom: 30px;
+            font-weight: 400;
         }
 
         /* BOTÃO GOOGLE */
         .btn-google {
             width: 100%;
-            padding: 14px;
-            background: white;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
+            padding: 15px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.95);
             color: #333;
+            font-size: 15px;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 12px;
             margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
         .btn-google:hover {
-            border-color: #667eea;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+            background: rgba(255, 255, 255, 1);
         }
 
         .divider {
             text-align: center;
-            margin: 25px 0;
+            margin: 22px 0;
             position: relative;
         }
 
@@ -110,99 +174,213 @@
             top: 50%;
             width: 100%;
             height: 1px;
-            background: #e0e0e0;
+            background: rgba(255, 255, 255, 0.3);
         }
 
         .divider span {
-            background: white;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
             padding: 0 15px;
-            color: #999;
-            font-size: 13px;
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 12px;
             position: relative;
             z-index: 1;
+            text-transform: uppercase;
+            font-weight: 600;
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 18px;
+            position: relative;
         }
 
-        .form-group label {
+        label {
             display: block;
-            color: #333;
+            color: #ffffff;
+            font-size: 13px;
             font-weight: 600;
-            margin-bottom: 8px;
-            font-size: 14px;
+            margin-bottom: 7px;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
         }
 
-        .form-group input {
+        input {
             width: 100%;
-            padding: 14px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
+            padding: 13px 16px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            color: #ffffff;
             font-size: 15px;
-            transition: all 0.3s;
-        }
-
-        .form-group input:focus {
+            transition: all 0.3s ease;
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
-        .btn-primary {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
         }
 
-        .btn-primary:hover {
+        input:focus {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.6);
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
 
-        .btn-primary:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
+        .password-wrapper {
+            position: relative;
         }
 
-        .links {
+        .password-wrapper input {
+            padding-right: 45px;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-password:hover {
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .toggle-password svg {
+            width: 20px;
+            height: 20px;
+            fill: rgba(255, 255, 255, 0.7);
+            transition: fill 0.3s ease;
+        }
+
+        .toggle-password:hover svg {
+            fill: rgba(255, 255, 255, 0.95);
+        }
+
+        .remember-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 22px;
+        }
+
+        .remember-container input[type="checkbox"] {
+            width: auto;
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
+        .remember-container label {
+            margin: 0;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 15px;
+            border-radius: 14px;
+            border: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .links-container {
+            margin-top: 22px;
             text-align: center;
-            margin-top: 20px;
         }
 
-        .links a {
-            color: #667eea;
+        .link {
+            color: #ffffff;
             text-decoration: none;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-block;
+            padding: 6px 0;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
         }
 
-        .links a:hover {
-            text-decoration: underline;
+        .link:hover {
+            transform: translateY(-2px);
+            text-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
         }
 
-        .links span {
-            color: #ccc;
-            margin: 0 8px;
+        .divider-link {
+            margin: 0 12px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .alert {
+            padding: 11px 14px;
+            border-radius: 12px;
+            margin-bottom: 18px;
+            font-size: 13px;
+            display: none;
+            animation: slideDown 0.4s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .alert-success {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid rgba(76, 175, 80, 0.5);
+            color: #ffffff;
+        }
+
+        .alert-error {
+            background: rgba(244, 67, 54, 0.2);
+            border: 1px solid rgba(244, 67, 54, 0.5);
+            color: #ffffff;
+        }
+
+        .alert-warning {
+            background: rgba(255, 193, 7, 0.2);
+            border: 1px solid rgba(255, 193, 7, 0.5);
+            color: #ffffff;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #ffffff;
+            margin-top: 12px;
         }
 
         .spinner {
-            border: 3px solid rgba(102, 126, 234, 0.2);
-            border-top: 3px solid #667eea;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid #ffffff;
             border-radius: 50%;
-            width: 20px;
-            height: 20px;
+            width: 28px;
+            height: 28px;
             animation: spin 1s linear infinite;
-            display: inline-block;
-            margin-right: 8px;
-            vertical-align: middle;
+            margin: 0 auto;
         }
 
         @keyframes spin {
@@ -212,56 +390,77 @@
     </style>
 </head>
 <body>
+    <div class="background"></div>
+    <div class="particles" id="particles"></div>
+
     <div class="login-container">
-        <div class="logo">
-            <h1>🛠️ Sistema de Gestão</h1>
-            <p>Faça login para continuar</p>
-        </div>
-
-        <div id="alertError" class="alert error"></div>
-        <div id="alertWarning" class="alert warning"></div>
-        <div id="alertInfo" class="alert info"></div>
-
-        <!-- BOTÃO GOOGLE -->
-        <button class="btn-google" onclick="loginComGoogle()">
-            <svg width="20" height="20" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-            Entrar com Google
-        </button>
-
-        <div class="divider">
-            <span>ou</span>
-        </div>
-
-        <!-- FORMULÁRIO EMAIL/SENHA -->
-        <form id="loginForm">
-            <div class="form-group">
-                <label>Email:</label>
-                <input type="email" id="email" placeholder="seu@email.com" required>
+        <div class="login-card">
+            <div class="logo-container">
+                <img src="logo.png" alt="Logo" id="logoLogin">
             </div>
 
-            <div class="form-group">
-                <label>Senha:</label>
-                <input type="password" id="password" placeholder="••••••••" required>
-            </div>
+            <h1 class="welcome-text">Seu negócio merece o melhor</h1>
+            <p class="subtitle">Gestão profissional ao seu alcance</p>
 
-            <button type="submit" class="btn-primary" id="btnLogin">
-                Entrar
+            <div id="alertSuccess" class="alert alert-success"></div>
+            <div id="alertError" class="alert alert-error"></div>
+            <div id="alertWarning" class="alert alert-warning"></div>
+
+            <!-- BOTÃO GOOGLE -->
+            <button class="btn-google" onclick="loginComGoogle()">
+                <svg width="20" height="20" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                </svg>
+                Entrar com Google
             </button>
-        </form>
 
-        <div class="links">
-            <a href="cadastro.html">Solicitar Acesso</a>
-            <span>|</span>
-            <a href="reset-password.html">Esqueci a senha</a>
+            <div class="divider">
+                <span>ou</span>
+            </div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">E-mail</label>
+                    <input type="email" id="email" name="email" placeholder="seu@email.com" required autocomplete="email">
+                </div>
+
+                <div class="form-group">
+                    <label for="senha">Senha</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="senha" name="senha" placeholder="••••••••" required autocomplete="current-password">
+                        <button type="button" class="toggle-password" id="togglePassword">
+                            <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="remember-container">
+                    <input type="checkbox" id="rememberMe" name="rememberMe">
+                    <label for="rememberMe">Lembrar neste dispositivo</label>
+                </div>
+
+                <button type="submit" class="btn-login">Entrar</button>
+            </form>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 8px; font-size: 12px;">Carregando...</p>
+            </div>
+
+            <div class="links-container">
+                <a href="cadastro.html" class="link">Solicitar acesso</a>
+                <span class="divider-link">|</span>
+                <a href="reset-password.html" class="link">Esqueci a senha</a>
+            </div>
         </div>
     </div>
 
-    <!-- Firebase -->
+    <!-- FIREBASE -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -273,121 +472,73 @@
             firebase.initializeApp(window.FIREBASE_CONFIG);
         }
 
-        const btnLogin = document.getElementById('btnLogin');
-        const alertError = document.getElementById('alertError');
-        const alertWarning = document.getElementById('alertWarning');
-        const alertInfo = document.getElementById('alertInfo');
-
-        // LOGIN COM GOOGLE
-        async function loginComGoogle() {
-            try {
-                const provider = new firebase.auth.GoogleAuthProvider();
-                const result = await firebase.auth().signInWithPopup(provider);
-                const user = result.user;
-
-                console.log('✅ Login Google OK:', user.email);
-                await verificarAcessoUsuario(user);
-
-            } catch (error) {
-                console.error('❌ Erro:', error);
-                if (error.code !== 'auth/popup-closed-by-user') {
-                    showError('❌ Erro ao fazer login com Google');
-                }
-            }
+        // Carregar logo
+        const logoImg = document.getElementById('logoLogin');
+        if (window.OFICINA_CONFIG?.logo) {
+            logoImg.src = window.OFICINA_CONFIG.logo;
         }
 
-        // LOGIN COM EMAIL/SENHA
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        // Toggle senha
+        const togglePassword = document.getElementById('togglePassword');
+        const senhaInput = document.getElementById('senha');
+        const eyeIcon = document.getElementById('eyeIcon');
 
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-
-            hideAlerts();
-            btnLogin.disabled = true;
-            btnLogin.innerHTML = '<span class="spinner"></span> Entrando...';
-
-            try {
-                const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
-                await verificarAcessoUsuario(userCredential.user);
-
-            } catch (error) {
-                console.error('❌ Erro:', error);
-                let errorMsg = '❌ Erro ao fazer login';
-
-                switch (error.code) {
-                    case 'auth/user-not-found':
-                        errorMsg = '❌ Usuário não encontrado';
-                        break;
-                    case 'auth/wrong-password':
-                        errorMsg = '❌ Senha incorreta';
-                        break;
-                    case 'auth/invalid-email':
-                        errorMsg = '❌ Email inválido';
-                        break;
-                    case 'auth/too-many-requests':
-                        errorMsg = '❌ Muitas tentativas. Aguarde';
-                        break;
-                }
-
-                showError(errorMsg);
-
-            } finally {
-                btnLogin.disabled = false;
-                btnLogin.textContent = 'Entrar';
+        togglePassword.addEventListener('click', () => {
+            const type = senhaInput.type === 'password' ? 'text' : 'password';
+            senhaInput.type = type;
+            
+            if (type === 'text') {
+                eyeIcon.innerHTML = '<path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/>';
+            } else {
+                eyeIcon.innerHTML = '<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>';
             }
         });
 
-        // VERIFICAR ACESSO (SaaS)
-        async function verificarAcessoUsuario(user) {
-            try {
-                const userDoc = await firebase.firestore().collection('usuarios').doc(user.uid).get();
-
-                if (!userDoc.exists) {
-                    // Criar usuário pendente
-                    await firebase.firestore().collection('usuarios').doc(user.uid).set({
-                        email: user.email,
-                        nome: user.displayName || '',
-                        status: 'pendente',
-                        role: 'user',
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-
-                    await firebase.auth().signOut();
-                    showWarning('⚠️ Acesso solicitado! Aguarde aprovação do administrador.');
-                    return;
-                }
-
-                const userData = userDoc.data();
-
-                if (userData.status === 'pendente') {
-                    await firebase.auth().signOut();
-                    showWarning('⏳ Aguardando aprovação...');
-                    return;
-                }
-
-                if (userData.status === 'bloqueado') {
-                    await firebase.auth().signOut();
-                    showError('❌ Conta bloqueada');
-                    return;
-                }
-
-                if (userData.status === 'ativo') {
-                    showInfo('✅ Login realizado! Redirecionando...');
-                    setTimeout(() => window.location.href = 'app.html', 1000);
-                }
-
-            } catch (error) {
-                console.error('❌ Erro:', error);
-                await firebase.auth().signOut();
-                showError('❌ Erro ao verificar permissões');
+        // Partículas
+        function createParticles() {
+            const container = document.getElementById('particles');
+            const isMobile = window.innerWidth < 768;
+            const particleCount = isMobile ? 20 : 40;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                const size = Math.random() * 50 + 20;
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                particle.style.animationDelay = Math.random() * 5 + 's';
+                container.appendChild(particle);
             }
+        }
+        createParticles();
+
+        const form = document.getElementById('loginForm');
+        const emailInput = document.getElementById('email');
+        const rememberMe = document.getElementById('rememberMe');
+        const alertSuccess = document.getElementById('alertSuccess');
+        const alertError = document.getElementById('alertError');
+        const alertWarning = document.getElementById('alertWarning');
+        const loading = document.getElementById('loading');
+
+        // Carregar email salvo
+        const savedEmail = localStorage.getItem('rememberedEmail');
+        if (savedEmail) {
+            emailInput.value = savedEmail;
+            rememberMe.checked = true;
         }
 
         function hideAlerts() {
+            alertSuccess.style.display = 'none';
             alertError.style.display = 'none';
             alertWarning.style.display = 'none';
-            alertInfo.style.display = 'none';
+        }
+
+        function showSuccess(msg) {
+            hideAlerts();
+            alertSuccess.innerHTML = msg;
+            alertSuccess.style.display = 'block';
         }
 
         function showError(msg) {
@@ -402,10 +553,109 @@
             alertWarning.style.display = 'block';
         }
 
-        function showInfo(msg) {
+        // LOGIN COM GOOGLE
+        async function loginComGoogle() {
+            try {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                const result = await firebase.auth().signInWithPopup(provider);
+                await verificarAcessoUsuario(result.user);
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                if (error.code !== 'auth/popup-closed-by-user') {
+                    showError('❌ Erro ao fazer login com Google');
+                }
+            }
+        }
+
+        // LOGIN COM EMAIL/SENHA
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = emailInput.value.trim();
+            const senha = senhaInput.value;
+
+            loading.style.display = 'block';
             hideAlerts();
-            alertInfo.innerHTML = msg;
-            alertInfo.style.display = 'block';
+
+            try {
+                const userCredential = await firebase.auth().signInWithEmailAndPassword(email, senha);
+                
+                if (rememberMe.checked) {
+                    localStorage.setItem('rememberedEmail', email);
+                } else {
+                    localStorage.removeItem('rememberedEmail');
+                }
+
+                await verificarAcessoUsuario(userCredential.user);
+
+            } catch (error) {
+                loading.style.display = 'none';
+                
+                let msgErro = '❌ Erro ao fazer login';
+                
+                if (error.code === 'auth/user-not-found') {
+                    msgErro = '❌ Usuário não encontrado';
+                } else if (error.code === 'auth/wrong-password') {
+                    msgErro = '❌ Senha incorreta';
+                } else if (error.code === 'auth/invalid-email') {
+                    msgErro = '❌ E-mail inválido';
+                } else if (error.code === 'auth/too-many-requests') {
+                    msgErro = '❌ Muitas tentativas. Tente novamente mais tarde';
+                }
+                
+                showError(msgErro);
+            }
+        });
+
+        // VERIFICAR ACESSO (SaaS)
+        async function verificarAcessoUsuario(user) {
+            try {
+                const userDoc = await firebase.firestore().collection('usuarios').doc(user.uid).get();
+
+                if (!userDoc.exists) {
+                    // Criar documento pendente
+                    await firebase.firestore().collection('usuarios').doc(user.uid).set({
+                        email: user.email,
+                        nome: user.displayName || '',
+                        status: 'pendente',
+                        role: 'user',
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    await firebase.auth().signOut();
+                    loading.style.display = 'none';
+                    showWarning('⚠️ Acesso solicitado! Aguarde aprovação.');
+                    return;
+                }
+
+                const userData = userDoc.data();
+
+                if (userData.status === 'pendente') {
+                    await firebase.auth().signOut();
+                    loading.style.display = 'none';
+                    showWarning('⏳ Aguardando aprovação...');
+                    return;
+                }
+
+                if (userData.status === 'bloqueado') {
+                    await firebase.auth().signOut();
+                    loading.style.display = 'none';
+                    showError('❌ Conta bloqueada');
+                    return;
+                }
+
+                if (userData.status === 'ativo') {
+                    loading.style.display = 'none';
+                    showSuccess('✅ Login realizado! Redirecionando...');
+                    setTimeout(() => window.location.href = 'app.html', 1000);
+                }
+
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                await firebase.auth().signOut();
+                loading.style.display = 'none';
+                showError('❌ Erro ao verificar permissões');
+            }
         }
 
         // Redirecionar se já logado
