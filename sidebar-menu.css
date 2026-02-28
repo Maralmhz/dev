@@ -1,16 +1,18 @@
 /* ==============================================
    SIDEBAR MENU - HAMBÚRGUER LATERAL
+   Cores dinâmicas que seguem o tema da oficina
    ============================================== */
 
-/* BOTÃO HAMBÚRGUER - DESKTOP */
+/* BOTÃO HAMBÚRGUER - USA COR DO SISTEMA */
 .hamburger-btn {
     position: fixed;
-    top: 65px; /* Abaixo do badge v3.4 PRO no desktop */
+    top: 65px;
     right: 20px;
     z-index: 10000;
     width: 42px;
     height: 42px;
-    background: linear-gradient(135deg, var(--color-primary, #667eea) 0%, var(--color-secondary, #764ba2) 100%);
+    /* USA A COR PRIMÁRIA DO SISTEMA */
+    background: var(--color-primary, #000000);
     border: none;
     border-radius: 50%;
     cursor: pointer;
@@ -26,6 +28,7 @@
 .hamburger-btn:hover {
     transform: scale(1.1);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    filter: brightness(1.1);
 }
 
 .hamburger-btn:active {
@@ -73,7 +76,7 @@
     visibility: visible;
 }
 
-/* SIDEBAR */
+/* SIDEBAR - FUNDO ESCURO NEUTRO */
 .sidebar-menu {
     position: fixed;
     top: 0;
@@ -93,10 +96,11 @@
     right: 0;
 }
 
-/* HEADER DO MENU - USA CORES DINÂMICAS */
+/* HEADER DO MENU - USA COR DO SISTEMA */
 .sidebar-header {
     padding: 30px 20px;
-    background: linear-gradient(135deg, var(--color-primary, #667eea) 0%, var(--color-secondary, #764ba2) 100%);
+    /* USA A COR PRIMÁRIA DO SISTEMA */
+    background: var(--color-primary, #000000);
     color: #fff;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -165,7 +169,8 @@
 .sidebar-nav-item:hover {
     background: rgba(255, 255, 255, 0.05);
     color: #fff;
-    border-left-color: var(--color-primary, #667eea);
+    /* USA A COR PRIMÁRIA DO SISTEMA NO HOVER */
+    border-left-color: var(--color-primary, #000000);
 }
 
 .sidebar-nav-item i {
@@ -185,7 +190,7 @@
     margin: 10px 20px;
 }
 
-/* BOTÃO LOGOUT - USA COR DINÂMICA */
+/* BOTÃO LOGOUT - SEMPRE VERMELHO (PADRÃO DE PERIGO) */
 .sidebar-logout {
     padding: 20px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -218,9 +223,10 @@
     transform: translateY(0);
 }
 
-/* BADGE DE NOTIFICAÇÃO */
+/* BADGE DE NOTIFICAÇÃO - USA COR DO SISTEMA */
 .sidebar-badge {
-    background: var(--color-primary, #667eea);
+    /* USA A COR PRIMÁRIA DO SISTEMA */
+    background: var(--color-primary, #000000);
     color: #fff;
     font-size: 10px;
     padding: 2px 6px;
@@ -234,7 +240,7 @@
     .hamburger-btn {
         width: 40px;
         height: 40px;
-        top: 135px !important; /* BEM ABAIXO - GARANTE QUE FIQUE DEPOIS DO BADGE */
+        top: 135px !important;
         right: 15px;
     }
     
