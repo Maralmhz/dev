@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🧪 Criar Usuário de Teste</title>
+    <title>🧪 Criar Usuário Teste</title>
     <style>
         * {
             margin: 0;
@@ -13,184 +13,114 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             padding: 20px;
         }
 
-        .card {
+        .container {
             background: white;
             border-radius: 20px;
             padding: 40px;
-            max-width: 500px;
+            max-width: 600px;
             width: 100%;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
         }
 
         h1 {
+            font-size: 32px;
             color: #333;
             margin-bottom: 10px;
-            font-size: 28px;
         }
 
         p {
             color: #666;
-            margin-bottom: 25px;
+            margin-bottom: 30px;
             line-height: 1.6;
-            font-size: 14px;
         }
 
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            color: #333;
-            font-weight: 600;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-
-        input {
-            width: 100%;
-            padding: 14px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 15px;
-            transition: all 0.3s;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        button {
-            width: 100%;
-            padding: 14px;
+        .btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
+            padding: 15px 40px;
             border-radius: 10px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
-            margin-top: 10px;
+            margin: 10px;
         }
 
-        button:hover {
+        .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
         }
 
-        button:disabled {
-            opacity: 0.6;
+        .btn:disabled {
+            opacity: 0.5;
             cursor: not-allowed;
         }
 
-        .alert {
-            padding: 12px 16px;
+        .status {
+            margin-top: 30px;
+            padding: 20px;
             border-radius: 10px;
-            margin-bottom: 20px;
             font-size: 14px;
-            display: none;
+            line-height: 1.8;
+            text-align: left;
         }
 
-        .alert.success {
+        .status.success {
             background: #d4edda;
             color: #155724;
             border: 1px solid #c3e6cb;
         }
 
-        .alert.error {
+        .status.error {
             background: #f8d7da;
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
 
-        .quick-fill {
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .user-box {
             background: #f8f9fa;
-            border: 2px solid #e0e0e0;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-
-        .quick-fill h3 {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 10px;
-        }
-
-        .quick-fill button {
-            background: #6c757d;
-            padding: 8px 16px;
-            font-size: 13px;
-            margin-top: 0;
-        }
-
-        .quick-fill button:hover {
-            background: #5a6268;
-        }
-
-        .info-box {
-            background: #e7f3ff;
-            border: 2px solid #2196F3;
             padding: 15px;
             border-radius: 10px;
             margin-top: 20px;
-            font-size: 13px;
-            color: #1976D2;
+            text-align: left;
+        }
+
+        .user-box strong {
+            color: #667eea;
         }
     </style>
 </head>
 <body>
-    <div class="card">
+    <div class="container">
         <h1>🧪 Criar Usuário de Teste</h1>
-        <p>Crie rapidamente um usuário para testar o sistema de limites de dispositivos.</p>
+        <p>Este script criará um usuário de teste completo (Firebase Auth + Firestore) para você testar o bloqueio.</p>
 
-        <div class="quick-fill">
-            <h3>⚡ Preenchimento rápido:</h3>
-            <button onclick="preencherTeste1()">📝 Usuário Teste 1</button>
-            <button onclick="preencherTeste2()">📝 Usuário Teste 2</button>
+        <div class="user-box">
+            <strong>Email:</strong> teste@bloqueio.com<br>
+            <strong>Senha:</strong> teste123<br>
+            <strong>Status:</strong> ativo<br>
+            <strong>Role:</strong> user
         </div>
 
-        <div id="alertSuccess" class="alert success"></div>
-        <div id="alertError" class="alert error"></div>
+        <button class="btn" id="btnCriar" onclick="criarUsuarioTeste()">🚀 Criar Usuário Teste</button>
 
-        <form id="createUserForm">
-            <div class="form-group">
-                <label>Email:</label>
-                <input type="email" id="userEmail" placeholder="teste@exemplo.com" required autofocus>
-            </div>
-
-            <div class="form-group">
-                <label>Senha (mínimo 6 caracteres):</label>
-                <input type="password" id="userPassword" placeholder="••••••••" minlength="6" required>
-            </div>
-
-            <div class="form-group">
-                <label>Nome Completo:</label>
-                <input type="text" id="userName" placeholder="Usuário Teste" required>
-            </div>
-
-            <button type="submit" id="btnSubmit">✅ Criar Usuário</button>
-        </form>
-
-        <div class="info-box">
-            <strong>💡 Dica:</strong><br>
-            Use emails simples como:<br>
-            • teste1@teste.com<br>
-            • teste2@teste.com<br>
-            • cliente@exemplo.com<br><br>
-            Senha simples para testes: <strong>123456</strong>
-        </div>
+        <div id="status" style="display:none;"></div>
     </div>
 
     <!-- Firebase -->
@@ -205,102 +135,107 @@
             firebase.initializeApp(window.FIREBASE_CONFIG);
         }
 
-        // Preenchimento rápido
-        function preencherTeste1() {
-            document.getElementById('userEmail').value = 'teste1@teste.com';
-            document.getElementById('userPassword').value = '123456';
-            document.getElementById('userName').value = 'Usuário Teste 1';
-        }
+        async function criarUsuarioTeste() {
+            const email = 'teste@bloqueio.com';
+            const password = 'teste123';
+            const nome = 'Usuário Teste';
+            const statusDiv = document.getElementById('status');
+            const btnCriar = document.getElementById('btnCriar');
 
-        function preencherTeste2() {
-            document.getElementById('userEmail').value = 'teste2@teste.com';
-            document.getElementById('userPassword').value = '123456';
-            document.getElementById('userName').value = 'Usuário Teste 2';
-        }
-
-        const form = document.getElementById('createUserForm');
-        const btnSubmit = document.getElementById('btnSubmit');
-        const alertSuccess = document.getElementById('alertSuccess');
-        const alertError = document.getElementById('alertError');
-
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const email = document.getElementById('userEmail').value.trim();
-            const password = document.getElementById('userPassword').value;
-            const nome = document.getElementById('userName').value.trim();
-
-            alertSuccess.style.display = 'none';
-            alertError.style.display = 'none';
-
-            btnSubmit.disabled = true;
-            btnSubmit.textContent = '⏳ Criando...';
+            btnCriar.disabled = true;
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'status info';
+            statusDiv.innerHTML = '🔄 Criando usuário de teste...';
 
             try {
-                // Criar usuário no Firebase Authentication
-                const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
-                const user = userCredential.user;
+                console.log('🔄 Iniciando criação...');
 
-                // Criar documento no Firestore
-                await firebase.firestore().collection('usuarios').doc(user.uid).set({
+                // 1. Criar usuário no Firebase Auth
+                statusDiv.innerHTML += '<br>🔄 Criando conta no Firebase Auth...';
+                let userCredential;
+                try {
+                    userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+                    console.log('✅ Conta criada no Firebase Auth');
+                    statusDiv.innerHTML += '<br>✅ Conta criada no Firebase Auth';
+                } catch (authError) {
+                    if (authError.code === 'auth/email-already-in-use') {
+                        console.log('⚠️ Email já existe, deletando e recriando...');
+                        statusDiv.innerHTML += '<br>⚠️ Email já existe, fazendo login para pegar UID...';
+                        
+                        // Login para pegar UID
+                        userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+                        const uid = userCredential.user.uid;
+                        
+                        // Deletar conta antiga
+                        await userCredential.user.delete();
+                        console.log('🗑️ Conta antiga deletada');
+                        statusDiv.innerHTML += '<br>🗑️ Conta antiga deletada';
+                        
+                        // Criar nova
+                        userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+                        console.log('✅ Nova conta criada');
+                        statusDiv.innerHTML += '<br>✅ Nova conta criada';
+                    } else {
+                        throw authError;
+                    }
+                }
+
+                const uid = userCredential.user.uid;
+                console.log('🆔 UID:', uid);
+
+                // 2. Criar documento no Firestore
+                statusDiv.innerHTML += '<br>🔄 Criando registro no Firestore...';
+                
+                await firebase.firestore().collection('usuarios').doc(uid).set({
                     email: email,
                     nome: nome,
+                    status: 'ativo',
                     role: 'user',
-                    oficinaId: null,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    approvedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    approvedBy: 'script_teste'
                 });
 
-                // Fazer logout imediatamente (para não ficar logado)
+                console.log('✅ Documento criado no Firestore');
+                statusDiv.innerHTML += '<br>✅ Registro criado no Firestore';
+
+                // 3. Deslogar
                 await firebase.auth().signOut();
 
-                showSuccess(`
-                    ✅ Usuário criado com sucesso!<br><br>
-                    <strong>Credenciais:</strong><br>
-                    📧 Email: ${email}<br>
-                    🔑 Senha: ${password}<br><br>
-                    Você já pode fazer login com essas credenciais!
-                `);
+                // 4. Sucesso!
+                statusDiv.className = 'status success';
+                statusDiv.innerHTML = `
+                    <strong>✅ USUÁRIO DE TESTE CRIADO COM SUCESSO!</strong><br><br>
+                    👤 Email: <strong>${email}</strong><br>
+                    🔑 Senha: <strong>${password}</strong><br>
+                    🆔 UID: <strong>${uid}</strong><br>
+                    📄 Status: <strong>ativo</strong><br>
+                    👤 Role: <strong>user</strong><br><br>
+                    🚀 <strong>Agora faça o teste:</strong><br>
+                    1. Abra uma aba anônima (Ctrl+Shift+N)<br>
+                    2. Acesse: <a href="index.html" style="color:#667eea;">index.html</a><br>
+                    3. Faça login com: <strong>${email}</strong> / <strong>${password}</strong><br>
+                    4. Vá no Super Admin e bloqueie este usuário<br>
+                    5. Observe a aba anônima ser deslogada em 3 segundos! 🚀<br><br>
+                    🚨 Pode fechar esta página agora.
+                `;
 
-                // Limpar formulário
-                form.reset();
+                btnCriar.textContent = '✅ Usuário Criado!';
 
             } catch (error) {
                 console.error('❌ Erro:', error);
-                
-                let errorMsg = '❌ Erro ao criar usuário';
-                
-                switch (error.code) {
-                    case 'auth/email-already-in-use':
-                        errorMsg = '❌ Este email já está cadastrado';
-                        break;
-                    case 'auth/invalid-email':
-                        errorMsg = '❌ Email inválido';
-                        break;
-                    case 'auth/weak-password':
-                        errorMsg = '❌ Senha muito fraca (mínimo 6 caracteres)';
-                        break;
-                    default:
-                        errorMsg = '❌ ' + error.message;
-                }
-                
-                showError(errorMsg);
-
-            } finally {
-                btnSubmit.disabled = false;
-                btnSubmit.textContent = '✅ Criar Usuário';
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `
+                    <strong>❌ ERRO AO CRIAR USUÁRIO</strong><br><br>
+                    ${error.message}<br><br>
+                    <strong>Código do erro:</strong> ${error.code || 'desconhecido'}<br><br>
+                    📝 Verifique se:<br>
+                    1. O Firebase está configurado corretamente<br>
+                    2. As regras do Firestore permitem escrita<br>
+                    3. O Authentication está habilitado
+                `;
+                btnCriar.disabled = false;
             }
-        });
-
-        function showSuccess(msg) {
-            alertSuccess.innerHTML = msg;
-            alertSuccess.style.display = 'block';
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        function showError(msg) {
-            alertError.innerHTML = msg;
-            alertError.style.display = 'block';
-            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     </script>
 </body>
