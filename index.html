@@ -2,757 +2,645 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#ffffff">
-    <meta name="description" content="Checklist de Oficina - App Offline com PDF">
-    <link rel="stylesheet" href="styles.css?v=3.2">
-    <link rel="stylesheet" href="gestao_oficina.css?v=3.2">
-    <link rel="stylesheet" href="gestao_oficina_v2.css?v=1.0.2">
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="logo.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Login - Gestão de Oficinas</title>
     <link rel="icon" type="image/png" href="logo.png">
-   <title id="titulo-pagina">Checklist de Entrada – Nossa Oficina</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
-    <!-- ✅ FIREBASE CDN OFICIAL (COMPAT v9+) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    <!-- 🔒 PROTEÇÃO DE ROTA -->
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .background {
+            position: fixed;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .particles {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            animation: float linear infinite;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) scale(0);
+                opacity: 0;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) scale(1);
+                opacity: 0;
+            }
+        }
+
+        .login-container {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            padding: 40px 35px;
+            width: 100%;
+            max-width: 420px;
+            animation: slideUp 0.8s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo-container {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .logo-container img {
+            width: 70px;
+            height: 70px;
+            border-radius: 18px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            animation: pulse 2s ease-in-out infinite;
+            object-fit: cover;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .welcome-text {
+            text-align: center;
+            color: #ffffff;
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            line-height: 1.3;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 13px;
+            margin-bottom: 30px;
+            font-weight: 400;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+            position: relative;
+        }
+
+        label {
+            display: block;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 7px;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        input {
+            width: 100%;
+            padding: 13px 16px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            color: #ffffff;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        input:focus {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .password-wrapper {
+            position: relative;
+        }
+
+        .password-wrapper input {
+            padding-right: 45px;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-password:hover {
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .toggle-password svg {
+            width: 20px;
+            height: 20px;
+            fill: rgba(255, 255, 255, 0.7);
+            transition: fill 0.3s ease;
+        }
+
+        .toggle-password:hover svg {
+            fill: rgba(255, 255, 255, 0.95);
+        }
+
+        .remember-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 22px;
+        }
+
+        .remember-container input[type="checkbox"] {
+            width: auto;
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
+        .remember-container label {
+            margin: 0;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 15px;
+            border-radius: 14px;
+            border: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .links-container {
+            margin-top: 22px;
+            text-align: center;
+        }
+
+        .link {
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-block;
+            padding: 6px 0;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .link:hover {
+            transform: translateY(-2px);
+            text-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .divider {
+            margin: 0 12px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .alert {
+            padding: 11px 14px;
+            border-radius: 12px;
+            margin-bottom: 18px;
+            font-size: 13px;
+            display: none;
+            animation: slideDown 0.4s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .alert-success {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid rgba(76, 175, 80, 0.5);
+            color: #ffffff;
+        }
+
+        .alert-error {
+            background: rgba(244, 67, 54, 0.2);
+            border: 1px solid rgba(244, 67, 54, 0.5);
+            color: #ffffff;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #ffffff;
+            margin-top: 12px;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid #ffffff;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-height: 700px) {
+            .login-card {
+                padding: 30px 28px;
+            }
+            
+            .logo-container {
+                margin-bottom: 20px;
+            }
+            
+            .logo-container img {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .welcome-text {
+                font-size: 19px;
+                margin-bottom: 6px;
+            }
+            
+            .subtitle {
+                font-size: 12px;
+                margin-bottom: 22px;
+            }
+            
+            .form-group {
+                margin-bottom: 15px;
+            }
+            
+            input {
+                padding: 12px 14px;
+            }
+            
+            .password-wrapper input {
+                padding-right: 42px;
+            }
+            
+            .remember-container {
+                margin-bottom: 18px;
+            }
+            
+            .links-container {
+                margin-top: 18px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .login-card {
+                padding: 28px 25px;
+                border-radius: 25px;
+            }
+            
+            .welcome-text {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background"></div>
+    <div class="particles" id="particles"></div>
+
+    <div class="login-container">
+        <div class="login-card">
+            <div class="logo-container">
+                <img src="logo.png" alt="Logo" id="logoLogin">
+            </div>
+
+            <h1 class="welcome-text">Seu negócio merece o melhor</h1>
+            <p class="subtitle">Gestão profissional ao seu alcance</p>
+
+            <div id="alertSuccess" class="alert alert-success"></div>
+            <div id="alertError" class="alert alert-error"></div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">E-mail</label>
+                    <input type="email" id="email" name="email" placeholder="seu@email.com" required autocomplete="email">
+                </div>
+
+                <div class="form-group">
+                    <label for="senha">Senha</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="senha" name="senha" placeholder="••••••••" required autocomplete="current-password">
+                        <button type="button" class="toggle-password" id="togglePassword">
+                            <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="remember-container">
+                    <input type="checkbox" id="rememberMe" name="rememberMe">
+                    <label for="rememberMe">Lembrar neste dispositivo</label>
+                </div>
+
+                <button type="submit" class="btn-login">Entrar</button>
+            </form>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 8px; font-size: 12px;">Carregando...</p>
+            </div>
+
+            <div class="links-container">
+                <a href="#" class="link" id="btnCriarConta">Criar conta</a>
+                <span class="divider">|</span>
+                <a href="#" class="link" id="btnEsqueciSenha">Esqueci a senha</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="config.js"></script>
+
     <script>
-        // INICIALIZAR FIREBASE
         if (window.FIREBASE_CONFIG && !firebase.apps.length) {
             firebase.initializeApp(window.FIREBASE_CONFIG);
         }
 
-        // VERIFICAR AUTENTICAÇÃO
-        firebase.auth().onAuthStateChanged((user) => {
-            if (!user) {
-                // NÃO ESTÁ LOGADO - REDIRECIONA PRO LOGIN
-                window.location.href = 'login.html';
-            } else {
-                console.log('✅ Usuário autenticado:', user.email);
+        document.addEventListener('DOMContentLoaded', () => {
+            const logoImg = document.getElementById('logoLogin');
+            if (window.OFICINA_CONFIG && window.OFICINA_CONFIG.logo) {
+                logoImg.src = window.OFICINA_CONFIG.logo;
             }
         });
+
+        const togglePassword = document.getElementById('togglePassword');
+        const senhaInput = document.getElementById('senha');
+        const eyeIcon = document.getElementById('eyeIcon');
+
+        togglePassword.addEventListener('click', () => {
+            const type = senhaInput.type === 'password' ? 'text' : 'password';
+            senhaInput.type = type;
+            
+            if (type === 'text') {
+                eyeIcon.innerHTML = '<path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/>';
+            } else {
+                eyeIcon.innerHTML = '<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>';
+            }
+        });
+
+        function createParticles() {
+            const container = document.getElementById('particles');
+            const isMobile = window.innerWidth < 768;
+            const particleCount = isMobile ? 20 : 40;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                const size = Math.random() * 50 + 20;
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                particle.style.animationDelay = Math.random() * 5 + 's';
+                container.appendChild(particle);
+            }
+        }
+        createParticles();
+
+        const form = document.getElementById('loginForm');
+        const emailInput = document.getElementById('email');
+        const rememberMe = document.getElementById('rememberMe');
+        const alertSuccess = document.getElementById('alertSuccess');
+        const alertError = document.getElementById('alertError');
+        const loading = document.getElementById('loading');
+        const btnCriarConta = document.getElementById('btnCriarConta');
+        const btnEsqueciSenha = document.getElementById('btnEsqueciSenha');
+
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                window.location.href = 'sistema.html';
+            }
+        });
+
+        const savedEmail = localStorage.getItem('rememberedEmail');
+        if (savedEmail) {
+            emailInput.value = savedEmail;
+            rememberMe.checked = true;
+        }
+
+        function showSuccess(msg) {
+            alertError.style.display = 'none';
+            alertSuccess.textContent = msg;
+            alertSuccess.style.display = 'block';
+        }
+
+        function showError(msg) {
+            alertSuccess.style.display = 'none';
+            alertError.textContent = msg;
+            alertError.style.display = 'block';
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = emailInput.value.trim();
+            const senha = senhaInput.value;
+
+            loading.style.display = 'block';
+            alertSuccess.style.display = 'none';
+            alertError.style.display = 'none';
+
+            try {
+                await firebase.auth().signInWithEmailAndPassword(email, senha);
+                
+                if (rememberMe.checked) {
+                    localStorage.setItem('rememberedEmail', email);
+                } else {
+                    localStorage.removeItem('rememberedEmail');
+                }
+
+                showSuccess('✅ Login realizado! Redirecionando...');
+                
+                setTimeout(() => {
+                    window.location.href = 'sistema.html';
+                }, 1500);
+
+            } catch (error) {
+                loading.style.display = 'none';
+                
+                let msgErro = '❌ Erro ao fazer login';
+                
+                if (error.code === 'auth/user-not-found') {
+                    msgErro = '❌ Usuário não encontrado';
+                } else if (error.code === 'auth/wrong-password') {
+                    msgErro = '❌ Senha incorreta';
+                } else if (error.code === 'auth/invalid-email') {
+                    msgErro = '❌ E-mail inválido';
+                } else if (error.code === 'auth/too-many-requests') {
+                    msgErro = '❌ Muitas tentativas. Tente novamente mais tarde';
+                }
+                
+                showError(msgErro);
+            }
+        });
+
+        btnCriarConta.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            const email = prompt('Digite seu e-mail para criar conta:');
+            if (!email) return;
+
+            const senha = prompt('Digite uma senha (mínimo 6 caracteres):');
+            if (!senha || senha.length < 6) {
+                alert('❌ Senha deve ter no mínimo 6 caracteres!');
+                return;
+            }
+
+            const nome = prompt('Digite seu nome completo:');
+            if (!nome) return;
+
+            loading.style.display = 'block';
+
+            firebase.auth().createUserWithEmailAndPassword(email, senha)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+                    
+                    return firebase.firestore().collection('usuarios').doc(user.uid).set({
+                        email: user.email,
+                        nome: nome,
+                        role: 'admin',
+                        oficinaId: null,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                })
+                .then(() => {
+                    loading.style.display = 'none';
+                    showSuccess('✅ Conta criada com sucesso! Faça login.');
+                })
+                .catch((error) => {
+                    loading.style.display = 'none';
+                    
+                    let msgErro = '❌ Erro ao criar conta';
+                    if (error.code === 'auth/email-already-in-use') {
+                        msgErro = '❌ Este e-mail já está cadastrado';
+                    } else if (error.code === 'auth/invalid-email') {
+                        msgErro = '❌ E-mail inválido';
+                    }
+                    
+                    showError(msgErro);
+                });
+        });
+
+        btnEsqueciSenha.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            const email = prompt('Digite seu e-mail para recuperação de senha:');
+            if (!email) return;
+
+            loading.style.display = 'block';
+
+            firebase.auth().sendPasswordResetEmail(email)
+                .then(() => {
+                    loading.style.display = 'none';
+                    showSuccess('✅ E-mail de recuperação enviado! Verifique sua caixa de entrada.');
+                })
+                .catch((error) => {
+                    loading.style.display = 'none';
+                    
+                    let msgErro = '❌ Erro ao enviar e-mail';
+                    if (error.code === 'auth/user-not-found') {
+                        msgErro = '❌ Usuário não encontrado';
+                    } else if (error.code === 'auth/invalid-email') {
+                        msgErro = '❌ E-mail inválido';
+                    }
+                    
+                    showError(msgErro);
+                });
+        });
     </script>
-</head>
-<body>
-    <div class="container">
-       <div class="header">
-    <div class="logo-container">
-        <img id="logo-oficina" src="logo.png" alt="Logo da Oficina">
-    </div>
-    <div class="header-content">
-        <!-- ✅ NEUTRO - PREENCHER NO CONFIG.JS -->
-        <h1 id="nome-oficina">OFICINA</h1>
-        <p id="subtitulo-oficina">Checklist de entrada e inspeção veicular</p>
-        <div class="contato-info">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" class="whatsapp-icon">
-            <span id="telefone-oficina">(00) 00000-0000</span>
-        </div>
-        <div class="endereco-oficina" id="endereco-oficina">
-            ENDEREÇO DA OFICINA
-        </div>
-        <div class="cnpj-oficina" id="cnpj-oficina">
-    CNPJ: 00.000.000/0000-00
-</div>
-
-
-                <div class="status-sync">
-                    <div class="sync-dot" id="syncStatus"></div>
-                    <span id="syncText">Online</span>
-                </div>
-            </div>
-            <div class="header-badge">v3.2 PRO</div>
-        </div>
-<div class="tabs">
-    <button class="tab-button active" onclick="switchTab('novo-checklist')"><span>➞ Novo Checklist</span></button>
-    <button class="tab-button" onclick="switchTab('orcamento')"><span>💰 Peças & Serviços</span></button>
-    <button class="tab-button" onclick="switchTab('fotos')"><span>📸 Fotos</span></button>
-    <button class="tab-button" onclick="switchTab('resumo'); atualizarResumoOS()"><span>📄 Resumo</span></button>
-    <button class="tab-button" onclick="switchTab('historico')"><span>📋 Histórico</span></button>
-    <button class="tab-button" onclick="switchTab('relatorios')"><span>📊 Relatórios</span></button>
-    <button class="tab-button" data-tab-gestao><span>🛠️ Gestão Oficina</span></button>
-</div>
-        
-        <!-- BARRA FIXA DE INFORMAÇÕES DA OS -->
-<div class="os-info-bar" style="
-    background: #f8f9fa;
-    border-bottom: 1px solid #ddd;
-    padding: 10px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-">
-    <div style="font-size: 13px; font-weight: 600; color: #555;">
-        🛠️ ORDEM DE SERVIÇO ATUAL
-    </div>
-    <div id="barraFixaOS" style="
-        font-size: 18px; 
-        font-weight: 900; 
-        color: var(--color-primary); 
-        letter-spacing: 1px;
-    ">
-        -
-    </div>
-</div>
-
-
-
-        <!-- ABA PRINCIPAL - CHECKLIST -->
-        <div id="novo-checklist" class="tab-content active">
-            <div class="content">
-                <div id="successMessage" class="alert alert-success"></div>
-                <div id="errorMessage" class="alert alert-error"></div>
-                <div id="infoMessage" class="alert alert-info"></div>
-
-               <form id="checklistForm" class="wizard-form">
-
-    <!-- BARRA DE PROGRESSO DO WIZARD -->
-    <div class="wizard-progress">
-        <div class="step-indicator active" onclick="showStep(1)" data-step="1">1. Veículo</div>
-        <div class="step-indicator" onclick="showStep(2)" data-step="2">2. Inspeção</div>
-        <div class="step-indicator" onclick="showStep(3)" data-step="3">3. Cliente</div>
-    </div>
-
-    <!-- ================================================== -->
-    <!-- PASSO 1: INFORMAÇÕES DO VEÍCULO -->
-    <!-- ================================================== -->
-    <div class="wizard-step active" id="step1">
-        <div class="section-title">📋 INFORMAÇÕES DO VEÍCULO</div>
-
-        <!-- RESUMO FIXO DO VEÍCULO (VISUAL) -->
-        <div class="veiculo-resumo" id="resumoVeiculoPrincipal">
-            <div class="veiculo-resumo-pill">Placa: <strong id="resumoPlaca">-</strong></div>
-            <div class="veiculo-resumo-pill">Modelo: <strong id="resumoModelo">-</strong></div>
-            <div class="veiculo-resumo-pill">KM: <strong id="resumoKmEntrada">-</strong></div>
-            <div class="veiculo-resumo-pill">Data: <strong id="resumoData">-</strong></div>
-        </div>
-
-        <div class="form-row">
-            <div class="form-group">
-                <label for="placa">Placa *</label>
-                <input type="text" id="placa" name="placa" placeholder="ABC-1234" maxlength="8" style="text-transform: uppercase;">
-            </div>
-            <div class="form-group">
-                <label for="chassi">Chassi</label>
-                <input type="text" id="chassi" name="chassi" placeholder="17 dígitos" maxlength="17">
-            </div>
-        </div>
-
-        <div class="form-row">
-            <div class="form-group">
-                <label for="modelo">Modelo</label>
-                <input type="text" id="modelo" name="modelo" placeholder="Ex: Fiat Uno">
-            </div>
-            <div class="form-group">
-                <label for="km_entrada">KM Entrada</label>
-                <input type="text" id="km_entrada" name="km_entrada" placeholder="150.000">
-            </div>
-        </div>
-
-        <div class="form-row">
-            <div class="form-group">
-                <label for="data">Data Entrada</label>
-                <input type="date" id="data" name="data">
-            </div>
-            <div class="form-group">
-                <label for="hora">Hora Entrada</label>
-                <input type="time" id="hora" name="hora">
-            </div>
-        </div>
-
-        <div class="form-row">
-            <div class="form-group">
-                <label for="combustivel">Nível Combustível</label>
-                <select id="combustivel" name="combustivel">
-                    <option value="">Selecione...</option>
-                    <option value="cheio">Cheio</option>
-                    <option value="meio">Meio</option>
-                    <option value="1/4">1/4</option>
-                    <option value="vazio">Vazio</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="km_saida">KM Saída</label>
-                <input type="text" id="km_saida" name="km_saida" placeholder="150.500">
-            </div>
-        </div>
-
-        <!-- BOTÕES DE NAVEGAÇÃO -->
-        <div class="wizard-buttons right">
-            <button type="button" class="btn-secondary" onclick="limparFormulario()"> 🗑️ Limpar</button>
-            <button type="button" class="btn-primary" onclick="nextStep(2)">Próximo ➞️</button>
-        </div>
-    </div>
-
-
-    <!-- ================================================== -->
-    <!-- PASSO 2: INSPEÇÃO E CARACTERÍSTICAS -->
-    <!-- ================================================== -->
-    <div class="wizard-step" id="step2">
-        <div class="section-title">🔍 INSPEÇÃO VISUAL</div>
-
-        <div class="equip-section">
-            <div class="equip-section-title">🔧 ACESSÓRIOS OBRIGATÓRIOS</div>
-            <div class="checkbox-group">
-                <div class="checkbox-item"><input type="checkbox" id="estepe" name="equipamentos" value="ESTEPE"><label for="estepe">ESTEPE</label></div>
-                <div class="checkbox-item"><input type="checkbox" id="macaco" name="equipamentos" value="MACACO"><label for="macaco">MACACO</label></div>
-                <div class="checkbox-item"><input type="checkbox" id="chave_roda" name="equipamentos" value="CHAVE DE RODA"><label for="chave_roda">CHAVE DE RODA</label></div>
-                <div class="checkbox-item"><input type="checkbox" id="triangulo" name="equipamentos" value="TRIÂNGULO"><label for="triangulo">TRIÂNGULO</label></div>
-            </div>
-        </div>
-
-        <div class="equip-section">
-            <div class="equip-section-title">⛽ TIPO COMBUSTÍVEL</div>
-            <div class="checkbox-group">
-                <div class="checkbox-item"><input type="checkbox" id="flex" name="equipamentos" value="FLEX"><label for="flex">FLEX</label></div>
-                <div class="checkbox-item"><input type="checkbox" id="gasolina" name="equipamentos" value="GASOLINA"><label for="gasolina">GASOLINA</label></div>
-                <div class="checkbox-item"><input type="checkbox" id="etanol" name="equipamentos" value="ETANOL"><label for="etanol">ETANOL</label></div>
-                <div class="checkbox-item"><input type="checkbox" id="gnv" name="equipamentos" value="GNV"><label for="gnv">GNV</label></div>
-                <div class="checkbox-item"><input type="checkbox" id="diesel" name="equipamentos" value="DIESEL"><label for="diesel">DIESEL</label></div>
-            </div>
-        </div>
-
-        <div class="equip-section">
-            <div class="equip-section-title">🔊 ELETRÔNICOS</div>
-            <div class="checkbox-group">
-                <div class="checkbox-item"><input type="checkbox" id="radio" name="equipamentos" value="RÁDIO / MULTIMÍDIA"><label for="radio">RÁDIO / MULTIMÍDIA</label></div>
-                <div class="checkbox-item"><input type="checkbox" id="alarme_corta" name="equipamentos" value="ALARME / CORTA CORRENTE"><label for="alarme_corta">ALARME / CORTA CORRENTE</label></div>
-                <div class="checkbox-item"><input type="checkbox" id="antena" name="equipamentos" value="ANTENA"><label for="antena">ANTENA</label></div>
-                <div class="checkbox-item"><input type="checkbox" id="acendedor" name="equipamentos" value="ACENDEDOR/TOMADA 12V"><label for="acendedor">ACENDEDOR/TOMADA 12V</label></div>
-            </div>
-        </div>
-
-        <div class="equip-section">
-            <div class="equip-section-title">⚡ ELÉTRICOS</div>
-            <div class="checkbox-group">
-                <div class="checkbox-item"><input type="checkbox" id="vidro_eletrico" name="equipamentos" value="VIDRO ELÉTRICO"><label for="vidro_eletrico">VIDRO ELÉTRICO</label></div>
-                <div class="checkbox-item"><input type="checkbox" id="trava_eletrica" name="equipamentos" value="TRAVA ELÉTRICA"><label for="trava_eletrica">TRAVA ELÉTRICA</label></div>
-                <div class="checkbox-item"><input type="checkbox" id="buzina" name="equipamentos" value="BUZINA"><label for="buzina">BUZINA</label></div>
-                <div class="checkbox-item"><input type="checkbox" id="bateria" name="equipamentos" value="BATERIA"><label for="bateria">BATERIA</label></div>
-            </div>
-        </div>
-
-        <div class="equip-section">
-            <div class="equip-section-title">🛣️ RODAS & PÁRA-BRISAS</div>
-            <div class="checkbox-group">
-                <div class="checkbox-item"><input type="checkbox" id="calotas" name="equipamentos" value="CALOTAS"><label for="calotas">CALOTAS</label></div>
-                <div class="checkbox-item"><input type="checkbox" id="rodas_liga" name="equipamentos" value="RODAS DE LIGA"><label for="rodas_liga">RODAS DE LIGA</label></div>
-                <div class="checkbox-item"><input type="checkbox" id="roda_ferro" name="equipamentos" value="RODA DE FERRO"><label for="roda_ferro">RODA DE FERRO</label></div>
-                <div class="checkbox-item"><input type="checkbox" id="para_brisa" name="equipamentos" value="PARABRISA TRINCADO"><label for="para_brisa">PÁRA BRISA TRINCADO</label></div>
-            </div>
-        </div>
-
-        <div class="equip-section">
-            <div class="equip-section-title">📦 DEMAIS ACESSÓRIOS</div>
-            <div class="checkbox-group">
-                <div class="checkbox-item"><input type="checkbox" id="extintor" name="equipamentos" value="EXTINTOR"><label for="extintor">EXTINTOR</label></div>
-                <div class="checkbox-item"><input type="checkbox" id="protetor_carter" name="equipamentos" value="PROTETOR DE CARTER"><label for="protetor_carter">PROTETOR DE CARTER</label></div>
-                <div class="checkbox-item"><input type="checkbox" id="chave_secreta" name="equipamentos" value="CHAVE SEGREDO (RODA)"><label for="chave_secreta">CHAVE SEGREDO (RODA)</label></div>
-                <div class="checkbox-item"><input type="checkbox" id="tapetes" name="equipamentos" value="TAPETES"><label for="tapetes">TAPETES</label></div>
-            </div>
-        </div>
-
-        <div class="equip-section">
-            <div class="equip-section-title">⭐ EQUIPAMENTOS PRINCIPAIS</div>
-            <div class="checkbox-group">
-                <div class="checkbox-item"><input type="checkbox" id="ar" name="caracteristicas" value="AR"><label for="ar">AR</label></div>
-                <div class="checkbox-item"><input type="checkbox" id="abs" name="caracteristicas" value="ABS"><label for="abs">ABS</label></div>
-                <div class="checkbox-item"><input type="checkbox" id="airbag" name="caracteristicas" value="Air Bag"><label for="airbag">Air Bag</label></div>
-            </div>
-        </div>
-
-        <div class="form-row">
-            <div class="equip-section" style="flex: 1; margin-top: 0;">
-                <div class="equip-section-title">🕹️ CÂMBIO</div>
-                <div class="checkbox-group">
-                    <div class="checkbox-item"><input type="checkbox" id="cambio_auto" name="cambio" value="Automático"><label for="cambio_auto">AUTOMÁTICO</label></div>
-                    <div class="checkbox-item"><input type="checkbox" id="cambio_manual" name="cambio" value="Manual"><label for="cambio_manual">MANUAL</label></div>
-                </div>
-            </div>
-
-            <div class="equip-section" style="flex: 1; margin-top: 0;">
-                <div class="equip-section-title">🚜 TRAÇÃO</div>
-                <div class="checkbox-group">
-                    <div class="checkbox-item"><input type="checkbox" id="tracao_4x2" name="tracao" value="4x2"><label for="tracao_4x2">4x2</label></div>
-                    <div class="checkbox-item"><input type="checkbox" id="tracao_4x4" name="tracao" value="4x4"><label for="tracao_4x4">4x4</label></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="form-row full">
-    <div class="form-group">
-        <label for="obsInspecao">Observações da inspeção</label>
-        <textarea id="obsInspecao" name="obsInspecao"
-                  placeholder="Ex.: Vazamento de óleo no motor, ar condicionado não gela, lanterna traseira quebrada..."
-                  style="height: 60px; min-height: 60px;"></textarea>
-    </div>
-</div>
-
-        <!-- BOTÕES DE NAVEGAÇÃO -->
-        <div class="wizard-buttons">
-            <button type="button" class="btn-secondary" onclick="prevStep(1)">⬅️ Voltar</button>
-            <button type="button" class="btn-primary" onclick="nextStep(3)">Próximo ➞️</button>
-        </div>
-    </div>
-
-
-    <!-- ================================================== -->
-    <!-- PASSO 3: DADOS DO CLIENTE E FINALIZAÇÃO -->
-    <!-- ================================================== -->
-    <div class="wizard-step" id="step3">
-        <div class="section-title">👤 DADOS DO CLIENTE</div>
-
-        <div class="form-row">
-            <div class="form-group">
-                <label for="nome_cliente">Nome</label>
-                <input type="text" id="nome_cliente" name="nome_cliente" placeholder="Nome completo do cliente">
-            </div>
-            <div class="form-group">
-                <label for="cpf_cnpj">CPF / CNPJ</label>
-                <input type="text" id="cpf_cnpj" name="cpf_cnpj" placeholder="000.000.000-00" maxlength="18">
-            </div>
-        </div>
-
-        <div class="form-row full">
-            <div class="form-group">
-                <label for="endereco_cliente">Endereço Completo</label>
-                <textarea id="endereco_cliente" name="endereco_cliente" placeholder="Rua, número, bairro, cidade - UF, CEP" style="height: 60px; min-height: 60px;"></textarea>
-            </div>
-        </div>
-
-        <div class="form-row">
-            <div class="form-group">
-                <label for="celular_cliente">Celular / WhatsApp</label>
-                <input type="tel" id="celular_cliente" name="celular_cliente" placeholder="(31) 99999-9999">
-            </div>
-            <div class="form-group">
-                <label for="telefone2">Telefone 2 (opcional)</label>
-                <input type="tel" id="telefone2" name="telefone2" placeholder="(31) 9999-9999">
-            </div>
-        </div>
-
-        <div class="section-title">🔧 SERVIÇOS SOLICITADOS</div>
-
-        <div class="form-row full">
-            <div class="form-group">
-                <label for="servicos">Descreva os serviços solicitados:</label>
-                <textarea id="servicos" name="servicos" placeholder="Ex: Troca de óleo e filtro, alinhamento e balanceamento..."></textarea>
-            </div>
-        </div>
-
-        <!-- BOTÕES DE NAVEGAÇÃO -->
-        <div class="wizard-buttons">
-            <button type="button" class="btn-secondary" onclick="prevStep(2)">⬅️ Voltar</button>
-<button type="button" class="btn-primary" onclick="switchTab('orcamento')">Ir para Peças & Serviços ➞️</button>
-        </div>
-    </div>
-
-</form>
-            </div>
-        </div>
-
-        <!-- ABA HISTÓRICO -->
-        <div id="historico" class="tab-content">
-            <div class="content">
-                <div class="search-box">
-                    <input type="text" id="searchInput" placeholder="🔍 Buscar por placa, modelo ou cliente..." onkeyup="filtrarChecklists()">
-                     <!-- BOTÃO SINCRONIZAR AQUI -->
-                    <button class="btn-primary btn-small" id="btnSync" onclick="sincronizarChecklists()" style="background-color: #27ae60;">🔄 Sincronizar Nuvem</button>
-                    <button class="btn-secondary btn-small" onclick="ordenarChecklists()">📊 Ordenar</button>
-                </div>
-
-                <div id="checklistsList"></div>
-                <div id="emptyMessage" style="text-align: center; padding: 40px; color: #999;">
-                    <p style="font-size: 40px; margin-bottom: 10px;">📬</p>
-                    <p>Nenhum checklist salvo ainda. Crie um novo para começar!</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- ABA RELATÓRIOS -->
-        <div id="relatorios" class="tab-content">
-            <div class="content">
-                <div class="section-title">📊 ESTATÍSTICAS GERAIS</div>
-                <div class="stats-box">
-                    <div class="stat-card">
-                        <div class="stat-number" id="totalChecklists">0</div>
-                        <div class="stat-label">Checklists Salvos</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="checklistsMes">0</div>
-                        <div class="stat-label">Checklists Mês Atual</div>
-                    </div>
-                </div>
-
-                <div class="section-title">🚗 MARCAS MAIS ATENDIDAS</div>
-                <div id="graficoMarcas" style="margin-top: 20px;"></div>
-
-                <div class="action-buttons">
-                    <button class="btn-primary" onclick="exportarDados()">💾 Exportar Todos (JSON)</button>
-                    <button class="btn-danger" onclick="limparTodosDados()">🗑️ Limpar Histórico</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ABA ORÇAMENTO – PLANILHA DE PEÇAS & SERVIÇOS -->
-        <div id="orcamento" class="tab-content">
-            <div class="content">
-                <div class="section-title">💰 PEÇAS & SERVIÇOS</div>
-
-                <!-- RESUMO FIXO DO VEÍCULO TAMBÉM NA ABA DE PEÇAS -->
-                <div class="veiculo-resumo" id="resumoVeiculoOrcamento">
-                    <div class="veiculo-resumo-pill">Placa: <strong id="resumoPlaca2">-</strong></div>
-                    <div class="veiculo-resumo-pill">Modelo: <strong id="resumoModelo2">-</strong></div>
-                    <div class="veiculo-resumo-pill">Chassi: <strong id="resumoChassi2">-</strong></div>
-                    <div class="veiculo-resumo-pill">KM Entrada: <strong id="resumoKmEntrada2">-</strong></div>
-                    <div class="veiculo-resumo-pill">Complexidade: <strong id="resumoComplexidade">-</strong></div>
-                </div>
-
-                <!-- COMPLEXIDADE -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="complexidade">Tipo de evento</label>
-                        <select id="complexidade" name="complexidade">
-                            <option value="">Selecione...</option>
-                            <option value="Evento pequeno">Evento pequeno</option>
-                            <option value="Evento médio">Evento médio</option>
-                            <option value="Evento grande">Evento grande</option>
-                        </select>
-                    </div>
-                </div>
-
-<div class="form-row">
-    <div class="form-group">
-        <label>Tipo do Item:</label>
-        <div class="checkbox-group" style="margin-top: 5px;">
-            <div class="checkbox-item">
-                <input type="radio" id="tipoPeca" name="tipoItem" value="peca" checked>
-                <label for="tipoPeca">Peça</label>
-            </div>
-            <div class="checkbox-item">
-                <input type="radio" id="tipoServico" name="tipoItem" value="servico">
-                <label for="tipoServico">Serviço</label>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="form-row two">
-    <div class="form-group">
-        <label for="descricaoItem">Descrição</label>
-        <textarea id="descricaoItem" rows="1" placeholder="Ex: Pastilha de Freio/Mão de obra (Enter)..."></textarea>
-    </div>
-    <div class="form-group">
-        <label for="valorItem">Valor (R$)</label>
-        <input type="number" id="valorItem" step="0.01" min="0" placeholder="0,00">
-    </div>
-</div>
-
-<div class="form-row">
-    <div class="form-group">
-<button type="button" class="btn-primary" id="btnAdicionarItem" onclick="adicionarItemManual()">
-    ➞ Adicionar
-</button>
-
-    </div>
-</div>
-
-<div style="margin-top:20px;">
-    
-    <h4 style="border-bottom: 2px solid #0056b3; padding-bottom: 5px; color: #333;">🔩 Peças</h4>
-    <table style="width:100%; border-collapse:collapse; font-size:13px; margin-bottom: 10px;">
-        <thead>
-            <tr style="background:#f7f7f7;">
-                <th style="border:1px solid #ddd; padding:6px; text-align:left;">Descrição</th>
-                <th style="border:1px solid #ddd; padding:6px; text-align:right; width: 100px;">Valor</th>
-                <th style="border:1px solid #ddd; padding:6px; text-align:center; width: 50px;">Ações</th>
-            </tr>
-        </thead>
-        <tbody id="tabelaPecas"></tbody>
-        <tfoot>
-            <tr>
-                <td style="border:1px solid #ddd; padding:6px; text-align:right; font-weight:bold;">Total Peças:</td>
-                <td id="totalPecas" style="border:1px solid #ddd; padding:6px; text-align:right; font-weight:bold; color: #0056b3;">R$ 0,00</td>
-                <td></td>
-            </tr>
-        </tfoot>
-    </table>
-
-    <h4 style="border-bottom: 2px solid #e41616; padding-bottom: 5px; color: #333; margin-top: 25px;">🔧 Serviços</h4>
-    <table style="width:100%; border-collapse:collapse; font-size:13px; margin-bottom: 10px;">
-        <thead>
-            <tr style="background:#f7f7f7;">
-                <th style="border:1px solid #ddd; padding:6px; text-align:left;">Descrição</th>
-                <th style="border:1px solid #ddd; padding:6px; text-align:right; width: 100px;">Valor</th>
-                <th style="border:1px solid #ddd; padding:6px; text-align:center; width: 50px;">Ações</th>
-            </tr>
-        </thead>
-        <tbody id="tabelaServicos"></tbody>
-        <tfoot>
-            <tr>
-                <td style="border:1px solid #ddd; padding:6px; text-align:right; font-weight:bold;">Total Serviços:</td>
-                <td id="totalServicos" style="border:1px solid #ddd; padding:6px; text-align:right; font-weight:bold; color: #e41616;">R$ 0,00</td>
-                <td></td>
-            </tr>
-        </tfoot>
-    </table>
-
-    <div style="background: #eee; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: right;">
-        <span style="font-size: 14px; font-weight: bold; color: #555;">TOTAL GERAL (Peças + Serviços):</span>
-        <div id="totalGeralFinal" style="font-size: 24px; font-weight: bold; color: #28a745;">R$ 0,00</div>
-    </div>
-
-</div>
-                <div class="action-buttons">
-<button type="button" class="btn-success" onclick="switchTab('resumo'); atualizarResumoOS()">📄 Ver Resumo & Imprimir</button>
-                </div>
-            </div>
-        </div>
-<div id="fotos" class="tab-content">
-    <div class="content">
-        <div class="section-title">📸 FOTOS DO VEÍCULO</div>
-
-        <div style="
-            background-color: #fff3cd; 
-            border: 1px solid #ffeeba; 
-            color: #856404; 
-            padding: 15px; 
-            border-radius: 6px; 
-            margin-bottom: 20px; 
-            text-align: center;
-            font-size: 14px;
-        ">
-            <strong>⚠️ Atenção:</strong> As fotos são salvas <u>apenas neste dispositivo</u>!<br>
-            Para backup, envie para o <strong>WhatsApp</strong> ou salve no <strong>Google Drive</strong>.
-        </div>
-        
-        <div class="veiculo-resumo" id="resumoVeiculoFotos">
-            <div class="veiculo-resumo-pill">Placa: <strong id="resumoPlaca3">-</strong></div>
-            <div class="veiculo-resumo-pill">Modelo: <strong id="resumoModelo3">-</strong></div>
-            <div class="veiculo-resumo-pill">Chassi: <strong id="resumoChassi3">-</strong></div>
-            <div class="veiculo-resumo-pill">KM: <strong id="resumoKmFotos">-</strong></div>
-        </div>
-
-        <div class="form-row">
-            <div class="form-group">
-                <button type="button" class="btn-primary" onclick="iniciarCamera()">📷 Tirar Foto</button>
-            </div>
-            <div class="form-group">
-                <input type="file" id="uploadFotos" multiple accept="image/*" onchange="adicionarFotos(event)">
-                <label for="uploadFotos" class="btn-secondary" style="cursor:pointer; padding:12px 24px; display:block; text-align:center;">📁 Galeria</label>
-            </div>
-        </div>
-
-        <div class="camera-container" style="display:none;">
-            <video id="cameraPreview" autoplay playsinline style="width:100%; max-width:400px; height:300px; border-radius:12px; border:3px solid #e41616; background:#000;"></video>
-            <div style="display:flex; gap:10px; justify-content:center; margin-top:10px;">
-                <button class="btn-success btn-small" onclick="tirarFoto()" id="btnTirarFoto" style="display:none;">📸 Capturar</button>
-                <button class="btn-secondary btn-small" onclick="pararCamera()">❌ Cancelar</button>
-            </div>
-        </div>
-
-        <div class="section-title">Galeria de Fotos (Máx 15)</div>
-        <div id="galeriaFotos" class="fotos-grid"></div>
-
-        <div class="action-buttons">
-            <button type="button" class="btn-success" onclick="gerarPDFFotos()">📄 PDF Fotos</button>
-            <button type="button" class="btn-danger" onclick="limparFotos()">🗑️ Limpar Fotos</button>
-        </div>
-    </div>
-</div>
-
-    </div>
-<div id="resumo" class="tab-content">
-  <div class="content">
-    
-    <div id="resumoContainer" class="os-paper">
-      
-      <div id="template-cabecalho" class="os-header">
-        <div class="os-header-left">
-          <img id="logoResumo" src="" alt="Logo" class="os-logo">
-          <div class="os-empresa-dados">
-            <div id="nomeOficinaResumo" class="os-oficina-nome">NOME DA OFICINA</div>
-            <div id="enderecoOficinaResumo" class="os-oficina-sub">Endereço da oficina</div>
-<div class="os-oficina-sub">
-    <img src="whatsapp.png" alt="WhatsApp" class="whatsapp-icon">
-    <span id="telefoneOficinaResumo">00 00000-0000</span>
-</div>
-            <div id="cnpjOficinaResumo" class="os-oficina-sub">CNPJ da oficina</div>
-          </div>
-        </div>
-        <div class="os-header-right">
-          <div class="os-label-os">ORDEM DE SERVIÇO</div>
-          <div id="osNumero" class="os-numero-os">00000000</div>
-        </div>
-      </div>
-
-      <div class="os-grid-2">
-        <div class="os-box">
-          <div class="os-box-title">CLIENTE</div>
-          <div class="os-line"><strong>Nome:</strong> <span id="rNomeCliente"></span></div>
-          <div class="os-line"><strong>CPF/CNPJ:</strong> <span id="rCpfCnpj"></span></div>
-          <div class="os-line"><strong>Tel:</strong> <span id="rCelular"></span></div>
-        </div>
-        <div class="os-box">
-          <div class="os-box-title">VEÍCULO</div>
-          <div class="os-line"><strong>Veículo:</strong> <span id="rModelo"></span> <span id="rPlaca" style="background:#eee; padding:0 4px; border-radius:3px; font-weight:bold;"></span></div>
-          <div class="os-line"><strong>Chassi:</strong> <span id="rChassi"></span></div>
-          <div class="os-line"><strong>KM:</strong> <span id="rKmEntrada"></span> | <strong>Comb:</strong> <span id="rCombustivel"></span></div>
-          <div class="os-line"><strong>Data:</strong> <span id="rEntradaDataHora"></span></div>
-        </div>
-      </div>
-
-      <div class="os-box mt-10">
-        <div class="os-box-title">SERVIÇOS SOLICITADOS</div>
-        <div id="rServicos" class="os-text-area"></div>
-      </div>
-
-      <div class="os-box mt-10">
-        <div class="os-box-title">INSPEÇÃO DE ENTRADA</div>
-        <div id="rChecklistBadges" class="os-badges-area">
-        </div>
-      </div>
-        
-<div class="os-box mt-10">
-    <div class="os-box-title">OBSERVAÇÕES DA INSPEÇÃO</div>
-    <div id="rObsInspecao" class="os-text-area">-</div>
-</div>
-
-       <div id="template-assinaturas" class="os-assinaturas">
-        <div class="os-assina-box">Assinatura do Cliente</div>
-        <div class="os-assina-box">Assinatura do Técnico</div>
-      </div>
-
-<div class="os-footer">
-    <span id="rodape-texto-1">Carregando...</span>
-</div>
-
-<div class="force-page-break"></div>
-
-
-<div class="os-header" id="header-pag2">
-</div>
-
-<div id="containerTabelasOrcamento">
-</div>
-
-      <div class="os-total-row">
-        <span>TOTAL GERAL:</span>
-        <span id="rTotalGeral" class="os-total-value">R$ 0,00</span>
-      </div>
-        
-<div class="os-assinaturas" id="assinaturas-pag2">
-    <div class="os-assina-box">Assinatura do Cliente</div>
-    <div class="os-assina-box">Assinatura do Técnico</div>
-</div>
-
-<div class="os-footer">
-    <span id="rodape-texto-2">Carregando...</span>
-</div>
-
-
-
-    </div>
-
-<div class="action-buttons no-pdf">
-      <button type="button" class="btn-success" onclick="gerarPDFResumo()">📂 Baixar PDF</button>
-       <button type="button" class="btn-primary" onclick="salvarChecklist()" style="background: #27ae60 !important;">💾 Salvar Completo</button>
-    </div>
-
-  </div>
-</div>
-
-<!-- ABA GESTÃO DA OFICINA -->
-<div id="gestao-oficina" class="tab-content">
-    <div class="content">
-        <div class="page-header">
-            <h2>🛠️ Gestão da Oficina</h2>
-            <button class="btn-primary" data-btn-nova-os>➞ Nova OS</button>
-        </div>
-        
-        <!-- PAINEL DE CONTROLE -->
-        <div id="painel-controle"></div>
-        
-        <!-- RESUMO TOPO -->
-        <div id="resumoTopo" class="resumo-cards"></div>
-        
-        <!-- KANBAN VIEW (HOJE) -->
-        <div id="kanban-view" class="kanban-container">
-            <div class="kanban-coluna">
-                <h3>📅 Agendados Hoje</h3>
-                <div class="cards-container" id="recebido"></div>
-            </div>
-            <div class="kanban-coluna">
-                <h3>🔧 Em Andamento</h3>
-                <div class="cards-container" id="em_andamento"></div>
-            </div>
-            <div class="kanban-coluna">
-                <h3>✅ Finalizados Hoje</h3>
-                <div class="cards-container" id="finalizado"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ✅ 1. PRIMEIRO: CONFIGS -->
-<script src="config.js?v=3.2"></script>
-
-<!-- ✅ 2. FIX INICIALIZAÇÃO FIREBASE RTDB GLOBAL -->
-<script>
-    if (window.FIREBASE_CONFIG && !window.firebase?.apps?.length) {
-        window.firebase.initializeApp(window.FIREBASE_CONFIG);
-        console.log("🔥 Firebase App GLOBAL inicializado!");
-    }
-</script>
-
-<!-- ✅ 3. SCRIPTS LOCAIS -->
-<script src="app.js?v=3.2"></script>
-<script src="core_utils.js?v=3.2"></script>
-<script src="firebase.js?v=1.0.0"></script>
-<script src="checklist.js?v=3.2"></script>
-<script src="gestao_oficina.js?v=3.2"></script>
-<script src="gestao_oficina_v2.js?v=1.0.2"></script>
-<script src="gestao_oficina_agendamentos.js?v=1.0.2"></script>
-<script src="gestao_oficina_financeiro.js?v=1.0.2"></script>
-<script src="gestao_oficina_recibos.js?v=1.0.2"></script>
-
-<!-- ✅ 4. NOVOS MÓDULOS DE GESTÃO -->
-<script src="gestao_oficina_os.js?v=1.0.0"></script>
-<script src="gestao_oficina_checklist.js?v=1.0.0"></script>
-<script src="gestao_oficina_clientes.js?v=1.0.0"></script>
-<script src="gestao_oficina_estoque.js?v=1.0.0"></script>
-
-<!-- ✅ 5. DASHBOARD TEMPO REAL -->
-<script src="gestao_oficina_dashboard.js?v=2.0.0"></script>
-
-<!-- ✅ 6. KANBAN MANAGER (MOBILE-FIRST) - CACHE BUSTING -->
-<script src="kanban_manager.js?v=3.2"></script>
-
-<!-- ✅ 7. INICIALIZADOR DE ABAS (FIX ONCLICK) -->
-<script src="tabs_init.js?v=3.2"></script>
-
-<!-- ✅ 8. SYNC FIREBASE GESTÃO OFICINA -->
-<script type="module" src="gestao_oficina_firebase.js?v=3.2"></script>
-
-<!-- 🔥 9. NOVO: EXPOSIÇÃO GLOBAL DOS MÓDULOS V2 -->
-<script src="v2-modules-expose.js?v=1.0.0"></script>
-
-<!-- 🚀 10. CRITICAL: GARANTIR EXPOSIÇÃO DE FUNÇÕES -->
-<script src="gestao_oficina_init.js?v=1.0.0"></script>
-
-<div class="os-footer" id="rRodape" style="position: fixed; bottom: 0; left: 0; right: 0; width: 100%; text-align: center; font-size: 10px; background: #f8f9fa; padding: 8px 12px; border-top: 2px solid var(--color-primary); z-index: 9999; box-sizing: border-box; font-family: Arial, sans-serif;">
-    <span id="rodape-texto">Developed by Hallz Branding 3199676-6963</span>
-</div>
-
-<script>
-  window.__GESTAO_V2_BUILD__ = 'v2-cache-1.0.4-global';
-  console.log('✅ Gestão V2 build ativo:', window.__GESTAO_V2_BUILD__);
-</script>
-
 </body>
 </html>
