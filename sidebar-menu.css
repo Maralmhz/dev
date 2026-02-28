@@ -2,14 +2,14 @@
    SIDEBAR MENU - HAMBÚRGUER LATERAL
    ============================================== */
 
-/* BOTÃO HAMBÚRGUER */
+/* BOTÃO HAMBÚRGUER - DESKTOP */
 .hamburger-btn {
     position: fixed;
-    top: 65px; /* Abaixo do badge v3.4 PRO */
+    top: 65px; /* Abaixo do badge v3.4 PRO no desktop */
     right: 20px;
     z-index: 10000;
-    width: 42px; /* Menor */
-    height: 42px; /* Menor */
+    width: 42px;
+    height: 42px;
     background: linear-gradient(135deg, var(--color-primary, #667eea) 0%, var(--color-secondary, #764ba2) 100%);
     border: none;
     border-radius: 50%;
@@ -33,7 +33,7 @@
 }
 
 .hamburger-btn span {
-    width: 20px; /* Menor */
+    width: 20px;
     height: 2.5px;
     background: #fff;
     border-radius: 3px;
@@ -229,12 +229,12 @@
     font-weight: 700;
 }
 
-/* RESPONSIVO */
+/* RESPONSIVO - MOBILE */
 @media (max-width: 768px) {
     .hamburger-btn {
         width: 40px;
         height: 40px;
-        top: 95px; /* AUMENTADO - Agora fica bem abaixo do badge no mobile */
+        top: 135px !important; /* BEM ABAIXO - GARANTE QUE FIQUE DEPOIS DO BADGE */
         right: 15px;
     }
     
@@ -251,7 +251,7 @@
 /* MOBILE MUITO PEQUENO */
 @media (max-width: 480px) {
     .hamburger-btn {
-        top: 85px; /* Ajuste fino para telas menores */
+        top: 125px !important;
     }
 }
 
