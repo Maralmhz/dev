@@ -9,6 +9,10 @@
     <link rel="stylesheet" href="gestao_oficina.css?v=3.2">
     <link rel="stylesheet" href="gestao_oficina_v2.css?v=1.0.2">
     <link rel="stylesheet" href="logout-style.css">
+    
+    <!-- 🍔 SIDEBAR MENU -->
+    <link rel="stylesheet" href="sidebar-menu.css?v=1.0">
+    
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="logo.png">
     <link rel="icon" type="image/png" href="logo.png">
@@ -59,7 +63,7 @@
                     <span id="syncText">Online</span>
                 </div>
 
-                <!-- 🔥 BOTÃO DE LOGOUT -->
+                <!-- 🔥 BOTÃO DE LOGOUT (OCULTO - AGORA ESTÁ NO SIDEBAR) -->
                 <div class="user-info-container">
                     <div class="user-email-badge">
                         <span id="userEmail">Carregando...</span>
@@ -69,7 +73,7 @@
                     </button>
                 </div>
             </div>
-            <div class="header-badge">v3.3 PRO</div>
+            <div class="header-badge">v3.4 PRO</div>
         </div>
 <div class="tabs">
     <button class="tab-button active" onclick="switchTab('novo-checklist')"><span>➞ Novo Checklist</span></button>
@@ -717,13 +721,16 @@
 <!-- 🔥 SESSION MANAGER - LIMITE DE SESSÕES -->
 <script src="session-manager.js?v=1.0"></script>
 
+<!-- 🍔 SIDEBAR MENU -->
+<script src="sidebar-menu.js?v=1.0"></script>
+
 <div class="os-footer" id="rRodape" style="position: fixed; bottom: 0; left: 0; right: 0; width: 100%; text-align: center; font-size: 10px; background: #f8f9fa; padding: 8px 12px; border-top: 2px solid var(--color-primary); z-index: 9999; box-sizing: border-box; font-family: Arial, sans-serif;">
     <span id="rodape-texto">Developed by Hallz Branding 3199676-6963</span>
 </div>
 
 <script>
-  window.__GESTAO_V2_BUILD__ = 'v3.3-session-limit';
-  console.log('✅ Gestão V3.3 build ativo:', window.__GESTAO_V2_BUILD__);
+  window.__GESTAO_V2_BUILD__ = 'v3.4-sidebar-menu';
+  console.log('✅ Gestão V3.4 build ativo:', window.__GESTAO_V2_BUILD__);
 </script>
 
 </body>
