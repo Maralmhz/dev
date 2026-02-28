@@ -308,7 +308,7 @@
                 <h1>👑 Super Admin - Painel de Controle</h1>
                 <p id="adminUserEmail">Carregando...</p>
             </div>
-            <button class="btn-logout" onclick="logout()">🚪 Sair</button>
+            <button class="btn-logout" onclick="logout()">🚺 Sair</button>
         </div>
 
         <div class="container">
@@ -535,16 +535,19 @@
         async function aprovarUsuario(uid, email) {
             if (!confirm(`✅ Aprovar ${email}?`)) return;
             try {
+                console.log('🔄 Aprovando usuário:', uid, email);
                 await firebase.firestore().collection('usuarios').doc(uid).update({
                     status: 'ativo',
                     approvedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     approvedBy: currentAdminEmail
                 });
+                console.log('✅ Usuário aprovado com sucesso!');
                 alert('✅ Usuário aprovado!');
                 await listarUsuarios();
                 await carregarDashboard();
             } catch (error) {
-                alert('❌ Erro ao aprovar');
+                console.error('❌ Erro ao aprovar:', error);
+                alert('❌ Erro ao aprovar: ' + error.message);
             }
         }
 
@@ -552,16 +555,19 @@
         async function rejeitarUsuario(uid, email) {
             if (!confirm(`❌ Rejeitar ${email}?`)) return;
             try {
+                console.log('🔄 Rejeitando usuário:', uid, email);
                 await firebase.firestore().collection('usuarios').doc(uid).update({
                     status: 'rejeitado',
                     rejectedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     rejectedBy: currentAdminEmail
                 });
+                console.log('✅ Usuário rejeitado com sucesso!');
                 alert('❌ Usuário rejeitado!');
                 await listarUsuarios();
                 await carregarDashboard();
             } catch (error) {
-                alert('❌ Erro ao rejeitar');
+                console.error('❌ Erro ao rejeitar:', error);
+                alert('❌ Erro ao rejeitar: ' + error.message);
             }
         }
 
@@ -569,19 +575,28 @@
         async function bloquearUsuario(uid, email) {
             if (!confirm(`🔒 Bloquear ${email}?`)) return;
             try {
+                console.log('🔄 Bloqueando usuário:', uid, email);
+                
+                // 1. Atualizar status no Firestore
                 await firebase.firestore().collection('usuarios').doc(uid).update({
                     status: 'bloqueado',
                     blockedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     blockedBy: currentAdminEmail
                 });
-                // Deslogar de todos os dispositivos
+                console.log('✅ Status atualizado para bloqueado');
+                
+                // 2. Remover sessões (usando email formatado)
                 const userEmail = email.replace(/[.@]/g, '_');
+                console.log('🗑️ Removendo sessões:', userEmail);
                 await firebase.database().ref(`sessions/${userEmail}`).remove();
-                alert('🔒 Usuário bloqueado!');
+                console.log('✅ Sessões removidas');
+                
+                alert('🔒 Usuário bloqueado! Ele será deslogado em até 3 segundos.');
                 await listarUsuarios();
                 await carregarDashboard();
             } catch (error) {
-                alert('❌ Erro ao bloquear');
+                console.error('❌ Erro ao bloquear:', error);
+                alert('❌ Erro ao bloquear: ' + error.message);
             }
         }
 
@@ -589,16 +604,19 @@
         async function desbloquearUsuario(uid, email) {
             if (!confirm(`🔓 Desbloquear ${email}?`)) return;
             try {
+                console.log('🔄 Desbloqueando usuário:', uid, email);
                 await firebase.firestore().collection('usuarios').doc(uid).update({
                     status: 'ativo',
                     unblockedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     unblockedBy: currentAdminEmail
                 });
+                console.log('✅ Usuário desbloqueado com sucesso!');
                 alert('🔓 Usuário desbloqueado!');
                 await listarUsuarios();
                 await carregarDashboard();
             } catch (error) {
-                alert('❌ Erro ao desbloquear');
+                console.error('❌ Erro ao desbloquear:', error);
+                alert('❌ Erro ao desbloquear: ' + error.message);
             }
         }
 
