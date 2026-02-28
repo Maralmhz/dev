@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>👑 Super Admin - Controle Total</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .auth-warning {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            color: #856404;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .card h2 {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table th, table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-admin {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-user {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .access-denied {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .access-denied h2 {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>👑 Super Admin - Painel de Controle</h1>
+        <p id="userEmail">Carregando...</p>
+    </div>
+
+    <div class="container">
+        <div id="authCheck" class="auth-warning">
+            ⏳ Verificando permissões...
+        </div>
+
+        <div id="adminPanel" style="display:none;">
+            <!-- ESTATÍSTICAS -->
+            <div class="grid">
+                <div class="stat-box">
+                    <div class="stat-number" id="totalUsers">0</div>
+                    <div class="stat-label">Usuários Totais</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" id="totalSessions">0</div>
+                    <div class="stat-label">Sessões Ativas</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" id="totalChecklists">0</div>
+                    <div class="stat-label">Checklists (Firestore)</div>
+                </div>
+            </div>
+
+            <!-- GERENCIAR USUÁRIOS -->
+            <div class="card">
+                <h2>👥 Gerenciar Usuários</h2>
+                <div style="margin-bottom: 20px;">
+                    <button class="btn btn-success" onclick="listarUsuarios()">🔄 Atualizar Lista</button>
+                    <button class="btn btn-primary" onclick="mostrarCriarUsuario()">➕ Criar Novo Usuário</button>
+                </div>
+                <div id="usersList"></div>
+            </div>
+
+            <!-- GERENCIAR SESSÕES -->
+            <div class="card">
+                <h2>📱 Sessões Ativas</h2>
+                <button class="btn btn-primary" onclick="listarTodasSessoes()">🔄 Atualizar Sessões</button>
+                <button class="btn btn-danger" onclick="limparTodasSessoes()">🗑️ Limpar TODAS Sessões</button>
+                <div id="sessionsList" style="margin-top: 20px;"></div>
+            </div>
+
+            <!-- CONFIGURAÇÕES DE LIMITE -->
+            <div class="card">
+                <h2>⚙️ Configurar Limites de Sessões</h2>
+                <div class="form-group">
+                    <label>Email do Usuário:</label>
+                    <input type="email" id="userEmailLimit" placeholder="usuario@email.com">
+                </div>
+                <div class="form-group">
+                    <label>Novo Limite de Dispositivos:</label>
+                    <input type="number" id="newLimit" value="2" min="1" max="10">
+                </div>
+                <button class="btn btn-success" onclick="atualizarLimite()">✅ Atualizar Limite</button>
+            </div>
+
+            <!-- BACKUP & DADOS -->
+            <div class="card">
+                <h2>💾 Backup & Manutenção</h2>
+                <button class="btn btn-primary" onclick="exportarTodosDados()">📥 Exportar Todos os Dados</button>
+                <button class="btn btn-danger" onclick="limparFirestore()">⚠️ Limpar Firestore (CUIDADO!)</button>
+            </div>
+        </div>
+
+        <div id="accessDenied" style="display:none;" class="access-denied">
+            <h2>🚫</h2>
+            <h3>Acesso Negado</h3>
+            <p>Apenas Super Admins podem acessar este painel.</p>
+            <button class="btn btn-primary" onclick="window.location.href='app.html'" style="margin-top: 20px;">Voltar ao App</button>
+        </div>
+    </div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="config.js"></script>
+
+    <script>
+        // Inicializar Firebase
+        if (window.FIREBASE_CONFIG && !firebase.apps.length) {
+            firebase.initializeApp(window.FIREBASE_CONFIG);
+        }
+
+        const SUPER_ADMINS = [
+            'maralmhz@gmail.com',  // ← ADICIONE SEUS EMAILS AQUI
+            // 'outro@email.com',
+        ];
+
+        let currentUser = null;
+
+        // Verificar autenticação e permissão
+        firebase.auth().onAuthStateChanged((user) => {
+            const authCheck = document.getElementById('authCheck');
+            const adminPanel = document.getElementById('adminPanel');
+            const accessDenied = document.getElementById('accessDenied');
+
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            currentUser = user;
+            document.getElementById('userEmail').textContent = user.email;
+
+            // Verificar se é super admin
+            if (SUPER_ADMINS.includes(user.email)) {
+                authCheck.style.display = 'none';
+                adminPanel.style.display = 'block';
+                carregarDashboard();
+            } else {
+                authCheck.style.display = 'none';
+                accessDenied.style.display = 'block';
+            }
+        });
+
+        // Carregar estatísticas
+        async function carregarDashboard() {
+            try {
+                // Contar usuários (Firebase Auth não permite listar via client)
+                // Vamos usar Firestore como referência
+                const usersSnapshot = await firebase.firestore().collection('usuarios').get();
+                document.getElementById('totalUsers').textContent = usersSnapshot.size;
+
+                // Contar sessões ativas
+                const sessionsSnapshot = await firebase.database().ref('sessions').once('value');
+                const sessions = sessionsSnapshot.val() || {};
+                let totalSessions = 0;
+                for (const user in sessions) {
+                    totalSessions += Object.keys(sessions[user]).length;
+                }
+                document.getElementById('totalSessions').textContent = totalSessions;
+
+                // Contar checklists
+                const checklistsSnapshot = await firebase.firestore().collection('checklists').get();
+                document.getElementById('totalChecklists').textContent = checklistsSnapshot.size;
+
+            } catch (error) {
+                console.error('❌ Erro ao carregar dashboard:', error);
+            }
+        }
+
+        // Listar todos os usuários
+        async function listarUsuarios() {
+            const usersList = document.getElementById('usersList');
+            usersList.innerHTML = '<p>🔄 Carregando...</p>';
+
+            try {
+                const snapshot = await firebase.firestore().collection('usuarios').get();
+                
+                if (snapshot.empty) {
+                    usersList.innerHTML = '<p>Nenhum usuário encontrado.</p>';
+                    return;
+                }
+
+                let html = '<table><thead><tr><th>Nome</th><th>Email</th><th>Role</th><th>Ações</th></tr></thead><tbody>';
+
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const role = data.role || 'user';
+                    html += `
+                        <tr>
+                            <td>${data.nome || '-'}</td>
+                            <td>${data.email}</td>
+                            <td><span class="badge badge-${role === 'admin' ? 'admin' : 'user'}">${role}</span></td>
+                            <td>
+                                <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="removerUsuario('${doc.id}', '${data.email}')">🗑️ Remover</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                html += '</tbody></table>';
+                usersList.innerHTML = html;
+
+            } catch (error) {
+                console.error('❌ Erro ao listar usuários:', error);
+                usersList.innerHTML = '<p style="color:red;">❌ Erro ao carregar usuários</p>';
+            }
+        }
+
+        // Listar todas as sessões
+        async function listarTodasSessoes() {
+            const sessionsList = document.getElementById('sessionsList');
+            sessionsList.innerHTML = '<p>🔄 Carregando...</p>';
+
+            try {
+                const snapshot = await firebase.database().ref('sessions').once('value');
+                const sessions = snapshot.val();
+
+                if (!sessions) {
+                    sessionsList.innerHTML = '<p>Nenhuma sessão ativa.</p>';
+                    return;
+                }
+
+                let html = '<table><thead><tr><th>Usuário</th><th>Dispositivo</th><th>Browser</th><th>Última Atividade</th></tr></thead><tbody>';
+
+                for (const [userEmail, devices] of Object.entries(sessions)) {
+                    const email = userEmail.replace(/_/g, '.');
+                    
+                    for (const [deviceId, info] of Object.entries(devices)) {
+                        const lastActive = new Date(info.lastActive).toLocaleString('pt-BR');
+                        html += `
+                            <tr>
+                                <td>${email}</td>
+                                <td>${deviceId.substring(0, 15)}...</td>
+                                <td>${info.browser || '-'}</td>
+                                <td>${lastActive}</td>
+                            </tr>
+                        `;
+                    }
+                }
+
+                html += '</tbody></table>';
+                sessionsList.innerHTML = html;
+
+            } catch (error) {
+                console.error('❌ Erro ao listar sessões:', error);
+                sessionsList.innerHTML = '<p style="color:red;">❌ Erro ao carregar sessões</p>';
+            }
+        }
+
+        // Limpar todas as sessões
+        async function limparTodasSessoes() {
+            if (!confirm('⚠️ Tem certeza? Isso deslogará TODOS os usuários!')) return;
+
+            try {
+                await firebase.database().ref('sessions').remove();
+                alert('✅ Todas as sessões foram limpas!');
+                await carregarDashboard();
+                await listarTodasSessoes();
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                alert('❌ Erro ao limpar sessões');
+            }
+        }
+
+        // Atualizar limite de sessões
+        async function atualizarLimite() {
+            const email = document.getElementById('userEmailLimit').value.trim();
+            const newLimit = parseInt(document.getElementById('newLimit').value);
+
+            if (!email) {
+                alert('⚠️ Digite o email do usuário');
+                return;
+            }
+
+            try {
+                const userEmail = email.replace(/[.@]/g, '_');
+                await firebase.database().ref(`users/${userEmail}/config`).update({
+                    maxSessions: newLimit,
+                    updatedAt: Date.now(),
+                    updatedBy: currentUser.email
+                });
+
+                alert(`✅ Limite de ${email} atualizado para ${newLimit} dispositivo(s)!`);
+                document.getElementById('userEmailLimit').value = '';
+
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                alert('❌ Erro ao atualizar limite');
+            }
+        }
+
+        // Exportar todos os dados
+        async function exportarTodosDados() {
+            try {
+                const data = {
+                    exportDate: new Date().toISOString(),
+                    users: [],
+                    sessions: null,
+                    checklists: []
+                };
+
+                // Usuários
+                const usersSnapshot = await firebase.firestore().collection('usuarios').get();
+                usersSnapshot.forEach(doc => {
+                    data.users.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Sessões
+                const sessionsSnapshot = await firebase.database().ref('sessions').once('value');
+                data.sessions = sessionsSnapshot.val();
+
+                // Checklists
+                const checklistsSnapshot = await firebase.firestore().collection('checklists').get();
+                checklistsSnapshot.forEach(doc => {
+                    data.checklists.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Download
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `backup-completo-${Date.now()}.json`;
+                a.click();
+
+                alert('✅ Backup exportado com sucesso!');
+
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                alert('❌ Erro ao exportar dados');
+            }
+        }
+
+        // Remover usuário
+        async function removerUsuario(uid, email) {
+            if (!confirm(`⚠️ Tem certeza que deseja remover ${email}?`)) return;
+
+            try {
+                // Remover do Firestore
+                await firebase.firestore().collection('usuarios').doc(uid).delete();
+                
+                // Limpar sessões
+                const userEmail = email.replace(/[.@]/g, '_');
+                await firebase.database().ref(`sessions/${userEmail}`).remove();
+
+                alert('✅ Usuário removido!');
+                await listarUsuarios();
+                await carregarDashboard();
+
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                alert('❌ Erro ao remover usuário');
+            }
+        }
+
+        // Limpar Firestore (CUIDADO!)
+        async function limparFirestore() {
+            const confirmacao = prompt('⚠️ ATENÇÃO! Digite "CONFIRMAR" para apagar TODOS os checklists:');
+            if (confirmacao !== 'CONFIRMAR') return;
+
+            try {
+                const snapshot = await firebase.firestore().collection('checklists').get();
+                const batch = firebase.firestore().batch();
+                
+                snapshot.docs.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+
+                await batch.commit();
+                alert('✅ Firestore limpo!');
+                await carregarDashboard();
+
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                alert('❌ Erro ao limpar Firestore');
+            }
+        }
+
+        function mostrarCriarUsuario() {
+            alert('ℹ️ Para criar novos usuários, use a opção "Criar conta" na tela de login (index.html)');
+        }
+    </script>
+</body>
+</html>
