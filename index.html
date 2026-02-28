@@ -19,6 +19,24 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+
+    <!-- 🔒 PROTEÇÃO DE ROTA -->
+    <script>
+        // INICIALIZAR FIREBASE
+        if (window.FIREBASE_CONFIG && !firebase.apps.length) {
+            firebase.initializeApp(window.FIREBASE_CONFIG);
+        }
+
+        // VERIFICAR AUTENTICAÇÃO
+        firebase.auth().onAuthStateChanged((user) => {
+            if (!user) {
+                // NÃO ESTÁ LOGADO - REDIRECIONA PRO LOGIN
+                window.location.href = 'login.html';
+            } else {
+                console.log('✅ Usuário autenticado:', user.email);
+            }
+        });
+    </script>
 </head>
 <body>
     <div class="container">
@@ -220,7 +238,7 @@
         </div>
 
         <div class="equip-section">
-            <div class="equip-section-title">🛷 RODAS & PÁRA-BRISAS</div>
+            <div class="equip-section-title">🛣️ RODAS & PÁRA-BRISAS</div>
             <div class="checkbox-group">
                 <div class="checkbox-item"><input type="checkbox" id="calotas" name="equipamentos" value="CALOTAS"><label for="calotas">CALOTAS</label></div>
                 <div class="checkbox-item"><input type="checkbox" id="rodas_liga" name="equipamentos" value="RODAS DE LIGA"><label for="rodas_liga">RODAS DE LIGA</label></div>
