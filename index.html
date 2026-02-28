@@ -440,16 +440,25 @@
         </div>
     </div>
 
+    <!-- FIREBASE -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <!-- CONFIG -->
     <script src="config.js"></script>
 
+    <!-- SESSION MANAGER - DEVE VIR ANTES DO LOGIN.JS -->
+    <script src="session-manager.js"></script>
+
     <script>
+        // Inicializar Firebase
         if (window.FIREBASE_CONFIG && !firebase.apps.length) {
             firebase.initializeApp(window.FIREBASE_CONFIG);
         }
 
+        // Carregar logo
         document.addEventListener('DOMContentLoaded', () => {
             const logoImg = document.getElementById('logoLogin');
             if (window.OFICINA_CONFIG && window.OFICINA_CONFIG.logo) {
@@ -457,6 +466,7 @@
             }
         });
 
+        // Toggle senha
         const togglePassword = document.getElementById('togglePassword');
         const senhaInput = document.getElementById('senha');
         const eyeIcon = document.getElementById('eyeIcon');
@@ -472,6 +482,7 @@
             }
         });
 
+        // Partículas
         function createParticles() {
             const container = document.getElementById('particles');
             const isMobile = window.innerWidth < 768;
@@ -500,12 +511,14 @@
         const btnCriarConta = document.getElementById('btnCriarConta');
         const btnEsqueciSenha = document.getElementById('btnEsqueciSenha');
 
+        // Redirecionar se já logado
         firebase.auth().onAuthStateChanged((user) => {
             if (user) {
-                window.location.href = 'sistema.html';
+                window.location.href = 'app.html';
             }
         });
 
+        // Carregar email salvo
         const savedEmail = localStorage.getItem('rememberedEmail');
         if (savedEmail) {
             emailInput.value = savedEmail;
@@ -520,10 +533,11 @@
 
         function showError(msg) {
             alertSuccess.style.display = 'none';
-            alertError.textContent = msg;
+            alertError.innerHTML = msg;
             alertError.style.display = 'block';
         }
 
+        // LOGIN COM SESSION MANAGER
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -535,18 +549,40 @@
             alertError.style.display = 'none';
 
             try {
-                await firebase.auth().signInWithEmailAndPassword(email, senha);
+                // ✅ VERIFICAR LIMITE DE SESSÕES ANTES DE LOGAR
+                const sessionCheck = await window.sessionManager.checkSessionLimit(email);
                 
+                if (!sessionCheck.allowed) {
+                    loading.style.display = 'none';
+                    showError(`
+                        <strong>🚫 Limite de Dispositivos Atingido</strong><br><br>
+                        Você já está logado em <strong>${sessionCheck.activeCount} dispositivo(s)</strong>.<br>
+                        Seu plano permite até <strong>${sessionCheck.maxSessions} dispositivo(s)</strong>.<br><br>
+                        <strong>Opções:</strong><br>
+                        1️⃣ Deslogue de outro dispositivo<br>
+                        2️⃣ Faça upgrade: <strong>R$ 30,00</strong> por dispositivo adicional
+                    `);
+                    return;
+                }
+
+                // ✅ FAZER LOGIN
+                const userCredential = await firebase.auth().signInWithEmailAndPassword(email, senha);
+                const user = userCredential.user;
+                
+                // Salvar email
                 if (rememberMe.checked) {
                     localStorage.setItem('rememberedEmail', email);
                 } else {
                     localStorage.removeItem('rememberedEmail');
                 }
 
+                // ✅ REGISTRAR SESSÃO
+                await window.sessionManager.registerSession(user.email);
+
                 showSuccess('✅ Login realizado! Redirecionando...');
                 
                 setTimeout(() => {
-                    window.location.href = 'sistema.html';
+                    window.location.href = 'app.html';
                 }, 1500);
 
             } catch (error) {
@@ -568,6 +604,7 @@
             }
         });
 
+        // CRIAR CONTA
         btnCriarConta.addEventListener('click', (e) => {
             e.preventDefault();
             
@@ -615,6 +652,7 @@
                 });
         });
 
+        // ESQUECI SENHA
         btnEsqueciSenha.addEventListener('click', (e) => {
             e.preventDefault();
             
