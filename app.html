@@ -27,6 +27,15 @@
     <script>
         if (window.FIREBASE_CONFIG && !firebase.apps.length) {
             firebase.initializeApp(window.FIREBASE_CONFIG);
+            
+            const oficinaId = sessionStorage.getItem("oficinaId");
+            if (oficinaId) {
+              window.OFICINA_CONFIG = {
+                ...window.OFICINA_CONFIG,
+                oficinaId: oficinaId
+              };
+              console.log("🏢 Oficina restaurada:", oficinaId);
+            }
         }
 
         firebase.auth().onAuthStateChanged((user) => {
