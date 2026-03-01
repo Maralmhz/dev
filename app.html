@@ -9,34 +9,20 @@
     <link rel="stylesheet" href="gestao_oficina.css?v=3.2">
     <link rel="stylesheet" href="gestao_oficina_v2.css?v=1.0.2">
     <link rel="stylesheet" href="logout-style.css">
-    
-    <!-- 🍔 SIDEBAR MENU -->
     <link rel="stylesheet" href="sidebar-menu.css?v=1.0">
-    
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="logo.png">
     <link rel="icon" type="image/png" href="logo.png">
-   <title id="titulo-pagina">Sistema de Gestão - Oficina</title>
+    <title id="titulo-pagina">Sistema de Gestão - Oficina</title>
+    
+    <!-- CDN EXTERNA -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
+    <!-- A) FIREBASE CDN -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-
-    <script>
-        if (window.FIREBASE_CONFIG && !firebase.apps.length) {
-            firebase.initializeApp(window.FIREBASE_CONFIG);
-        }
-
-        firebase.auth().onAuthStateChanged((user) => {
-            if (!user) {
-                window.location.href = 'index.html';
-            } else {
-                console.log('✅ Usuário autenticado:', user.email);
-            }
-        });
-    </script>
 </head>
 <body>
     <div class="container">
@@ -63,7 +49,6 @@
                     <span id="syncText">Online</span>
                 </div>
 
-                <!-- 🔥 BOTÃO DE LOGOUT (OCULTO - AGORA ESTÁ NO SIDEBAR) -->
                 <div class="user-info-container">
                     <div class="user-email-badge">
                         <span id="userEmail">Carregando...</span>
@@ -679,15 +664,43 @@
     </div>
 </div>
 
+<!-- B) CONFIG -->
 <script src="config.js?v=3.3"></script>
 
+<!-- C) INICIALIZAÇÃO FIREBASE + AUTH + SINCRONIZAÇÃO OFICINA -->
 <script>
-    if (window.FIREBASE_CONFIG && !window.firebase?.apps?.length) {
-        window.firebase.initializeApp(window.FIREBASE_CONFIG);
-        console.log("🔥 Firebase App GLOBAL inicializado!");
+(function() {
+    if (!window.FIREBASE_CONFIG) {
+        console.error("⚠️ FIREBASE_CONFIG não definido!");
+        return;
     }
+
+    if (!firebase.apps.length) {
+        firebase.initializeApp(window.FIREBASE_CONFIG);
+        window.firebaseApp = firebase.app();
+        console.log("🔥 Firebase inicializado - apps:", firebase.apps.length);
+    }
+
+    const oficinaId = sessionStorage.getItem("oficinaId");
+    if (oficinaId) {
+        window.OFICINA_CONFIG = {
+            ...window.OFICINA_CONFIG,
+            oficinaId: oficinaId
+        };
+        console.log("🏢 OFICINA_CONFIG sincronizado:", window.OFICINA_CONFIG.oficinaId);
+    }
+
+    firebase.auth().onAuthStateChanged((user) => {
+        if (!user) {
+            window.location.href = 'index.html';
+        } else {
+            console.log('✅ Usuário autenticado:', user.email);
+        }
+    });
+})();
 </script>
 
+<!-- E) MÓDULOS DO SISTEMA -->
 <script src="app.js?v=3.3"></script>
 <script src="core_utils.js?v=3.3"></script>
 <script src="firebase.js?v=1.0.0"></script>
@@ -697,50 +710,20 @@
 <script src="gestao_oficina_agendamentos.js?v=1.0.2"></script>
 <script src="gestao_oficina_financeiro.js?v=1.0.2"></script>
 <script src="gestao_oficina_recibos.js?v=1.0.2"></script>
-
 <script src="gestao_oficina_os.js?v=1.0.0"></script>
 <script src="gestao_oficina_checklist.js?v=1.0.0"></script>
 <script src="gestao_oficina_clientes.js?v=1.0.0"></script>
 <script src="gestao_oficina_estoque.js?v=1.0.0"></script>
-
 <script src="gestao_oficina_dashboard.js?v=2.0.0"></script>
-
 <script src="kanban_manager.js?v=3.3"></script>
-
 <script src="tabs_init.js?v=3.3"></script>
-
 <script type="module" src="gestao_oficina_firebase.js?v=3.3"></script>
-
 <script src="v2-modules-expose.js?v=1.0.0"></script>
-
 <script src="gestao_oficina_init.js?v=1.0.0"></script>
-
-<!-- 🔥 LOGOUT MANAGER -->
 <script src="logout.js?v=1.0"></script>
-
-<!-- 🔥 SESSION MANAGER - LIMITE DE SESSÕES -->
 <script src="session-manager.js?v=1.0"></script>
-
-<!-- 🍔 SIDEBAR MENU -->
 <script src="sidebar-menu.js?v=1.0"></script>
-
-<!-- 🔒 MONITOR DE STATUS EM TEMPO REAL (CARREGA POR ÚLTIMO) -->
 <script src="status-monitor.js?v=3.0"></script>
-
-<script>
-  window.addEventListener("load", () => {
-    const oficinaId = sessionStorage.getItem("oficinaId");
-
-    if (oficinaId) {
-      window.OFICINA_CONFIG = {
-        ...window.OFICINA_CONFIG,
-        oficinaId: oficinaId
-      };
-
-      console.log("🏢 Oficina restaurada após load:", oficinaId);
-    }
-  });
-</script>
 
 <div class="os-footer" id="rRodape" style="position: fixed; bottom: 0; left: 0; right: 0; width: 100%; text-align: center; font-size: 10px; background: #f8f9fa; padding: 8px 12px; border-top: 2px solid var(--color-primary); z-index: 9999; box-sizing: border-box; font-family: Arial, sans-serif;">
     <span id="rodape-texto">Developed by Hallz Branding 3199676-6963</span>
