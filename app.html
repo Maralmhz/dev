@@ -61,7 +61,9 @@
 </script>
 <div id="modulos-placeholder"></div>
 <script>
-window.iniciarSistema = function() {
+window.__modulosCarregados = 0;
+window.__modulosTotal = 23;
+window.iniciarSistema = async function() {
   if (window.__sistemaIniciado) return;
   window.__sistemaIniciado = true;
   const oficinaId = window.OFICINA_CONFIG?.oficinaId;
@@ -71,46 +73,41 @@ window.iniciarSistema = function() {
   }
   console.log("✅ Iniciando sistema com oficinaId:", oficinaId);
   const scripts = [
-    "app.js?v=3.3",
-    "core_utils.js?v=3.3",
-    "firebase.js?v=1.0.0",
-    "checklist.js?v=3.3",
-    "gestao_oficina.js?v=3.3",
-    "gestao_oficina_v2.js?v=1.0.2",
-    "gestao_oficina_agendamentos.js?v=1.0.2",
-    "gestao_oficina_financeiro.js?v=1.0.2",
-    "gestao_oficina_recibos.js?v=1.0.2",
-    "gestao_oficina_os.js?v=1.0.0",
-    "gestao_oficina_checklist.js?v=1.0.0",
-    "gestao_oficina_clientes.js?v=1.0.0",
-    "gestao_oficina_estoque.js?v=1.0.0",
-    "gestao_oficina_dashboard.js?v=2.0.0",
-    "kanban_manager.js?v=3.3",
-    "tabs_init.js?v=3.3",
-    "v2-modules-expose.js?v=1.0.0",
-    "gestao_oficina_init.js?v=1.0.0",
-    "logout.js?v=1.0",
-    "session-manager.js?v=1.0",
-    "sidebar-menu.js?v=1.0",
-    "status-monitor.js?v=3.0"
+    "app.js","core_utils.js","firebase.js","checklist.js","gestao_oficina.js","gestao_oficina_v2.js",
+    "gestao_oficina_agendamentos.js","gestao_oficina_financeiro.js","gestao_oficina_recibos.js",
+    "gestao_oficina_os.js","gestao_oficina_checklist.js","gestao_oficina_clientes.js",
+    "gestao_oficina_estoque.js","gestao_oficina_dashboard.js","kanban_manager.js",
+    "v2-modules-expose.js","gestao_oficina_init.js","logout.js","session-manager.js",
+    "sidebar-menu.js","status-monitor.js"
   ];
   const placeholder = document.getElementById('modulos-placeholder');
-  scripts.forEach(src => {
+  await Promise.all(scripts.map(src => new Promise((resolve) => {
     const script = document.createElement('script');
-    script.src = src;
-    if (src.includes('gestao_oficina_firebase')) script.type = 'module';
+    script.src = src + '?v=3.4';
+    script.onload = () => { window.__modulosCarregados++; resolve(); };
+    script.onerror = () => { console.error('Erro ao carregar:', src); resolve(); };
     placeholder.appendChild(script);
-  });
+  })));
   const moduloFirebase = document.createElement('script');
   moduloFirebase.type = 'module';
-  moduloFirebase.src = 'gestao_oficina_firebase.js?v=3.3';
-  placeholder.appendChild(moduloFirebase);
+  moduloFirebase.src = 'gestao_oficina_firebase.js?v=3.4';
+  await new Promise(resolve => {
+    moduloFirebase.onload = resolve;
+    moduloFirebase.onerror = resolve;
+    placeholder.appendChild(moduloFirebase);
+  });
+  console.log('✅ Módulos carregados:', window.__modulosCarregados);
+  await new Promise(resolve => setTimeout(resolve, 100));
+  const tabsScript = document.createElement('script');
+  tabsScript.src = 'tabs_init.js?v=3.4';
+  placeholder.appendChild(tabsScript);
+  console.log('✅ Sistema inicializado completamente');
 };
 </script>
 <div class="os-footer" id="rRodape" style="position: fixed; bottom: 0; left: 0; right: 0; width: 100%; text-align: center; font-size: 10px; background: #f8f9fa; padding: 8px 12px; border-top: 2px solid var(--color-primary); z-index: 9999; box-sizing: border-box; font-family: Arial, sans-serif;"><span id="rodape-texto">Developed by Hallz Branding 3199676-6963</span></div>
 <script>
-window.__GESTAO_V2_BUILD__ = 'v3.4-sidebar-menu';
-console.log('✅ Gestão V3.4 build ativo:', window.__GESTAO_V2_BUILD__);
+window.__GESTAO_V2_BUILD__ = 'v3.4-deterministic';
+console.log('✅ Build:', window.__GESTAO_V2_BUILD__);
 </script>
 </body>
 </html>
