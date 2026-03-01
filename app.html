@@ -27,15 +27,6 @@
     <script>
         if (window.FIREBASE_CONFIG && !firebase.apps.length) {
             firebase.initializeApp(window.FIREBASE_CONFIG);
-            
-            const oficinaId = sessionStorage.getItem("oficinaId");
-            if (oficinaId) {
-              window.OFICINA_CONFIG = {
-                ...window.OFICINA_CONFIG,
-                oficinaId: oficinaId
-              };
-              console.log("🏢 Oficina restaurada:", oficinaId);
-            }
         }
 
         firebase.auth().onAuthStateChanged((user) => {
@@ -735,6 +726,21 @@
 
 <!-- 🔒 MONITOR DE STATUS EM TEMPO REAL (CARREGA POR ÚLTIMO) -->
 <script src="status-monitor.js?v=3.0"></script>
+
+<script>
+  window.addEventListener("load", () => {
+    const oficinaId = sessionStorage.getItem("oficinaId");
+
+    if (oficinaId) {
+      window.OFICINA_CONFIG = {
+        ...window.OFICINA_CONFIG,
+        oficinaId: oficinaId
+      };
+
+      console.log("🏢 Oficina restaurada após load:", oficinaId);
+    }
+  });
+</script>
 
 <div class="os-footer" id="rRodape" style="position: fixed; bottom: 0; left: 0; right: 0; width: 100%; text-align: center; font-size: 10px; background: #f8f9fa; padding: 8px 12px; border-top: 2px solid var(--color-primary); z-index: 9999; box-sizing: border-box; font-family: Arial, sans-serif;">
     <span id="rodape-texto">Developed by Hallz Branding 3199676-6963</span>
