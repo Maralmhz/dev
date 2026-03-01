@@ -63,7 +63,7 @@
             color: #333;
         }
 
-        .form-group input {
+        .form-group input, .form-group select {
             width: 100%;
             padding: 14px;
             padding-right: 50px;
@@ -73,7 +73,7 @@
             transition: all 0.3s;
         }
 
-        .form-group input:focus {
+        .form-group input:focus, .form-group select:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
@@ -229,6 +229,7 @@
         .btn-success { background: #27ae60; color: white; }
         .btn-warning { background: #f39c12; color: white; }
         .btn-secondary { background: #95a5a6; color: white; }
+        .btn-info { background: #3498db; color: white; }
 
         .btn:hover {
             transform: translateY(-1px);
@@ -269,7 +270,7 @@
         .badge-rejeitado { background: #e2e3e5; color: #383d41; }
         .badge-duplicate { background: #ff6b6b; color: white; }
 
-        input[type="number"], input[type="email"], select {
+        input[type="number"], input[type="email"], input[type="text"], select {
             width: 100%;
             padding: 10px;
             border: 2px solid #e0e0e0;
@@ -281,6 +282,7 @@
             display: flex;
             gap: 4px;
             flex-wrap: wrap;
+            align-items: center;
         }
 
         .duplicate-warning {
@@ -289,6 +291,14 @@
             padding: 15px;
             border-radius: 8px;
             margin: 15px 0;
+        }
+
+        .plano-select {
+            padding: 6px 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            margin-right: 6px;
         }
     </style>
 </head>
@@ -347,6 +357,7 @@
             <div class="card">
                 <h2>👥 Gerenciar Usuários</h2>
                 <button class="btn btn-success" onclick="listarUsuarios()">🔄 Atualizar Lista</button>
+                <button class="btn btn-info" onclick="abrirCriarUsuario()">➕ Criar Novo Usuário</button>
                 <button class="btn btn-warning" onclick="verificarDuplicatas()">⚠️ Verificar Duplicatas</button>
                 <div id="duplicateWarning"></div>
                 <div id="usersList" style="margin-top: 20px;"></div>
@@ -363,7 +374,7 @@
             <!-- BACKUP & DADOS -->
             <div class="card">
                 <h2>💾 Backup & Manutenção</h2>
-                <button class="btn btn-primary" onclick="exportarTodosDados()">📥 Exportar Todos os Dados</button>
+                <button class="btn btn-primary" onclick="exportarTodosDados()">📅 Exportar Todos os Dados</button>
                 <button class="btn btn-danger" onclick="limparFirestore()">⚠️ Limpar Firestore (CUIDADO!)</button>
             </div>
         </div>
@@ -377,14 +388,12 @@
     <script src="config.js"></script>
 
     <script>
-        // Inicializar Firebase
         if (window.FIREBASE_CONFIG && !firebase.apps.length) {
             firebase.initializeApp(window.FIREBASE_CONFIG);
         }
 
         let currentAdminEmail = null;
 
-        // TOGGLE SENHA
         function togglePassword() {
             const passwordInput = document.getElementById('adminPassword');
             const toggleIcon = document.querySelector('.toggle-password');
@@ -398,7 +407,6 @@
             }
         }
 
-        // LOGIN DO SUPER ADMIN (COM FIREBASE AUTH)
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -411,7 +419,6 @@
             try {
                 console.log('🔄 Validando credenciais no Firestore...');
                 
-                // 1. Validar no Firestore (super_admins)
                 const adminDoc = await firebase.firestore()
                     .collection('super_admins')
                     .doc(email.replace(/[.@]/g, '_'))
@@ -430,7 +437,6 @@
 
                 console.log('✅ Credenciais validadas no Firestore');
 
-                // 2. Fazer login no Firebase Auth
                 console.log('🔄 Fazendo login no Firebase Auth...');
                 try {
                     await firebase.auth().signInWithEmailAndPassword(email, password);
@@ -438,7 +444,6 @@
                 } catch (authError) {
                     console.log('⚠️ Erro ao fazer login:', authError.code);
                     
-                    // Se der qualquer erro, tenta criar usuário
                     if (authError.code === 'auth/user-not-found' || 
                         authError.code === 'auth/invalid-login-credentials' ||
                         authError.code === 'auth/wrong-password') {
@@ -448,7 +453,6 @@
                             await firebase.auth().createUserWithEmailAndPassword(email, password);
                             console.log('✅ Usuário criado e logado no Firebase Auth');
                         } catch (createError) {
-                            // Se erro for 'email-already-in-use', força reset de senha
                             if (createError.code === 'auth/email-already-in-use') {
                                 console.log('⚠️ Email já existe, mas senha diferente. Enviando reset...');
                                 throw new Error('Conta existe mas senha está incorreta. Entre em contato com o administrador.');
@@ -460,7 +464,6 @@
                     }
                 }
 
-                // 3. Sucesso!
                 currentAdminEmail = email;
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('adminScreen').style.display = 'block';
@@ -476,7 +479,6 @@
             }
         });
 
-        // Verificar se já está logado
         window.addEventListener('DOMContentLoaded', async () => {
             const savedAuth = sessionStorage.getItem('superAdminAuth');
             if (savedAuth) {
@@ -497,7 +499,6 @@
             location.reload();
         }
 
-        // Carregar estatísticas
         async function carregarDashboard() {
             try {
                 const usersSnapshot = await firebase.firestore().collection('usuarios').get();
@@ -522,7 +523,6 @@
             }
         }
 
-        // Verificar emails duplicados
         async function verificarDuplicatas() {
             const warningDiv = document.getElementById('duplicateWarning');
             warningDiv.innerHTML = '<p>🔄 Verificando duplicatas...</p>';
@@ -555,7 +555,7 @@
                 
                 duplicates.forEach(dup => {
                     html += `<li><strong>${dup.email}</strong> - ${dup.count} usuários `;
-                    html += `<button class="btn btn-danger" onclick="removerDuplicatas('${dup.email}')">` + `🗑️ Remover Duplicatas</button></li>`;
+                    html += `<button class="btn btn-danger" onclick="removerDuplicatas('${dup.email}')">🗑️ Remover Duplicatas</button></li>`;
                 });
 
                 html += '</ul></div>';
@@ -567,12 +567,10 @@
             }
         }
 
-        // Remover duplicatas (mantém o mais antigo)
         async function removerDuplicatas(email) {
             if (!confirm(`⚠️ Remover duplicatas de ${email}? Será mantido apenas o usuário mais antigo.`)) return;
 
             try {
-                // Buscar todos os documentos com esse email
                 const snapshot = await firebase.firestore()
                     .collection('usuarios')
                     .where('email', '==', email)
@@ -583,7 +581,6 @@
                     return;
                 }
 
-                // Buscar datas de criação
                 const docsWithDates = [];
                 snapshot.forEach(doc => {
                     docsWithDates.push({
@@ -592,13 +589,11 @@
                     });
                 });
 
-                // Ordenar por data (mais antigo primeiro)
                 docsWithDates.sort((a, b) => a.createdAt - b.createdAt);
 
                 console.log('🗑️ Duplicatas encontradas:', docsWithDates);
                 console.log('✅ Mantendo:', docsWithDates[0].id);
 
-                // Remover todos exceto o primeiro (mais antigo)
                 for (let i = 1; i < docsWithDates.length; i++) {
                     await firebase.firestore().collection('usuarios').doc(docsWithDates[i].id).delete();
                     console.log(`🗑️ Removido duplicata: ${docsWithDates[i].id}`);
@@ -615,7 +610,6 @@
             }
         }
 
-        // Listar usuários
         async function listarUsuarios() {
             const usersList = document.getElementById('usersList');
             usersList.innerHTML = '<p>🔄 Carregando...</p>';
@@ -628,7 +622,6 @@
                     return;
                 }
 
-                // Detectar duplicatas
                 const emailMap = new Map();
                 snapshot.forEach(doc => {
                     const email = doc.data().email;
@@ -638,18 +631,24 @@
                     emailMap.get(email).push(doc.id);
                 });
 
-                let html = '<table><thead><tr><th>Nome</th><th>Email</th><th>Status</th><th>Role</th><th>Ações</th></tr></thead><tbody>';
+                let html = '<table><thead><tr><th>Nome</th><th>Email</th><th>Status</th><th>Role</th><th>Plano</th><th>Ações</th></tr></thead><tbody>';
 
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     const status = data.status || 'ativo';
                     const role = data.role || 'user';
+                    const plano = data.plano || 'starter';
                     const isDuplicate = emailMap.get(data.email).length > 1;
                     
                     let acoes = '';
                     
                     if (status === 'pendente') {
                         acoes = `
+                            <select class="plano-select" id="plano-${doc.id}">
+                                <option value="starter">🚀 Starter</option>
+                                <option value="professional">🔥 Professional</option>
+                                <option value="enterprise">🏢 Enterprise</option>
+                            </select>
                             <button class="btn btn-success" onclick="aprovarUsuario('${doc.id}', '${data.email}')">\u2705 Aprovar</button>
                             <button class="btn btn-danger" onclick="rejeitarUsuario('${doc.id}', '${data.email}')">\u274c Rejeitar</button>
                         `;
@@ -670,6 +669,7 @@
                     }
 
                     const duplicateBadge = isDuplicate ? '<span class="badge badge-duplicate">DUPLICATA</span> ' : '';
+                    const planoEmoji = plano === 'starter' ? '🚀' : plano === 'professional' ? '🔥' : '🏢';
 
                     html += `
                         <tr style="${isDuplicate ? 'background: #ffe0e0;' : ''}">
@@ -677,6 +677,7 @@
                             <td>${duplicateBadge}${data.email}</td>
                             <td><span class="badge badge-${status}">${status}</span></td>
                             <td><span class="badge badge-${role === 'admin' || role === 'platform_admin' ? 'admin' : 'user'}">${role}</span></td>
+                            <td>${planoEmoji} ${plano}</td>
                             <td><div class="actions-group">${acoes}</div></td>
                         </tr>
                     `;
@@ -691,18 +692,22 @@
             }
         }
 
-        // APROVAR USUÁRIO
         async function aprovarUsuario(uid, email) {
-            if (!confirm(`✅ Aprovar ${email}?`)) return;
+            const planoSelect = document.getElementById(`plano-${uid}`);
+            const planoSelecionado = planoSelect ? planoSelect.value : 'starter';
+            
+            if (!confirm(`✅ Aprovar ${email} com plano ${planoSelecionado}?`)) return;
+            
             try {
-                console.log('🔄 Aprovando usuário:', uid, email);
+                console.log('🔄 Aprovando usuário:', uid, email, 'plano:', planoSelecionado);
                 await firebase.firestore().collection('usuarios').doc(uid).update({
                     status: 'ativo',
+                    plano: planoSelecionado,
                     approvedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     approvedBy: currentAdminEmail
                 });
                 console.log('✅ Usuário aprovado com sucesso!');
-                alert('✅ Usuário aprovado!');
+                alert(`✅ Usuário aprovado com plano ${planoSelecionado}!`);
                 await listarUsuarios();
                 await carregarDashboard();
             } catch (error) {
@@ -711,7 +716,6 @@
             }
         }
 
-        // REJEITAR USUÁRIO
         async function rejeitarUsuario(uid, email) {
             if (!confirm(`❌ Rejeitar ${email}?`)) return;
             try {
@@ -731,13 +735,11 @@
             }
         }
 
-        // BLOQUEAR USUÁRIO
         async function bloquearUsuario(uid, email) {
             if (!confirm(`🔒 Bloquear ${email}?`)) return;
             try {
                 console.log('🔄 Bloqueando usuário:', uid, email);
                 
-                // 1. Atualizar status no Firestore
                 await firebase.firestore().collection('usuarios').doc(uid).update({
                     status: 'bloqueado',
                     blockedAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -745,7 +747,6 @@
                 });
                 console.log('✅ Status atualizado para bloqueado');
                 
-                // 2. Remover sessões (usando email formatado)
                 const userEmail = email.replace(/[.@]/g, '_');
                 console.log('🗑️ Removendo sessões:', userEmail);
                 await firebase.database().ref(`sessions/${userEmail}`).remove();
@@ -760,7 +761,6 @@
             }
         }
 
-        // DESBLOQUEAR USUÁRIO
         async function desbloquearUsuario(uid, email) {
             if (!confirm(`🔓 Desbloquear ${email}?`)) return;
             try {
@@ -780,7 +780,6 @@
             }
         }
 
-        // Listar sessões
         async function listarTodasSessoes() {
             const sessionsList = document.getElementById('sessionsList');
             sessionsList.innerHTML = '<p>🔄 Carregando...</p>';
@@ -821,7 +820,6 @@
             }
         }
 
-        // Limpar todas sessões
         async function limparTodasSessoes() {
             if (!confirm('⚠️ Deslogar TODOS os usuários?')) return;
             try {
@@ -834,7 +832,6 @@
             }
         }
 
-        // Exportar dados
         async function exportarTodosDados() {
             try {
                 const data = {
@@ -861,7 +858,6 @@
             }
         }
 
-        // Remover usuário
         async function removerUsuario(uid, email) {
             if (!confirm(`⚠️ Remover ${email}?`)) return;
             try {
@@ -876,7 +872,6 @@
             }
         }
 
-        // Limpar Firestore
         async function limparFirestore() {
             const conf = prompt('⚠️ Digite "CONFIRMAR" para apagar TUDO:');
             if (conf !== 'CONFIRMAR') return;
@@ -889,6 +884,69 @@
                 await carregarDashboard();
             } catch (error) {
                 alert('❌ Erro');
+            }
+        }
+
+        function abrirCriarUsuario() {
+            const nome = prompt('✏️ Nome completo do usuário:');
+            if (!nome) return;
+            
+            const email = prompt('📧 Email do usuário:');
+            if (!email) return;
+            
+            const plano = prompt('📈 Plano (starter, professional, enterprise):', 'starter');
+            if (!plano || !['starter', 'professional', 'enterprise'].includes(plano)) {
+                alert('❌ Plano inválido!');
+                return;
+            }
+            
+            criarUsuario(email, nome, plano);
+        }
+
+        async function criarUsuario(email, nome, plano) {
+            try {
+                const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, 'Senha123@Inicial');
+                const uid = userCredential.user.uid;
+                const oficinaId = `oficina_${uid.slice(0, 20)}`;
+                
+                await firebase.firestore().collection('oficinas').doc(oficinaId).set({
+                    plano: plano,
+                    usuariosAtivos: 1,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    createdBy: currentAdminEmail
+                });
+                
+                await firebase.firestore().collection('oficinas').doc(oficinaId).collection('usuarios').doc(email).set({
+                    uid: uid,
+                    email: email,
+                    nome: nome,
+                    role: 'owner',
+                    plano: plano,
+                    oficinaId: oficinaId,
+                    status: 'ativo',
+                    adicionadoPor: currentAdminEmail,
+                    adicionadoEm: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                await firebase.firestore().collection('usuarios').doc(uid).set({
+                    uid: uid,
+                    email: email,
+                    nome: nome,
+                    role: 'owner',
+                    plano: plano,
+                    oficinaId: oficinaId,
+                    status: 'ativo',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                alert(`✅ Usuário criado com sucesso!\n\nEmail: ${email}\nPlano: ${plano}\nOficina ID: ${oficinaId}\n\nSenha inicial: Senha123@Inicial`);
+                
+                await listarUsuarios();
+                await carregarDashboard();
+                
+            } catch (error) {
+                console.error('❌ Erro ao criar usuário:', error);
+                alert('❌ Erro: ' + error.message);
             }
         }
     </script>
