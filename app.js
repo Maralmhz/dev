@@ -56,3 +56,40 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 console.log('✅ app.js carregado com switchTab global');
+
+// Função global para teste de adição de usuários
+window.testUsuariosNovos = async function(planName) {
+  console.log(`\n🧪 TESTE: Adicionando usuários no plano ${planName.toUpperCase()}\n`);
+  
+  await window.PlanoManager.atualizarPlano(planName);
+  
+  const verificacao = await window.PlanoManager.verificarLimiteUsuarios();
+  console.log(`Plano: ${verificacao.badge} ${verificacao.nome}`);
+  console.log(`Limite: ${verificacao.limiteUsuarios} usuários\n`);
+  
+  const emailsParaTestar = [
+    'usuario1@teste.com',
+    'usuario2@teste.com',
+    'usuario3@teste.com',
+    'usuario4@teste.com',
+    'usuario5@teste.com',
+    'usuario6@teste.com',
+    'usuario7@teste.com'
+  ];
+  
+  for (let i = 0; i < emailsParaTestar.length; i++) {
+    const email = emailsParaTestar[i];
+    const resultado = await window.PlanoManager.adicionarUsuario(email);
+    
+    if (resultado) {
+      console.log(`✅ Usuário ${i + 1} adicionado: ${email}`);
+    } else {
+      console.log(`❌ Usuário ${i + 1} BLOQUEADO: ${email} (limite atingido)`);
+    }
+  }
+  
+  const verificacaoFinal = await window.PlanoManager.verificarLimiteUsuarios();
+  console.log(`\n📊 RESULTADO FINAL: ${verificacaoFinal.usuariosAtivos}/${verificacaoFinal.limiteUsuarios} usuários`);
+};
+
+console.log('✅ Função testUsuariosNovos disponível globalmente');
