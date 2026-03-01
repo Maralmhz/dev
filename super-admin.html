@@ -125,6 +125,12 @@
             border: 1px solid #f5c6cb;
         }
 
+        .alert.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
         /* ADMIN PANEL */
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -261,6 +267,7 @@
         .badge-pendente { background: #fff3cd; color: #856404; }
         .badge-bloqueado { background: #f8d7da; color: #721c24; }
         .badge-rejeitado { background: #e2e3e5; color: #383d41; }
+        .badge-duplicate { background: #ff6b6b; color: white; }
 
         input[type="number"], input[type="email"], select {
             width: 100%;
@@ -274,6 +281,14 @@
             display: flex;
             gap: 4px;
             flex-wrap: wrap;
+        }
+
+        .duplicate-warning {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
         }
     </style>
 </head>
@@ -308,7 +323,7 @@
                 <h1>👑 Super Admin - Painel de Controle</h1>
                 <p id="adminUserEmail">Carregando...</p>
             </div>
-            <button class="btn-logout" onclick="logout()">🚪 Sair</button>
+            <button class="btn-logout" onclick="logout()">🚺 Sair</button>
         </div>
 
         <div class="container">
@@ -332,6 +347,8 @@
             <div class="card">
                 <h2>👥 Gerenciar Usuários</h2>
                 <button class="btn btn-success" onclick="listarUsuarios()">🔄 Atualizar Lista</button>
+                <button class="btn btn-warning" onclick="verificarDuplicatas()">⚠️ Verificar Duplicatas</button>
+                <div id="duplicateWarning"></div>
                 <div id="usersList" style="margin-top: 20px;"></div>
             </div>
 
@@ -505,6 +522,86 @@
             }
         }
 
+        // Verificar emails duplicados
+        async function verificarDuplicatas() {
+            const warningDiv = document.getElementById('duplicateWarning');
+            warningDiv.innerHTML = '<p>🔄 Verificando duplicatas...</p>';
+
+            try {
+                const snapshot = await firebase.firestore().collection('usuarios').get();
+                const emailMap = new Map();
+                const duplicates = [];
+
+                snapshot.forEach(doc => {
+                    const email = doc.data().email;
+                    if (emailMap.has(email)) {
+                        duplicates.push({ email, docs: [...emailMap.get(email), doc.id] });
+                        emailMap.get(email).push(doc.id);
+                    } else {
+                        emailMap.set(email, [doc.id]);
+                    }
+                });
+
+                if (duplicates.length === 0) {
+                    warningDiv.innerHTML = '<p style="color:green;">✅ Nenhuma duplicata encontrada!</p>';
+                    return;
+                }
+
+                let html = '<div class="duplicate-warning"><h3>⚠️ Emails Duplicados Encontrados!</h3><ul>';
+                
+                emailMap.forEach((docs, email) => {
+                    if (docs.length > 1) {
+                        html += `<li><strong>${email}</strong> - ${docs.length} usuários `;
+                        html += `<button class="btn btn-danger" onclick="removerDuplicatas('${email}', ${JSON.stringify(docs).replace(/"/g, '&quot;')})">` + `🗑️ Remover Duplicatas</button></li>`;
+                    }
+                });
+
+                html += '</ul></div>';
+                warningDiv.innerHTML = html;
+
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                warningDiv.innerHTML = '<p style="color:red;">❌ Erro ao verificar duplicatas</p>';
+            }
+        }
+
+        // Remover duplicatas (mantém o mais antigo)
+        async function removerDuplicatas(email, docIds) {
+            if (!confirm(`⚠️ Remover duplicatas de ${email}? Será mantido apenas o usuário mais antigo.`)) return;
+
+            try {
+                const docs = JSON.parse(docIds.replace(/&quot;/g, '"'));
+                
+                // Buscar datas de criação
+                const docsWithDates = [];
+                for (const docId of docs) {
+                    const doc = await firebase.firestore().collection('usuarios').doc(docId).get();
+                    docsWithDates.push({
+                        id: docId,
+                        createdAt: doc.data().createdAt?.toMillis() || 0
+                    });
+                }
+
+                // Ordenar por data (mais antigo primeiro)
+                docsWithDates.sort((a, b) => a.createdAt - b.createdAt);
+
+                // Remover todos exceto o primeiro (mais antigo)
+                for (let i = 1; i < docsWithDates.length; i++) {
+                    await firebase.firestore().collection('usuarios').doc(docsWithDates[i].id).delete();
+                    console.log(`🗑️ Removido duplicata: ${docsWithDates[i].id}`);
+                }
+
+                alert(`✅ ${docsWithDates.length - 1} duplicata(s) removida(s)! Mantido: ${docsWithDates[0].id}`);
+                await verificarDuplicatas();
+                await listarUsuarios();
+                await carregarDashboard();
+
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                alert('❌ Erro ao remover duplicatas');
+            }
+        }
+
         // Listar usuários
         async function listarUsuarios() {
             const usersList = document.getElementById('usersList');
@@ -518,40 +615,53 @@
                     return;
                 }
 
+                // Detectar duplicatas
+                const emailMap = new Map();
+                snapshot.forEach(doc => {
+                    const email = doc.data().email;
+                    if (!emailMap.has(email)) {
+                        emailMap.set(email, []);
+                    }
+                    emailMap.get(email).push(doc.id);
+                });
+
                 let html = '<table><thead><tr><th>Nome</th><th>Email</th><th>Status</th><th>Role</th><th>Ações</th></tr></thead><tbody>';
 
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     const status = data.status || 'ativo';
                     const role = data.role || 'user';
+                    const isDuplicate = emailMap.get(data.email).length > 1;
                     
                     let acoes = '';
                     
                     if (status === 'pendente') {
                         acoes = `
-                            <button class="btn btn-success" onclick="aprovarUsuario('${doc.id}', '${data.email}')">✅ Aprovar</button>
-                            <button class="btn btn-danger" onclick="rejeitarUsuario('${doc.id}', '${data.email}')">❌ Rejeitar</button>
+                            <button class="btn btn-success" onclick="aprovarUsuario('${doc.id}', '${data.email}')">\u2705 Aprovar</button>
+                            <button class="btn btn-danger" onclick="rejeitarUsuario('${doc.id}', '${data.email}')">\u274c Rejeitar</button>
                         `;
                     } else if (status === 'ativo') {
                         acoes = `
-                            <button class="btn btn-warning" onclick="bloquearUsuario('${doc.id}', '${data.email}')">🔒 Bloquear</button>
-                            <button class="btn btn-danger" onclick="removerUsuario('${doc.id}', '${data.email}')">🗑️ Remover</button>
+                            <button class="btn btn-warning" onclick="bloquearUsuario('${doc.id}', '${data.email}')">\ud83d\udd12 Bloquear</button>
+                            <button class="btn btn-danger" onclick="removerUsuario('${doc.id}', '${data.email}')">\ud83d\uddd1\ufe0f Remover</button>
                         `;
                     } else if (status === 'bloqueado') {
                         acoes = `
-                            <button class="btn btn-success" onclick="desbloquearUsuario('${doc.id}', '${data.email}')">🔓 Desbloquear</button>
-                            <button class="btn btn-danger" onclick="removerUsuario('${doc.id}', '${data.email}')">🗑️ Remover</button>
+                            <button class="btn btn-success" onclick="desbloquearUsuario('${doc.id}', '${data.email}')">\ud83d\udd13 Desbloquear</button>
+                            <button class="btn btn-danger" onclick="removerUsuario('${doc.id}', '${data.email}')">\ud83d\uddd1\ufe0f Remover</button>
                         `;
                     } else {
                         acoes = `
-                            <button class="btn btn-danger" onclick="removerUsuario('${doc.id}', '${data.email}')">🗑️ Remover</button>
+                            <button class="btn btn-danger" onclick="removerUsuario('${doc.id}', '${data.email}')">\ud83d\uddd1\ufe0f Remover</button>
                         `;
                     }
 
+                    const duplicateBadge = isDuplicate ? '<span class="badge badge-duplicate">DUPLICATA</span> ' : '';
+
                     html += `
-                        <tr>
+                        <tr style="${isDuplicate ? 'background: #ffe0e0;' : ''}">
                             <td>${data.nome || '-'}</td>
-                            <td>${data.email}</td>
+                            <td>${duplicateBadge}${data.email}</td>
                             <td><span class="badge badge-${status}">${status}</span></td>
                             <td><span class="badge badge-${role === 'admin' || role === 'platform_admin' ? 'admin' : 'user'}">${role}</span></td>
                             <td><div class="actions-group">${acoes}</div></td>
