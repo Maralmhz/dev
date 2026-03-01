@@ -24,7 +24,9 @@
             position: fixed;
             width: 100vw;
             height: 100vh;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            background: 
+                linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
+                linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             background-size: 400% 400%;
             animation: gradientShift 15s ease infinite;
         }
@@ -35,7 +37,7 @@
             100% { background-position: 0% 50%; }
         }
 
-        /* 🚗 CARROS DRIFT */
+        /* 🚗 CARROS REALISTAS */
         .drift-container {
             position: fixed;
             width: 100%;
@@ -47,49 +49,71 @@
 
         .car {
             position: absolute;
-            font-size: 40px;
-            filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
+            width: 60px;
+            height: 120px;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
             animation: drift linear infinite;
         }
 
-        /* Rastro de fumaça */
+        /* Rastro de drift (marcas de pneu) */
+        .drift-mark {
+            position: absolute;
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(90deg, 
+                rgba(50, 50, 50, 0) 0%, 
+                rgba(50, 50, 50, 0.4) 50%, 
+                rgba(50, 50, 50, 0) 100%);
+            pointer-events: none;
+            animation: fadeMark 3s ease-out forwards;
+        }
+
+        @keyframes fadeMark {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Fumaça branca */
         .smoke {
             position: absolute;
-            width: 30px;
-            height: 30px;
-            background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, transparent 70%);
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0) 70%);
             border-radius: 50%;
             pointer-events: none;
-            animation: smokeTrail 2s ease-out forwards;
+            animation: smokeTrail 2.5s ease-out forwards;
         }
 
         @keyframes smokeTrail {
             0% {
                 opacity: 0.8;
-                transform: scale(0.5);
+                transform: scale(0.3);
             }
             100% {
                 opacity: 0;
-                transform: scale(2);
+                transform: scale(2.5);
             }
         }
 
-        /* Animações de drift */
+        /* Animações de drift realista */
         @keyframes drift {
             0% {
-                transform: translateX(-100px) translateY(0) rotate(0deg);
+                transform: translateX(-100px) translateY(0) rotate(90deg);
             }
-            25% {
-                transform: translateX(25vw) translateY(-15vh) rotate(-15deg);
+            20% {
+                transform: translateX(20vw) translateY(-10vh) rotate(75deg);
             }
-            50% {
-                transform: translateX(50vw) translateY(-5vh) rotate(5deg);
+            40% {
+                transform: translateX(40vw) translateY(-5vh) rotate(95deg);
             }
-            75% {
-                transform: translateX(75vw) translateY(-20vh) rotate(-10deg);
+            60% {
+                transform: translateX(60vw) translateY(-15vh) rotate(80deg);
+            }
+            80% {
+                transform: translateX(80vw) translateY(-8vh) rotate(90deg);
             }
             100% {
-                transform: translateX(110vw) translateY(-10vh) rotate(0deg);
+                transform: translateX(110vw) translateY(-12vh) rotate(90deg);
             }
         }
 
@@ -508,61 +532,110 @@
             logoImg.src = window.OFICINA_CONFIG.logo;
         }
 
-        // 🚗💨 SISTEMA DE CARROS DRIFT
-        const carEmojis = ['🚗', '🚙', '🛺', '🏎️', '🚕', '🚓'];
+        // 🚗 CARROS REALISTAS SVG (VISTOS DE CIMA)
         const driftContainer = document.getElementById('driftContainer');
+
+        const carColors = [
+            { body: '#ff3333', window: '#1a1a2e', roof: '#cc0000' }, // Vermelho
+            { body: '#3366ff', window: '#1a1a2e', roof: '#0033cc' }, // Azul
+            { body: '#ffffff', window: '#1a1a2e', roof: '#e0e0e0' }, // Branco
+            { body: '#ffdd33', window: '#1a1a2e', roof: '#ccaa00' }, // Amarelo
+            { body: '#33ff66', window: '#1a1a2e', roof: '#00cc33' }, // Verde
+            { body: '#000000', window: '#1a1a2e', roof: '#333333' }  // Preto
+        ];
+
+        function createCarSVG(color) {
+            return `
+                <svg width="60" height="120" viewBox="0 0 60 120" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Sombra -->
+                    <ellipse cx="30" cy="100" rx="22" ry="8" fill="rgba(0,0,0,0.3)" />
+                    
+                    <!-- Corpo do carro -->
+                    <rect x="10" y="20" width="40" height="80" rx="8" fill="${color.body}" stroke="rgba(0,0,0,0.3)" stroke-width="1"/>
+                    
+                    <!-- Teto -->
+                    <rect x="15" y="35" width="30" height="30" rx="6" fill="${color.roof}" />
+                    
+                    <!-- Vidros -->
+                    <rect x="18" y="38" width="24" height="12" rx="3" fill="${color.window}" opacity="0.7" />
+                    <rect x="18" y="53" width="24" height="10" rx="3" fill="${color.window}" opacity="0.7" />
+                    
+                    <!-- Rodas traseiras -->
+                    <rect x="5" y="25" width="8" height="15" rx="2" fill="#1a1a1a" />
+                    <rect x="47" y="25" width="8" height="15" rx="2" fill="#1a1a1a" />
+                    
+                    <!-- Rodas dianteiras -->
+                    <rect x="5" y="80" width="8" height="15" rx="2" fill="#1a1a1a" />
+                    <rect x="47" y="80" width="8" height="15" rx="2" fill="#1a1a1a" />
+                    
+                    <!-- Detalhes (faróis) -->
+                    <circle cx="20" cy="102" r="3" fill="#ffff99" opacity="0.8" />
+                    <circle cx="40" cy="102" r="3" fill="#ffff99" opacity="0.8" />
+                </svg>
+            `;
+        }
 
         function createDriftCar() {
             const car = document.createElement('div');
             car.className = 'car';
-            car.textContent = carEmojis[Math.floor(Math.random() * carEmojis.length)];
             
-            // Posição inicial (fora da tela à esquerda)
-            const startY = Math.random() * 80 + 10; // 10% a 90% da altura
+            const color = carColors[Math.floor(Math.random() * carColors.length)];
+            car.innerHTML = createCarSVG(color);
+            
+            const startY = Math.random() * 70 + 15;
             car.style.top = startY + 'vh';
             car.style.left = '-100px';
             
-            // Duração aleatória
-            const duration = Math.random() * 8 + 6; // 6-14s
+            const duration = Math.random() * 6 + 8;
             car.style.animationDuration = duration + 's';
             
             driftContainer.appendChild(car);
 
-            // Criar rastro de fumaça durante o drift
-            let smokeInterval = setInterval(() => {
+            // Criar rastro de drift e fumaça
+            let effectInterval = setInterval(() => {
                 if (!document.body.contains(car)) {
-                    clearInterval(smokeInterval);
+                    clearInterval(effectInterval);
                     return;
                 }
+                createDriftMark(car);
                 createSmoke(car);
-            }, 100);
+            }, 150);
 
-            // Remover carro após animação
             setTimeout(() => {
                 car.remove();
-                clearInterval(smokeInterval);
+                clearInterval(effectInterval);
             }, duration * 1000);
+        }
+
+        function createDriftMark(carElement) {
+            const rect = carElement.getBoundingClientRect();
+            const mark = document.createElement('div');
+            mark.className = 'drift-mark';
+            mark.style.left = (rect.left - 10) + 'px';
+            mark.style.top = (rect.top + 50) + 'px';
+            mark.style.transform = `rotate(${Math.random() * 20 - 10}deg)`;
+            driftContainer.appendChild(mark);
+
+            setTimeout(() => mark.remove(), 3000);
         }
 
         function createSmoke(carElement) {
             const rect = carElement.getBoundingClientRect();
             const smoke = document.createElement('div');
             smoke.className = 'smoke';
-            smoke.style.left = rect.left + 'px';
-            smoke.style.top = rect.top + 'px';
+            smoke.style.left = (rect.left + Math.random() * 30) + 'px';
+            smoke.style.top = (rect.top + 60) + 'px';
             driftContainer.appendChild(smoke);
 
-            setTimeout(() => smoke.remove(), 2000);
+            setTimeout(() => smoke.remove(), 2500);
         }
 
-        // Criar carros periodicamente
         function startDriftShow() {
             createDriftCar();
-            const nextCarDelay = Math.random() * 4000 + 2000; // 2-6s
+            const nextCarDelay = Math.random() * 3000 + 2500;
             setTimeout(startDriftShow, nextCarDelay);
         }
 
-        // Iniciar show de drift
         startDriftShow();
 
         // Toggle senha
@@ -589,14 +662,12 @@
         const alertWarning = document.getElementById('alertWarning');
         const loading = document.getElementById('loading');
 
-        // Carregar email salvo
         const savedEmail = localStorage.getItem('rememberedEmail');
         if (savedEmail) {
             emailInput.value = savedEmail;
             rememberMe.checked = true;
         }
 
-        // 💬 MOSTRAR MENSAGEM DE LOGOUT AUTOMÁTICO
         const logoutMessage = sessionStorage.getItem('logoutMessage');
         if (logoutMessage) {
             showError(logoutMessage);
@@ -627,7 +698,6 @@
             alertWarning.style.display = 'block';
         }
 
-        // LOGIN COM GOOGLE
         async function loginComGoogle() {
             try {
                 const provider = new firebase.auth.GoogleAuthProvider();
@@ -641,7 +711,6 @@
             }
         }
 
-        // LOGIN COM EMAIL/SENHA
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -681,13 +750,11 @@
             }
         });
 
-        // VERIFICAR ACESSO (SaaS)
         async function verificarAcessoUsuario(user) {
             try {
                 const userDoc = await firebase.firestore().collection('usuarios').doc(user.uid).get();
 
                 if (!userDoc.exists) {
-                    // Criar documento pendente
                     await firebase.firestore().collection('usuarios').doc(user.uid).set({
                         email: user.email,
                         nome: user.displayName || '',
@@ -732,7 +799,6 @@
             }
         }
 
-        // Redirecionar se já logado
         firebase.auth().onAuthStateChanged(async (user) => {
             if (user) {
                 const userDoc = await firebase.firestore().collection('usuarios').doc(user.uid).get();
