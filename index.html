@@ -620,13 +620,12 @@
             }
         });
 
-        // VERIFICAR ACESSO (SaaS)
+        // VERIFICAR ACESSO (SaaS Multi-tenant)
         async function verificarAcessoUsuario(user) {
             try {
                 const userDoc = await firebase.firestore().collection('usuarios').doc(user.uid).get();
 
                 if (!userDoc.exists) {
-                    // Criar documento pendente
                     await firebase.firestore().collection('usuarios').doc(user.uid).set({
                         email: user.email,
                         nome: user.displayName || '',
@@ -643,25 +642,38 @@
 
                 const userData = userDoc.data();
 
-                if (userData.status === 'pendente') {
+                // Verificar status
+                if (userData.status !== 'ativo') {
                     await firebase.auth().signOut();
                     loading.style.display = 'none';
-                    showWarning('⏳ Aguardando aprovação...');
+                    
+                    const mensagens = {
+                        'pendente': '⏳ Aguardando aprovação...',
+                        'bloqueado': '❌ Conta bloqueada',
+                        'rejeitado': '❌ Acesso rejeitado'
+                    };
+                    
+                    showWarning(mensagens[userData.status] || '❌ Acesso negado');
                     return;
                 }
 
-                if (userData.status === 'bloqueado') {
+                // Status ATIVO - configurar multi-tenant
+                if (!userData.oficinaId) {
                     await firebase.auth().signOut();
                     loading.style.display = 'none';
-                    showError('❌ Conta bloqueada');
+                    showError('❌ Usuário sem oficina vinculada');
                     return;
                 }
 
-                if (userData.status === 'ativo') {
-                    loading.style.display = 'none';
-                    showSuccess('✅ Login realizado! Redirecionando...');
-                    setTimeout(() => window.location.href = 'app.html', 1000);
-                }
+                // Salvar oficinaId globalmente
+                window.OFICINA_CONFIG.oficinaId = userData.oficinaId;
+                sessionStorage.setItem('oficinaId', userData.oficinaId);
+                sessionStorage.setItem('userRole', userData.role);
+
+                // Redirecionar
+                loading.style.display = 'none';
+                showSuccess('✅ Login realizado! Redirecionando...');
+                setTimeout(() => window.location.href = 'app.html', 1000);
 
             } catch (error) {
                 console.error('❌ Erro:', error);
