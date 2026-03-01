@@ -47,6 +47,11 @@ async function verificarStatusUsuario(user) {
 
         lastKnownStatus = status;
 
+        // Se usuario esta ATIVO, limpar mensagens de bloqueio antigas
+        if (status === 'ativo') {
+            sessionStorage.removeItem('logoutMessage');
+        }
+
         // Acoes baseadas no status
         if (status === 'bloqueado') {
             console.warn('[STATUS MONITOR] Conta bloqueada! Deslogando...');
