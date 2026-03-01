@@ -1,0 +1,206 @@
+/* gestao_oficina_mobile_preview.css - Ajustes para visualização mobile */
+/* ====================================================================== */
+
+/* Mobile breakpoint */
+@media (max-width: 768px) {
+  
+  /* Sidebar responsiva */
+  .sidebar-menu {
+    width: 100%;
+    height: auto;
+    position: relative;
+    transform: none !important;
+  }
+  
+  .sidebar-menu.collapsed {
+    height: 60px;
+    overflow: hidden;
+  }
+  
+  .sidebar-toggle {
+    display: block !important;
+  }
+  
+  /* Header mobile */
+  .header {
+    flex-direction: column;
+    padding: 10px;
+  }
+  
+  .header-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .logo-container img {
+    max-width: 80px;
+    max-height: 50px;
+  }
+  
+  .header-badge {
+    position: static;
+    margin-top: 10px;
+  }
+  
+  /* Tabs mobile */
+  .tabs {
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .tab-button {
+    min-width: 120px;
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+  
+  /* Kanban mobile */
+  .kanban-container {
+    flex-direction: column;
+    overflow-x: visible;
+  }
+  
+  .kanban-coluna {
+    width: 100%;
+    min-width: auto;
+    margin-bottom: 20px;
+  }
+  
+  .kanban-card {
+    margin-bottom: 10px;
+  }
+  
+  /* Dashboard mobile */
+  .resumo-cards {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .stat-card {
+    padding: 15px;
+  }
+  
+  /* Formulários mobile */
+  .form-row {
+    flex-direction: column;
+  }
+  
+  .form-group {
+    width: 100%;
+    margin-bottom: 15px;
+  }
+  
+  /* Botões mobile */
+  .action-buttons {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .btn-primary,
+  .btn-secondary,
+  .btn-success,
+  .btn-danger {
+    width: 100%;
+    padding: 12px;
+  }
+  
+  /* Wizard mobile */
+  .wizard-progress {
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  .step-indicator {
+    width: 100%;
+  }
+  
+  /* Modal mobile */
+  .modal-content {
+    width: 95% !important;
+    max-width: none !important;
+    margin: 10px;
+  }
+  
+  /* Tabelas mobile */
+  table {
+    font-size: 11px;
+  }
+  
+  table th,
+  table td {
+    padding: 4px !important;
+  }
+  
+  /* OS info bar mobile */
+  .os-info-bar {
+    flex-direction: column;
+    text-align: center;
+    gap: 5px;
+  }
+  
+  /* Search box mobile */
+  .search-box {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .search-box input {
+    width: 100%;
+  }
+  
+  /* Footer mobile */
+  .os-footer {
+    font-size: 9px;
+    padding: 5px;
+  }
+}
+
+/* Tablet breakpoint */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .kanban-container {
+    gap: 10px;
+  }
+  
+  .kanban-coluna {
+    min-width: 280px;
+  }
+  
+  .resumo-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Desktop otimizado */
+@media (min-width: 1025px) {
+  .kanban-container {
+    gap: 20px;
+  }
+  
+  .kanban-coluna {
+    min-width: 320px;
+  }
+  
+  .resumo-cards {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-pdf,
+  .sidebar-menu,
+  .tabs,
+  .action-buttons,
+  .btn-primary,
+  .btn-secondary,
+  .header-badge,
+  .sync-dot {
+    display: none !important;
+  }
+  
+  .os-paper {
+    margin: 0;
+    padding: 20px;
+  }
+}
