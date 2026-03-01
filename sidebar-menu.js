@@ -67,6 +67,11 @@ class SidebarMenu {
                 
                 <div class="sidebar-divider"></div>
                 
+                <a href="perfil-usuario.html" class="sidebar-nav-item">
+                    <i>👤</i>
+                    <span>Meu Perfil</span>
+                    <span class="sidebar-badge-new">NOVO</span>
+                </a>
                 <a href="#" class="sidebar-nav-item" onclick="sidebarMenu.openPersonalizar()">
                     <i>🎨</i>
                     <span>Personalizar</span>
