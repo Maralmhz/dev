@@ -52,21 +52,13 @@ class SidebarMenu {
                         <p id="sidebarUserEmail">Carregando...</p>
                     </div>
                 </div>
-                <span class="sidebar-plan">⭐ Plano Básico</span>
+                <span class="sidebar-plan" id="sidebarPlanBadge">⭐ Plano Básico</span>
             </div>
 
             <nav class="sidebar-nav">
                 <a href="#" class="sidebar-nav-item" onclick="sidebarMenu.close(); switchTab('novo-checklist')">
                     <i>➕</i>
                     <span>Novo Checklist</span>
-                </a>
-                <a href="#" class="sidebar-nav-item" onclick="sidebarMenu.close(); switchTab('historico')">
-                    <i>📋</i>
-                    <span>Histórico</span>
-                </a>
-                <a href="#" class="sidebar-nav-item" onclick="sidebarMenu.close(); switchTab('relatorios')">
-                    <i>📊</i>
-                    <span>Relatórios</span>
                 </a>
                 <a href="#" class="sidebar-nav-item" onclick="sidebarMenu.close(); switchTab('gestao-oficina')">
                     <i>🛠️</i>
@@ -75,10 +67,29 @@ class SidebarMenu {
                 
                 <div class="sidebar-divider"></div>
                 
+                <a href="#" class="sidebar-nav-item" onclick="sidebarMenu.openPersonalizar()">
+                    <i>🎨</i>
+                    <span>Personalizar</span>
+                </a>
+                <a href="#" class="sidebar-nav-item" onclick="sidebarMenu.close(); switchTab('historico')">
+                    <i>📜</i>
+                    <span>Histórico</span>
+                </a>
+                <a href="#" class="sidebar-nav-item" onclick="sidebarMenu.close(); switchTab('relatorios')">
+                    <i>📊</i>
+                    <span>Relatórios</span>
+                </a>
+                
+                <div class="sidebar-divider"></div>
+                
                 <a href="#" class="sidebar-nav-item" onclick="sidebarMenu.showDevices()">
                     <i>📱</i>
                     <span>Dispositivos Ativos</span>
                     <span class="sidebar-badge" id="deviceCount">0</span>
+                </a>
+                <a href="#" class="sidebar-nav-item" onclick="sidebarMenu.showPlanInfo()">
+                    <i>💎</i>
+                    <span>Informações do Plano</span>
                 </a>
                 <a href="#" class="sidebar-nav-item">
                     <i>⚙️</i>
@@ -134,6 +145,7 @@ class SidebarMenu {
         
         this.isOpen = true;
         this.updateDeviceCount();
+        this.updatePlanBadge();
     }
 
     close() {
@@ -156,8 +168,30 @@ class SidebarMenu {
                 if (emailEl) {
                     emailEl.textContent = user.email;
                 }
+                this.updatePlanBadge();
             }
         });
+    }
+
+    async updatePlanBadge() {
+        try {
+            if (typeof window.PlanoManager === 'undefined') return;
+            
+            const verificacao = await window.PlanoManager.verificarLimiteUsuarios();
+            const badge = document.getElementById('sidebarPlanBadge');
+            
+            if (badge && verificacao.plano) {
+                if (verificacao.plano === 'premium') {
+                    badge.textContent = '💎 PREMIUM';
+                    badge.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                } else {
+                    badge.textContent = '🆓 FREE';
+                    badge.style.background = 'rgba(255, 255, 255, 0.2)';
+                }
+            }
+        } catch (error) {
+            console.error('❌ Erro ao atualizar badge do plano:', error);
+        }
     }
 
     async updateDeviceCount() {
@@ -210,6 +244,36 @@ class SidebarMenu {
         }
 
         this.close();
+    }
+
+    openPersonalizar() {
+        // Fecha o menu
+        this.close();
+        
+        // Aguarda animação de fechamento e abre o modal de personalização
+        setTimeout(() => {
+            if (typeof window.WhiteLabelManager !== 'undefined') {
+                window.WhiteLabelManager.abrirConfiguracao();
+            } else {
+                console.error('❌ WhiteLabelManager não disponível');
+                alert('⚠️ Módulo de personalização não carregado. Recarregue a página.');
+            }
+        }, 300);
+    }
+
+    showPlanInfo() {
+        // Fecha o menu
+        this.close();
+        
+        // Aguarda animação de fechamento e mostra info do plano
+        setTimeout(() => {
+            if (typeof window.PlanoManager !== 'undefined') {
+                window.PlanoManager.mostrarInfoPlano();
+            } else {
+                console.error('❌ PlanoManager não disponível');
+                alert('⚠️ Módulo de plano não carregado. Recarregue a página.');
+            }
+        }, 300);
     }
 }
 
