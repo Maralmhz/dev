@@ -235,6 +235,32 @@
     font-weight: 700;
 }
 
+/* BADGE "NOVO" - DESTAQUE AMARELO/VERDE */
+.sidebar-badge-new {
+    background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+    color: #fff;
+    font-size: 9px;
+    padding: 3px 8px;
+    border-radius: 10px;
+    margin-left: auto;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    animation: pulse-badge 2s ease-in-out infinite;
+    box-shadow: 0 2px 8px rgba(243, 156, 18, 0.4);
+}
+
+@keyframes pulse-badge {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.05);
+        opacity: 0.9;
+    }
+}
+
 /* RESPONSIVO - MOBILE */
 @media (max-width: 768px) {
     .hamburger-btn {
