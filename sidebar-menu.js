@@ -103,7 +103,7 @@ class SidebarMenu {
 
             <div class="sidebar-logout">
                 <button class="btn-logout-sidebar" onclick="fazerLogout()">
-                    <span>🚪</span>
+                    <span>🚺</span>
                     <span>Sair da Conta</span>
                 </button>
             </div>
@@ -181,13 +181,9 @@ class SidebarMenu {
             const badge = document.getElementById('sidebarPlanBadge');
             
             if (badge && verificacao.plano) {
-                if (verificacao.plano === 'premium') {
-                    badge.textContent = '💎 PREMIUM';
-                    badge.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-                } else {
-                    badge.textContent = '🆓 FREE';
-                    badge.style.background = 'rgba(255, 255, 255, 0.2)';
-                }
+                badge.textContent = `${verificacao.badge} ${verificacao.nome} (${verificacao.usuariosAtivos}/${verificacao.limiteUsuarios})`;
+                badge.style.background = verificacao.cor;
+                badge.style.color = 'white';
             }
         } catch (error) {
             console.error('❌ Erro ao atualizar badge do plano:', error);
