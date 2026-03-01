@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redefinir Senha - Gestão de Oficinas</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .background {
+            position: fixed;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            padding: 40px 35px;
+            width: 100%;
+            max-width: 420px;
+            animation: slideUp 0.8s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo-container {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .logo-container img {
+            width: 70px;
+            height: 70px;
+            border-radius: 18px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            object-fit: cover;
+        }
+
+        .title {
+            text-align: center;
+            color: #ffffff;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 13px;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        label {
+            display: block;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 7px;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        input {
+            width: 100%;
+            padding: 13px 45px 13px 16px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            color: #ffffff;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        input:focus {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 38px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            font-size: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-password:hover {
+            transform: scale(1.1);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 15px;
+            border-radius: 14px;
+            border: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .alert {
+            padding: 11px 14px;
+            border-radius: 12px;
+            margin-bottom: 18px;
+            font-size: 13px;
+            display: none;
+            animation: slideDown 0.4s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .alert-success {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid rgba(76, 175, 80, 0.5);
+            color: #ffffff;
+        }
+
+        .alert-error {
+            background: rgba(244, 67, 54, 0.2);
+            border: 1px solid rgba(244, 67, 54, 0.5);
+            color: #ffffff;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #ffffff;
+            margin-top: 12px;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid #ffffff;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .success-icon {
+            text-align: center;
+            font-size: 60px;
+            margin-bottom: 20px;
+            animation: bounce 1s ease;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 22px;
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .back-link:hover {
+            transform: translateY(-2px);
+            text-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="background"></div>
+
+    <div class="container">
+        <div class="card">
+            <div class="logo-container">
+                <img src="logo.png" alt="Logo" id="logoAuth">
+            </div>
+
+            <!-- VERIFICANDO CÓDIGO -->
+            <div id="loadingScreen">
+                <h1 class="title">🔍 Verificando...</h1>
+                <div class="loading" style="display:block;">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 8px; font-size: 12px;">Validando link...</p>
+                </div>
+            </div>
+
+            <!-- FORMULÁRIO DE NOVA SENHA -->
+            <div id="resetForm" style="display:none;">
+                <h1 class="title">🔑 Nova senha</h1>
+                <p class="subtitle">Digite sua nova senha abaixo.</p>
+
+                <div id="alertError" class="alert alert-error"></div>
+
+                <form id="form">
+                    <div class="form-group">
+                        <label for="newPassword">Nova senha</label>
+                        <input type="password" id="newPassword" placeholder="••••••••" required minlength="6">
+                        <button type="button" class="toggle-password" onclick="togglePassword('newPassword')">👁️</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirmar senha</label>
+                        <input type="password" id="confirmPassword" placeholder="••••••••" required minlength="6">
+                        <button type="button" class="toggle-password" onclick="togglePassword('confirmPassword')">👁️</button>
+                    </div>
+
+                    <button type="submit" class="btn-submit" id="btnSubmit">
+                        ✅ Salvar nova senha
+                    </button>
+                </form>
+
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 8px; font-size: 12px;">Salvando...</p>
+                </div>
+            </div>
+
+            <!-- SUCESSO -->
+            <div id="successMessage" style="display:none;">
+                <div class="success-icon">✅</div>
+                <h1 class="title">Senha alterada!</h1>
+                <p class="subtitle" style="margin-bottom: 20px;">
+                    Sua senha foi redefinida com sucesso.
+                    <br><br>
+                    Redirecionando para o login em <strong id="countdown">3</strong> segundos...
+                </p>
+                <a href="index.html" class="back-link">→ Ir para o login agora</a>
+            </div>
+
+            <!-- ERRO -->
+            <div id="errorMessage" style="display:none;">
+                <div style="text-align:center;font-size:60px;margin-bottom:20px;">❌</div>
+                <h1 class="title">Link inválido</h1>
+                <p class="subtitle" style="margin-bottom: 20px;">
+                    Este link de recuperação é inválido ou já foi usado.
+                    <br><br>
+                    Solicite um novo link de recuperação de senha.
+                </p>
+                <a href="reset-password.html" class="back-link">→ Solicitar novo link</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- FIREBASE -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="config.js"></script>
+
+    <script>
+        // Inicializar Firebase
+        if (window.FIREBASE_CONFIG && !firebase.apps.length) {
+            firebase.initializeApp(window.FIREBASE_CONFIG);
+        }
+
+        // Carregar logo
+        const logoImg = document.getElementById('logoAuth');
+        if (window.OFICINA_CONFIG?.logo) {
+            logoImg.src = window.OFICINA_CONFIG.logo;
+        }
+
+        const loadingScreen = document.getElementById('loadingScreen');
+        const resetForm = document.getElementById('resetForm');
+        const successMessage = document.getElementById('successMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        const form = document.getElementById('form');
+        const alertError = document.getElementById('alertError');
+        const loading = document.getElementById('loading');
+        const btnSubmit = document.getElementById('btnSubmit');
+
+        let actionCode = null;
+
+        function showError(msg) {
+            alertError.innerHTML = msg;
+            alertError.style.display = 'block';
+        }
+
+        function hideError() {
+            alertError.style.display = 'none';
+        }
+
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const button = input.nextElementSibling;
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                button.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                button.textContent = '👁️';
+            }
+        }
+
+        // Pegar parâmetros da URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const mode = urlParams.get('mode');
+        actionCode = urlParams.get('oobCode');
+
+        // Verificar se é reset de senha
+        if (mode !== 'resetPassword' || !actionCode) {
+            loadingScreen.style.display = 'none';
+            errorMessage.style.display = 'block';
+        } else {
+            // Verificar se o código é válido
+            firebase.auth().verifyPasswordResetCode(actionCode)
+                .then(() => {
+                    console.log('✅ Código válido');
+                    loadingScreen.style.display = 'none';
+                    resetForm.style.display = 'block';
+                })
+                .catch((error) => {
+                    console.error('❌ Erro:', error);
+                    loadingScreen.style.display = 'none';
+                    errorMessage.style.display = 'block';
+                });
+        }
+
+        // Processar formulário
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            hideError();
+
+            if (newPassword.length < 6) {
+                showError('❌ A senha deve ter pelo menos 6 caracteres');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showError('❌ As senhas não coincidem');
+                return;
+            }
+
+            loading.style.display = 'block';
+            btnSubmit.disabled = true;
+
+            try {
+                // Redefinir senha
+                await firebase.auth().confirmPasswordReset(actionCode, newPassword);
+                
+                console.log('✅ Senha alterada com sucesso!');
+                
+                // Mostrar sucesso e redirecionar
+                resetForm.style.display = 'none';
+                successMessage.style.display = 'block';
+
+                // Countdown
+                let seconds = 3;
+                const countdownEl = document.getElementById('countdown');
+                const interval = setInterval(() => {
+                    seconds--;
+                    countdownEl.textContent = seconds;
+                    if (seconds <= 0) {
+                        clearInterval(interval);
+                        window.location.href = 'index.html';
+                    }
+                }, 1000);
+
+            } catch (error) {
+                loading.style.display = 'none';
+                btnSubmit.disabled = false;
+                
+                console.error('❌ Erro:', error);
+                
+                let msgErro = '❌ Erro ao alterar senha';
+                
+                if (error.code === 'auth/weak-password') {
+                    msgErro = '❌ Senha muito fraca. Use pelo menos 6 caracteres';
+                } else if (error.code === 'auth/expired-action-code') {
+                    msgErro = '❌ Link expirado. Solicite um novo';
+                } else if (error.code === 'auth/invalid-action-code') {
+                    msgErro = '❌ Link inválido ou já usado';
+                }
+                
+                showError(msgErro);
+            }
+        });
+    </script>
+</body>
+</html>
