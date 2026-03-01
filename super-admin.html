@@ -530,15 +530,19 @@
             try {
                 const snapshot = await firebase.firestore().collection('usuarios').get();
                 const emailMap = new Map();
-                const duplicates = [];
 
                 snapshot.forEach(doc => {
                     const email = doc.data().email;
-                    if (emailMap.has(email)) {
-                        duplicates.push({ email, docs: [...emailMap.get(email), doc.id] });
-                        emailMap.get(email).push(doc.id);
-                    } else {
-                        emailMap.set(email, [doc.id]);
+                    if (!emailMap.has(email)) {
+                        emailMap.set(email, []);
+                    }
+                    emailMap.get(email).push(doc.id);
+                });
+
+                const duplicates = [];
+                emailMap.forEach((docs, email) => {
+                    if (docs.length > 1) {
+                        duplicates.push({ email, count: docs.length });
                     }
                 });
 
@@ -549,11 +553,9 @@
 
                 let html = '<div class="duplicate-warning"><h3>⚠️ Emails Duplicados Encontrados!</h3><ul>';
                 
-                emailMap.forEach((docs, email) => {
-                    if (docs.length > 1) {
-                        html += `<li><strong>${email}</strong> - ${docs.length} usuários `;
-                        html += `<button class="btn btn-danger" onclick="removerDuplicatas('${email}', ${JSON.stringify(docs).replace(/"/g, '&quot;')})">` + `🗑️ Remover Duplicatas</button></li>`;
-                    }
+                duplicates.forEach(dup => {
+                    html += `<li><strong>${dup.email}</strong> - ${dup.count} usuários `;
+                    html += `<button class="btn btn-danger" onclick="removerDuplicatas('${dup.email}')">` + `🗑️ Remover Duplicatas</button></li>`;
                 });
 
                 html += '</ul></div>';
@@ -566,24 +568,35 @@
         }
 
         // Remover duplicatas (mantém o mais antigo)
-        async function removerDuplicatas(email, docIds) {
+        async function removerDuplicatas(email) {
             if (!confirm(`⚠️ Remover duplicatas de ${email}? Será mantido apenas o usuário mais antigo.`)) return;
 
             try {
-                const docs = JSON.parse(docIds.replace(/&quot;/g, '"'));
-                
+                // Buscar todos os documentos com esse email
+                const snapshot = await firebase.firestore()
+                    .collection('usuarios')
+                    .where('email', '==', email)
+                    .get();
+
+                if (snapshot.empty) {
+                    alert('❌ Nenhum usuário encontrado');
+                    return;
+                }
+
                 // Buscar datas de criação
                 const docsWithDates = [];
-                for (const docId of docs) {
-                    const doc = await firebase.firestore().collection('usuarios').doc(docId).get();
+                snapshot.forEach(doc => {
                     docsWithDates.push({
-                        id: docId,
+                        id: doc.id,
                         createdAt: doc.data().createdAt?.toMillis() || 0
                     });
-                }
+                });
 
                 // Ordenar por data (mais antigo primeiro)
                 docsWithDates.sort((a, b) => a.createdAt - b.createdAt);
+
+                console.log('🗑️ Duplicatas encontradas:', docsWithDates);
+                console.log('✅ Mantendo:', docsWithDates[0].id);
 
                 // Remover todos exceto o primeiro (mais antigo)
                 for (let i = 1; i < docsWithDates.length; i++) {
@@ -598,7 +611,7 @@
 
             } catch (error) {
                 console.error('❌ Erro:', error);
-                alert('❌ Erro ao remover duplicatas');
+                alert('❌ Erro ao remover duplicatas: ' + error.message);
             }
         }
 
