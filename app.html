@@ -194,6 +194,15 @@ window.iniciarSistemaCompleto = async function() {
     placeholder.appendChild(moduloFirebase);
   });
   
+  if (typeof window.waitForOficinaIdReady === 'function') {
+    try {
+      await window.waitForOficinaIdReady();
+      console.log('✅ oficinaId resolvido antes da inicialização dos módulos de UI');
+    } catch (error) {
+      console.error('❌ Falha ao aguardar oficinaId:', error);
+    }
+  }
+
   await esperarModulos();
   await new Promise(resolve => setTimeout(resolve, 150));
   
