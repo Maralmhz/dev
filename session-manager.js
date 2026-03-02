@@ -1,14 +1,23 @@
 // ==============================================
-// SESSION MANAGER - LIMITE DE SESSÕES
+// SESSION MANAGER - LIMITE DE SESSÕES POR PLANO
 // ==============================================
-// Sistema que limita logins simultâneos e cobra por slots extras
+// Sistema que limita logins simultâneos baseado no plano
 
 class SessionManager {
     constructor() {
         this.db = firebase.database();
+        this.firestore = firebase.firestore();
         this.currentDeviceId = this.getDeviceId();
         this.sessionRef = null;
-        this.MAX_FREE_SESSIONS = 2; // Limite grátis
+        
+        // 👉 LIMITES POR PLANO (sincronizado com gestao_oficina_plano.js)
+        this.PLANOS_LIMITES = {
+            starter: 2,
+            professional: 4,
+            enterprise: 6
+        };
+        
+        this.MAX_FREE_SESSIONS = 2; // Fallback padrão
         this.EXTRA_SESSION_PRICE = 30; // R$ 30 por sessão extra
     }
 
@@ -30,6 +39,37 @@ class SessionManager {
             timestamp: Date.now(),
             lastActive: Date.now()
         };
+    }
+
+    // 🆕 NOVO: Busca limite de sessões baseado no plano
+    async getSessionLimitByPlan(userId) {
+        try {
+            const oficinaId = window.OFICINA_CONFIG?.oficinaId;
+            
+            if (!oficinaId) {
+                console.log('⚠️ oficinaId não encontrado, usando limite padrão: 2');
+                return this.MAX_FREE_SESSIONS;
+            }
+            
+            // Busca plano da oficina no Firestore
+            const docOficina = await this.firestore.collection('oficinas').doc(oficinaId).get();
+            
+            if (!docOficina.exists) {
+                console.log('⚠️ Oficina não encontrada, usando limite padrão: 2');
+                return this.MAX_FREE_SESSIONS;
+            }
+            
+            const dados = docOficina.data();
+            const plano = dados.plano || 'starter';
+            const limite = this.PLANOS_LIMITES[plano] || this.MAX_FREE_SESSIONS;
+            
+            console.log(`✅ Plano "${plano}" detectado - Limite: ${limite} sessões`);
+            return limite;
+            
+        } catch (error) {
+            console.error('❌ Erro ao buscar plano:', error);
+            return this.MAX_FREE_SESSIONS; // Fallback em caso de erro
+        }
     }
 
     // Registra sessão ativa
@@ -62,18 +102,15 @@ class SessionManager {
         try {
             const userEmail = userId.replace(/[.@]/g, '_');
             const sessionsRef = this.db.ref(`sessions/${userEmail}`);
-            const userConfigRef = this.db.ref(`users/${userEmail}/config`);
 
-            // Busca configuração do usuário
-            const configSnap = await userConfigRef.once('value');
-            const userConfig = configSnap.val() || {};
-            const maxSessions = userConfig.maxSessions || this.MAX_FREE_SESSIONS;
+            // 👉 BUSCA LIMITE BASEADO NO PLANO
+            const maxSessions = await this.getSessionLimitByPlan(userId);
 
             // Busca sessões ativas
             const sessionsSnap = await sessionsRef.once('value');
             const activeSessions = sessionsSnap.val() || {};
 
-            // 🔧 CORREÇÃO: Limpa sessões expiradas (24 horas em vez de 5 minutos)
+            // 🧼 Limpa sessões expiradas (24 horas)
             const now = Date.now();
             const validSessions = {};
             
@@ -83,11 +120,13 @@ class SessionManager {
                 } else {
                     // Remove sessão expirada
                     await this.db.ref(`sessions/${userEmail}/${deviceId}`).remove();
+                    console.log('🗑️ Sessão expirada removida:', deviceId);
                 }
             }
 
             // Verifica se já está logado neste dispositivo
             if (validSessions[this.currentDeviceId]) {
+                console.log('✅ Sessão já ativa neste dispositivo');
                 return { allowed: true, message: 'Sessão já ativa neste dispositivo' };
             }
 
@@ -95,16 +134,19 @@ class SessionManager {
             const activeCount = Object.keys(validSessions).length;
             
             if (activeCount >= maxSessions) {
+                console.warn(`⚠️ Limite de ${maxSessions} dispositivo(s) atingido (${activeCount} ativos)`);
+                
                 return {
                     allowed: false,
                     activeCount,
                     maxSessions,
                     needsUpgrade: true,
-                    message: `Limite de ${maxSessions} dispositivo(s) atingido. Deslogue de outro dispositivo ou faça upgrade.`
+                    message: `Limite de ${maxSessions} dispositivo(s) atingido. Deslogue de outro dispositivo ou faça upgrade do plano.`
                 };
             }
 
-            return { allowed: true };
+            console.log(`✅ Sessão permitida (${activeCount}/${maxSessions})`);
+            return { allowed: true, activeCount, maxSessions };
 
         } catch (error) {
             console.error('❌ Erro ao verificar sessões:', error);
@@ -153,18 +195,10 @@ class SessionManager {
         }
     }
 
-    // Atualiza limite de sessões do usuário (para upgrade)
+    // Atualiza limite de sessões do usuário (para upgrade) - DEPRECATED
     async updateSessionLimit(userId, newLimit) {
-        try {
-            const userEmail = userId.replace(/[.@]/g, '_');
-            await this.db.ref(`users/${userEmail}/config`).update({
-                maxSessions: newLimit,
-                updatedAt: Date.now()
-            });
-            console.log(`✅ Limite atualizado para ${newLimit} sessões`);
-        } catch (error) {
-            console.error('❌ Erro ao atualizar limite:', error);
-        }
+        console.warn('⚠️ updateSessionLimit() DEPRECATED - Use PlanoManager.atualizarPlano()');
+        console.warn('⚠️ O limite agora é definido pelo plano no Firestore');
     }
 }
 
@@ -172,4 +206,4 @@ class SessionManager {
 window.SessionManager = SessionManager;
 window.sessionManager = new SessionManager();
 
-console.log('✅ Session Manager inicializado - Limite: 2 devices (24h expiração) | R$ 30 por adicional');
+console.log('✅ Session Manager inicializado - Limites: Starter=2 | Professional=4 | Enterprise=6 (24h expiração)');
