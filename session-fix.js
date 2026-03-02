@@ -1,111 +1,144 @@
 // ==========================================
 // SESSION FIX - HOTFIX TEMPORÁRIO
 // ==========================================
-// Intercepta a validação rígida de oficinaId no app.html
-// e permite que oficina-guard.js faça a validação correta
+// Executa validação de oficinaId ANTES da validação rígida do app.html
 
 console.log('💉 SessionFix: Aplicando hotfix...');
 
-// ✅ SOLUÇÃO 1: Sobrescrever alert para ignorar "Sessão inválida"
+// ✅ FUNÇÃO PRINCIPAL: Validar e recuperar oficinaId
+async function validarOficinaId() {
+  console.log('🔐 SessionFix: Validando oficinaId...');
+  
+  // Aguardar Firebase Auth estar pronto
+  let tentativas = 0;
+  while (!firebase?.auth?.().currentUser && tentativas < 30) {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    tentativas++;
+  }
+  
+  const user = firebase.auth().currentUser;
+  if (!user) {
+    console.error('❌ SessionFix: Usuário não autenticado');
+    return false;
+  }
+  
+  console.log('✅ SessionFix: Usuário autenticado:', user.email);
+  
+  // Tentar pegar do sessionStorage primeiro
+  let oficinaId = sessionStorage.getItem('oficinaId');
+  
+  if (oficinaId && oficinaId !== 'undefined' && oficinaId !== 'null') {
+    console.log('✅ SessionFix: oficinaId encontrado no sessionStorage:', oficinaId);
+    window.OFICINA_CONFIG = { ...window.OFICINA_CONFIG, oficinaId };
+    return true;
+  }
+  
+  // Buscar no Firestore
+  console.log('⚠️ SessionFix: oficinaId não encontrado, buscando no Firestore...');
+  
+  try {
+    const userDoc = await firebase.firestore().collection('usuarios').doc(user.uid).get();
+    
+    if (!userDoc.exists) {
+      console.error('❌ SessionFix: Usuário não encontrado no Firestore');
+      return false;
+    }
+    
+    const userData = userDoc.data();
+    
+    if (userData.status !== 'ativo') {
+      console.error('❌ SessionFix: Usuário não ativo:', userData.status);
+      return false;
+    }
+    
+    if (!userData.oficinaId) {
+      console.error('❌ SessionFix: Usuário sem oficinaId vinculado');
+      return false;
+    }
+    
+    // Salvar no sessionStorage
+    oficinaId = userData.oficinaId;
+    sessionStorage.setItem('oficinaId', oficinaId);
+    sessionStorage.setItem('userRole', userData.role || 'user');
+    sessionStorage.setItem('userEmail', user.email);
+    
+    window.OFICINA_CONFIG = { ...window.OFICINA_CONFIG, oficinaId };
+    
+    console.log('✅ SessionFix: oficinaId recuperado do Firestore:', oficinaId);
+    return true;
+    
+  } catch (error) {
+    console.error('❌ SessionFix: Erro ao validar oficinaId:', error);
+    return false;
+  }
+}
+
+// ✅ Sobrescrever alert para ignorar "Sessão inválida"
 const originalAlert = window.alert;
 window.alert = function(message) {
   if (message && typeof message === 'string') {
-    // Ignorar alerts de sessão inválida
     if (message.includes('Sessão inválida') || 
         message.includes('Session inválida') ||
         message.includes('Faça login novamente')) {
       console.warn('🚫 SessionFix: Bloqueou alert:', message);
-      console.log('⏳ Aguardando oficina-guard.js validar oficinaId...');
       
-      // Verificar oficinaId após 3 segundos
-      setTimeout(() => {
-        const oficinaId = sessionStorage.getItem('oficinaId');
-        if (!oficinaId || oficinaId === 'undefined' || oficinaId === 'null') {
-          console.error('❌ SessionFix: oficinaId não foi resolvido após 3s');
-          console.log('🔄 Redirecionando para login...');
-          window.location.href = 'index.html';
+      // Tentar validar oficinaId automaticamente
+      validarOficinaId().then(success => {
+        if (!success) {
+          console.error('❌ SessionFix: Validação falhou, redirecionando...');
+          setTimeout(() => {
+            window.location.href = 'index.html';
+          }, 1000);
         } else {
-          console.log('✅ SessionFix: oficinaId recuperado!', oficinaId);
-          window.OFICINA_CONFIG = { ...window.OFICINA_CONFIG, oficinaId };
+          console.log('✅ SessionFix: Validação bem-sucedida!');
         }
-      }, 3000);
+      });
       
       return; // NÃO mostrar o alert
     }
   }
-  // Outros alerts funcionam normalmente
   return originalAlert.apply(window, arguments);
 };
 
-// ✅ SOLUÇÃO 2: Interceptar firebase.auth().signOut() temporário
+// ✅ Interceptar firebase.auth().signOut() temporário
 let signOutBlocked = false;
-let signOutTimer = null;
 
 if (window.firebase && firebase.auth) {
   const originalSignOut = firebase.auth().signOut.bind(firebase.auth());
   
   firebase.auth().signOut = async function() {
-    // Se ainda não validou oficinaId, bloquear logout temporário
     const oficinaId = sessionStorage.getItem('oficinaId');
     
     if ((!oficinaId || oficinaId === 'undefined' || oficinaId === 'null') && !signOutBlocked) {
-      console.warn('🚫 SessionFix: Bloqueou signOut temporário (aguardando oficinaId)');
+      console.warn('🚫 SessionFix: Bloqueou signOut, tentando validar oficinaId...');
       signOutBlocked = true;
       
-      // Permitir logout após 3 segundos se ainda não tiver oficinaId
-      signOutTimer = setTimeout(async () => {
-        const checkId = sessionStorage.getItem('oficinaId');
-        if (!checkId || checkId === 'undefined' || checkId === 'null') {
-          console.error('❌ SessionFix: oficinaId não resolvido, fazendo logout...');
-          await originalSignOut();
-          window.location.href = 'index.html';
-        }
-      }, 3000);
+      const success = await validarOficinaId();
       
-      return Promise.resolve(); // Retorna promessa vazia
+      if (!success) {
+        console.error('❌ SessionFix: Validação falhou, fazendo logout...');
+        await originalSignOut();
+        window.location.href = 'index.html';
+        return;
+      }
+      
+      console.log('✅ SessionFix: Validação bem-sucedida, cancelando logout');
+      signOutBlocked = false;
+      return Promise.resolve();
     }
     
-    // Se já tem oficinaId ou já esperou, permite logout
-    if (signOutTimer) clearTimeout(signOutTimer);
     return originalSignOut();
   };
 }
 
-// ✅ SOLUÇÃO 3: Monitorar sessionStorage e avisar quando oficinaId for definido
-const checkOficinaId = setInterval(() => {
-  const oficinaId = sessionStorage.getItem('oficinaId');
-  
-  if (oficinaId && oficinaId !== 'undefined' && oficinaId !== 'null') {
-    console.log('✅ SessionFix: oficinaId detectado!', oficinaId);
-    
-    // Limpar timers de bloqueio
-    if (signOutTimer) {
-      clearTimeout(signOutTimer);
-      signOutTimer = null;
-    }
-    signOutBlocked = false;
-    
-    // Garantir que OFICINA_CONFIG está atualizado
-    if (window.OFICINA_CONFIG) {
-      window.OFICINA_CONFIG.oficinaId = oficinaId;
-    } else {
-      window.OFICINA_CONFIG = { oficinaId };
-    }
-    
-    clearInterval(checkOficinaId);
-    console.log('✅ SessionFix: Hotfix concluído com sucesso!');
-  }
-}, 100);
-
-// Timeout de segurança (10 segundos)
-setTimeout(() => {
-  clearInterval(checkOficinaId);
-  const oficinaId = sessionStorage.getItem('oficinaId');
-  
-  if (!oficinaId || oficinaId === 'undefined' || oficinaId === 'null') {
-    console.error('❌ SessionFix: Timeout - oficinaId não foi resolvido em 10s');
-  }
-}, 10000);
+// ✅ Executar validação imediatamente quando Firebase estiver pronto
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => validarOficinaId(), 500);
+  });
+} else {
+  setTimeout(() => validarOficinaId(), 500);
+}
 
 console.log('✅ SessionFix: Hotfix aplicado!');
-console.log('ℹ️ Aguardando oficinaId ser resolvido pelo oficina-guard.js...');
+console.log('ℹ️ Validando oficinaId automaticamente...');
