@@ -18,6 +18,10 @@ class SessionManager {
         
         this.MAX_FREE_SESSIONS = 2; // Fallback padrão
         this.EXTRA_SESSION_PRICE = 30; // R$ 30 por sessão extra
+
+        this.currentUser = null;
+        this.oficinaId = null;
+        this.authReadyPromise = null;
     }
 
     // Inicializar Firebase refs (chamar DEPOIS do Firebase estar pronto)
@@ -30,7 +34,133 @@ class SessionManager {
         this.db = firebase.database();
         this.firestore = firebase.firestore();
         console.log('✅ SessionManager inicializado com Firebase');
+
+        if (!this.authReadyPromise) {
+            this.authReadyPromise = new Promise((resolve) => {
+                firebase.auth().onAuthStateChanged(async (user) => {
+                    if (!user) {
+                        this.currentUser = null;
+                        this.oficinaId = null;
+                        window.OFICINA_CONFIG = { ...window.OFICINA_CONFIG, oficinaId: null };
+                        window.oficinaId = null;
+                        resolve(null);
+                        return;
+                    }
+
+                    this.currentUser = user;
+
+                    try {
+                        const oficinaId = await this.resolverOficinaId(user);
+                        this.oficinaId = oficinaId;
+                        window.OFICINA_CONFIG = { ...window.OFICINA_CONFIG, oficinaId };
+                        window.oficinaId = oficinaId;
+                        console.log('✅ SessionManager: oficinaId resolvido:', oficinaId);
+                        resolve(user);
+                    } catch (error) {
+                        console.error('❌ SessionManager: falha ao resolver oficinaId:', error);
+                        resolve(user);
+                    }
+                });
+            });
+        }
+
         return true;
+    }
+
+    async waitForAuthReady() {
+        if (!this.authReadyPromise) {
+            this.init();
+        }
+
+        return this.authReadyPromise;
+    }
+
+    async resolverOficinaId(usuario) {
+        if (!usuario) {
+            throw new Error('Usuário não autenticado para resolver oficinaId');
+        }
+
+        let oficinaId = sessionStorage.getItem('oficinaId');
+        if (oficinaId && oficinaId !== 'undefined' && oficinaId !== 'null') {
+            return oficinaId;
+        }
+
+        const userDocRef = this.firestore.collection('usuarios').doc(usuario.uid);
+        const userDoc = await userDocRef.get();
+
+        if (!userDoc.exists) {
+            throw new Error('Usuário não encontrado no Firestore');
+        }
+
+        const userData = userDoc.data() || {};
+        if (userData.status && userData.status !== 'ativo') {
+            throw new Error(`Conta não está ativa. Status: ${userData.status}`);
+        }
+
+        oficinaId = userData.oficinaId;
+
+        if (!oficinaId) {
+            oficinaId = await this.criarOficinaParaUsuario(usuario, userData);
+            await userDocRef.set({ oficinaId }, { merge: true });
+        }
+
+        sessionStorage.setItem('oficinaId', oficinaId);
+        sessionStorage.setItem('userRole', userData.role || 'admin');
+        sessionStorage.setItem('userEmail', usuario.email || '');
+
+        return oficinaId;
+    }
+
+    async criarOficinaParaUsuario(usuario, userData = {}) {
+        const nomeBase = (userData.nomeOficina || userData.nome || usuario.displayName || 'Minha Oficina').trim();
+        const nomeNormalizado = nomeBase
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9\s]/g, '')
+            .replace(/\s+/g, '-')
+            .substring(0, 24) || 'oficina';
+
+        let oficinaId = `${nomeNormalizado}-${Date.now().toString(36).slice(-6)}`;
+        let tentativas = 0;
+
+        while (tentativas < 5) {
+            const oficinaDoc = await this.firestore.collection('oficinas').doc(oficinaId).get();
+            if (!oficinaDoc.exists) break;
+
+            tentativas += 1;
+            const sufixo = Math.random().toString(36).substring(2, 6);
+            oficinaId = `${nomeNormalizado}-${sufixo}`;
+        }
+
+        if (tentativas >= 5) {
+            throw new Error('Não foi possível gerar oficinaId único após 5 tentativas');
+        }
+
+        await this.firestore.collection('oficinas').doc(oficinaId).set({
+            oficinaId,
+            nome: nomeBase,
+            criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+            criadoPor: usuario.email || userData.email || usuario.uid,
+            plano: 'starter',
+            usuariosAtivos: 1,
+            limiteUsuarios: 2
+        });
+
+        if (usuario.email) {
+            await this.firestore
+                .collection('oficinas')
+                .doc(oficinaId)
+                .collection('usuarios')
+                .doc(usuario.email)
+                .set({
+                    email: usuario.email,
+                    role: userData.role || 'admin',
+                    adicionadoEm: firebase.firestore.FieldValue.serverTimestamp()
+                });
+        }
+
+        return oficinaId;
     }
 
     // Gera ID único do dispositivo
@@ -250,6 +380,34 @@ class SessionManager {
 
 // Expor globalmente
 window.SessionManager = SessionManager;
+
+
+
+window.resolverOficinaId = async function resolverOficinaId(usuario) {
+    if (!window.sessionManager) {
+        throw new Error('SessionManager não inicializado');
+    }
+
+    return window.sessionManager.resolverOficinaId(usuario);
+};
+
+window.waitForOficinaIdReady = async function() {
+    if (!window.sessionManager) {
+        throw new Error('SessionManager não inicializado');
+    }
+
+    const user = await window.sessionManager.waitForAuthReady();
+    if (!user) {
+        throw new Error('Usuário não autenticado');
+    }
+
+    const oficinaId = window.sessionManager.oficinaId || sessionStorage.getItem('oficinaId');
+    if (!oficinaId || oficinaId === 'undefined' || oficinaId === 'null') {
+        throw new Error('oficinaId não resolvido');
+    }
+
+    return oficinaId;
+};
 
 // ⚠️ NÃO instanciar automaticamente - aguardar Firebase estar pronto
 // A instância será criada manualmente após Firebase.initializeApp()
