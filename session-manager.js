@@ -73,12 +73,12 @@ class SessionManager {
             const sessionsSnap = await sessionsRef.once('value');
             const activeSessions = sessionsSnap.val() || {};
 
-            // Limpa sessões expiradas (mais de 5 minutos sem atividade)
+            // 🔧 CORREÇÃO: Limpa sessões expiradas (24 horas em vez de 5 minutos)
             const now = Date.now();
             const validSessions = {};
             
             for (const [deviceId, session] of Object.entries(activeSessions)) {
-                if (now - session.lastActive < 5 * 60 * 1000) { // 5 minutos
+                if (now - session.lastActive < 24 * 60 * 60 * 1000) { // 24 horas
                     validSessions[deviceId] = session;
                 } else {
                     // Remove sessão expirada
@@ -172,4 +172,4 @@ class SessionManager {
 window.SessionManager = SessionManager;
 window.sessionManager = new SessionManager();
 
-console.log('✅ Session Manager inicializado - Limite: 2 devices | R$ 30 por adicional');
+console.log('✅ Session Manager inicializado - Limite: 2 devices (24h expiração) | R$ 30 por adicional');
