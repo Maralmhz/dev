@@ -35,7 +35,7 @@ const PDFLogoFix = {
       };
       
       img.onerror = (error) => {
-        console.error('❌ Erro ao carregar imagem:', imageUrl, error);
+        console.error('❌ Erro ao carregar imagem:', imageUrl);
         reject(error);
       };
       
@@ -50,30 +50,53 @@ const PDFLogoFix = {
   async prepararLogoPDF() {
     try {
       if (this.logoBase64Cache) {
-        console.log('✅ Logo carregada do cache');
+        console.log('✅ Logo do cache');
         return this.logoBase64Cache;
       }
       
-      let logoUrl = window.OFICINA_CONFIG?.logo || 'logo.png';
-      
-      // Tentar pegar do elemento logo-oficina se existir
+      // PRIORIDADE 1: Pegar do elemento logo-oficina (já está em base64)
       const logoOficina = document.getElementById('logo-oficina');
-      if (logoOficina && logoOficina.src) {
-        logoUrl = logoOficina.src;
+      if (logoOficina && logoOficina.src && logoOficina.src.startsWith('data:')) {
+        console.log('🖼️ Logo encontrada no elemento logo-oficina (já em base64)');
+        
+        // Se for AVIF, converter para PNG
+        if (logoOficina.src.includes('avif')) {
+          console.log('🔄 Convertendo AVIF para PNG...');
+          const base64 = await this.imageToBase64(logoOficina.src);
+          this.logoBase64Cache = base64;
+          console.log('✅ Logo convertida (' + (base64.length / 1024).toFixed(1) + 'KB)');
+          return base64;
+        }
+        
+        // Já é PNG ou outro formato compatível
+        this.logoBase64Cache = logoOficina.src;
+        console.log('✅ Logo já em base64 compatível (' + (logoOficina.src.length / 1024).toFixed(1) + 'KB)');
+        return logoOficina.src;
       }
       
-      // Se for URL relativa, converter para absoluta
-      if (!logoUrl.startsWith('http') && !logoUrl.startsWith('data:')) {
-        logoUrl = window.location.origin + '/' + logoUrl.replace(/^\//, '');
+      // PRIORIDADE 2: Pegar URL externa do elemento
+      if (logoOficina && logoOficina.src && !logoOficina.src.startsWith('data:')) {
+        console.log('🖼️ Convertendo logo de URL:', logoOficina.src);
+        const base64 = await this.imageToBase64(logoOficina.src);
+        this.logoBase64Cache = base64;
+        console.log('✅ Logo convertida (' + (base64.length / 1024).toFixed(1) + 'KB)');
+        return base64;
       }
       
-      console.log('🖼️ Convertendo logo para base64:', logoUrl);
+      // PRIORIDADE 3: Tentar config
+      let logoUrl = window.OFICINA_CONFIG?.logo;
+      if (logoUrl) {
+        if (!logoUrl.startsWith('http') && !logoUrl.startsWith('data:')) {
+          logoUrl = window.location.origin + '/' + logoUrl.replace(/^\//, '');
+        }
+        console.log('🖼️ Convertendo logo de config:', logoUrl);
+        const base64 = await this.imageToBase64(logoUrl);
+        this.logoBase64Cache = base64;
+        console.log('✅ Logo convertida (' + (base64.length / 1024).toFixed(1) + 'KB)');
+        return base64;
+      }
       
-      const base64 = await this.imageToBase64(logoUrl);
-      this.logoBase64Cache = base64;
-      
-      console.log('✅ Logo convertida para base64 (' + (base64.length / 1024).toFixed(1) + 'KB)');
-      return base64;
+      throw new Error('Logo não encontrada');
       
     } catch (error) {
       console.error('❌ Erro ao preparar logo para PDF:', error);
