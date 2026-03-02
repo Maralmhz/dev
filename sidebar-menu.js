@@ -22,7 +22,7 @@ class SidebarMenu {
     }
 
     createMenu() {
-        // Botão hambúrger
+        // Botão hambúrguer
         const hamburger = document.createElement('button');
         hamburger.className = 'hamburger-btn';
         hamburger.id = 'hamburgerBtn';
@@ -57,7 +57,7 @@ class SidebarMenu {
 
             <nav class="sidebar-nav">
                 <a href="#" class="sidebar-nav-item" onclick="sidebarMenu.close(); switchTab('novo-checklist')">
-                    <i>➕</i>
+                    <i>➞</i>
                     <span>Novo Checklist</span>
                 </a>
                 <a href="#" class="sidebar-nav-item" onclick="sidebarMenu.close(); switchTab('gestao-oficina')">
@@ -90,7 +90,7 @@ class SidebarMenu {
                 <a href="#" class="sidebar-nav-item" onclick="sidebarMenu.showDevices()">
                     <i>📱</i>
                     <span>Dispositivos Ativos</span>
-                    <span class="sidebar-badge" id="deviceCount">0</span>
+                    <span class="sidebar-badge" id="deviceCount">0/2</span>
                 </a>
                 <a href="#" class="sidebar-nav-item" onclick="sidebarMenu.showPlanInfo()">
                     <i>💎</i>
@@ -108,7 +108,7 @@ class SidebarMenu {
 
             <div class="sidebar-logout">
                 <button class="btn-logout-sidebar" onclick="fazerLogout()">
-                    <span>🚺</span>
+                    <span>🚪</span>
                     <span>Sair da Conta</span>
                 </button>
             </div>
@@ -174,6 +174,7 @@ class SidebarMenu {
                     emailEl.textContent = user.email;
                 }
                 this.updatePlanBadge();
+                this.updateDeviceCount(); // 🐛 CORREÇÃO: Atualizar contador ao carregar
             }
         });
     }
@@ -195,19 +196,57 @@ class SidebarMenu {
         }
     }
 
+    // 🐛 CORREÇÃO: Função reescrita para garantir contagem correta
     async updateDeviceCount() {
         const user = firebase.auth().currentUser;
-        if (!user) return;
+        if (!user) {
+            console.warn('⚠️ updateDeviceCount: Usuário não autenticado');
+            return;
+        }
 
         try {
-            const sessions = await window.sessionManager.getActiveSessions(user.email);
-            const count = Object.keys(sessions).length;
-            const badge = document.getElementById('deviceCount');
-            if (badge) {
-                badge.textContent = count;
+            // Buscar sessões ativas do Realtime Database
+            const userEmail = user.email.replace(/[.@]/g, '_');
+            const sessionsRef = firebase.database().ref(`sessions/${userEmail}`);
+            
+            const snapshot = await sessionsRef.once('value');
+            const sessions = snapshot.val() || {};
+            
+            // Filtrar sessões válidas (menos de 24h inativas)
+            const now = Date.now();
+            const validSessions = {};
+            
+            for (const [deviceId, session] of Object.entries(sessions)) {
+                if (session.lastActive && (now - session.lastActive < 24 * 60 * 60 * 1000)) {
+                    validSessions[deviceId] = session;
+                }
             }
+            
+            const count = Object.keys(validSessions).length;
+            const badge = document.getElementById('deviceCount');
+            
+            if (badge) {
+                badge.textContent = `${count}/2`;
+                
+                // Cor do badge baseado na contagem
+                if (count >= 2) {
+                    badge.style.background = '#e74c3c'; // Vermelho (limite atingido)
+                } else if (count === 1) {
+                    badge.style.background = '#f39c12'; // Laranja (1 disponível)
+                } else {
+                    badge.style.background = '#27ae60'; // Verde (livres)
+                }
+            }
+            
+            console.log(`📱 Sessões ativas: ${count}/2`);
+            
         } catch (error) {
             console.error('❌ Erro ao contar devices:', error);
+            const badge = document.getElementById('deviceCount');
+            if (badge) {
+                badge.textContent = '?/2';
+                badge.style.background = '#95a5a6';
+            }
         }
     }
 
@@ -216,13 +255,28 @@ class SidebarMenu {
         if (!user) return;
 
         try {
-            const sessions = await window.sessionManager.getActiveSessions(user.email);
-            const count = Object.keys(sessions).length;
-            const currentDevice = window.sessionManager.currentDeviceId;
+            // Buscar sessões do Realtime Database
+            const userEmail = user.email.replace(/[.@]/g, '_');
+            const sessionsRef = firebase.database().ref(`sessions/${userEmail}`);
+            const snapshot = await sessionsRef.once('value');
+            const sessions = snapshot.val() || {};
+            
+            // Filtrar sessões válidas
+            const now = Date.now();
+            const validSessions = {};
+            
+            for (const [deviceId, session] of Object.entries(sessions)) {
+                if (session.lastActive && (now - session.lastActive < 24 * 60 * 60 * 1000)) {
+                    validSessions[deviceId] = session;
+                }
+            }
+            
+            const count = Object.keys(validSessions).length;
+            const currentDevice = window.sessionManager?.currentDeviceId;
 
             let message = `📱 <strong>Dispositivos Ativos (${count}/2)</strong>\n\n`;
 
-            for (const [deviceId, info] of Object.entries(sessions)) {
+            for (const [deviceId, info] of Object.entries(validSessions)) {
                 const isCurrent = deviceId === currentDevice;
                 const browser = info.browser || 'Desconhecido';
                 const lastActive = new Date(info.lastActive).toLocaleString('pt-BR');
@@ -287,4 +341,4 @@ if (document.readyState === 'loading') {
     window.sidebarMenu = new SidebarMenu();
 }
 
-console.log('✅ Sidebar Menu JS carregado');
+console.log('✅ Sidebar Menu JS carregado (contador corrigido)');
