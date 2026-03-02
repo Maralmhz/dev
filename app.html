@@ -119,30 +119,30 @@ window.__modulosCarregados = 0;
 window.__modulosTotal = 28;
 window.__modulosStatus = {};
 
-async function esperarModulos() {
-  console.log('⏳ Aguardando carregamento de módulos...');
-  return new Promise((resolve) => {
-    const verificar = setInterval(() => {
-      const oficinaIdOk = window.OFICINA_CONFIG?.oficinaId;
-      const gestaoV2Ok = typeof window.GestaoOficinaV2 !== 'undefined';
-      const moduloOSOk = typeof window.ModuloOS !== 'undefined';
+// ✅ NÃO redefinir se já foi patcheada
+if (typeof window.esperarModulos !== 'function') {
+  window.esperarModulos = async function() {
+    console.log('⏳ [LEGADO] Aguardando carregamento de módulos...');
+    return new Promise((resolve) => {
+      const verificar = setInterval(() => {
+        const oficinaIdOk = window.OFICINA_CONFIG?.oficinaId;
+        const gestaoV2Ok = typeof window.GestaoOficinaV2 !== 'undefined';
+        const moduloOSOk = typeof window.ModuloOS !== 'undefined';
+        
+        if (oficinaIdOk && gestaoV2Ok && moduloOSOk) {
+          clearInterval(verificar);
+          console.log('✅ Todos os módulos essenciais carregados!');
+          resolve();
+        }
+      }, 100);
       
-      console.log(`🔍 Check: oficinaId=${ !!oficinaIdOk}, GestaoV2=${gestaoV2Ok}, ModuloOS=${moduloOSOk}`);
-      
-      if (oficinaIdOk && gestaoV2Ok && moduloOSOk) {
-        clearInterval(verificar);
-        console.log('✅ Todos os módulos essenciais carregados!');
-        resolve();
-      }
-    }, 100);
-    
-    setTimeout(() => {
-      clearInterval(verificar);
-      console.error("❌ Timeout: módulos não carregaram a tempo");
-      resolve();
-    }, 5000);
-  });
+      // SEM setTimeout de timeout (eliminado)
+    });
+  };
+} else {
+  console.log('✅ esperarModulos já foi patcheada, usando versão otimizada');
 }
+
 
 window.iniciarSistemaCompleto = async function() {
   if (window.__sistemaIniciado) {
