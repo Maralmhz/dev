@@ -1,5 +1,5 @@
 // ==============================================
-// LOGIN.JS - ATUALIZADO COM SESSION MANAGER
+// LOGIN.JS - VERSÃO FINAL COM BLOQUEIO REAL
 // ==============================================
 
 const loginForm = document.getElementById('loginForm');
@@ -18,7 +18,10 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// FUNÇÃO DE LOGIN
+// ==============================================
+// LOGIN PRINCIPAL
+// ==============================================
+
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -34,40 +37,47 @@ loginForm.addEventListener('submit', async (e) => {
     errorMessage.style.display = 'none';
 
     try {
-        // 🔥 NOVO: Verificar limite de sessões ANTES de logar
-        const sessionCheck = await window.sessionManager.checkSessionLimit(email);
-        
-        if (!sessionCheck.allowed) {
-            showLoading(false);
-            showSessionLimitError(sessionCheck);
-            return;
-        }
 
-        // Fazer login no Firebase
-        const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+        // 🔐 LOGIN FIREBASE
+        const userCredential = await firebase.auth()
+            .signInWithEmailAndPassword(email, password);
+
         const user = userCredential.user;
 
         console.log('✅ Login bem-sucedido:', user.email);
 
-        // Salvar email se "Lembrar-me" estiver marcado
+        // 💾 Lembrar email
         if (rememberCheckbox.checked) {
             localStorage.setItem('rememberedEmail', email);
         } else {
             localStorage.removeItem('rememberedEmail');
         }
 
-        // 🔥 NOVO: Registrar sessão ativa
-        await window.sessionManager.registerSession(user.email);
+        // ==========================================
+        // 🔥 BLOQUEIO REAL DE SESSÃO (IMPORTANTE)
+        // ==========================================
 
-        // Redirecionar para o app
+        await window.sessionManager.waitForAuthReady();
+
+        const result = await window.sessionManager.validateAndRegisterSession();
+
+        if (!result.allowed) {
+            showLoading(false);
+            alert(result.message);
+            await firebase.auth().signOut();
+            return;
+        }
+
+        // ✅ Se passou, entra no sistema
         window.location.href = 'app.html';
 
     } catch (error) {
+
         showLoading(false);
         console.error('❌ Erro no login:', error);
-        
+
         let errorMsg = '❌ Erro ao fazer login';
-        
+
         switch (error.code) {
             case 'auth/user-not-found':
                 errorMsg = '❌ Usuário não encontrado';
@@ -84,53 +94,33 @@ loginForm.addEventListener('submit', async (e) => {
             default:
                 errorMsg = `❌ ${error.message}`;
         }
-        
+
         showError(errorMsg);
     }
 });
 
-// MOSTRAR ERRO
+// ==============================================
+// UI HELPERS
+// ==============================================
+
 function showError(message) {
     errorMessage.textContent = message;
     errorMessage.style.display = 'block';
-    
-    // Vibrar se disponível
+
     if (navigator.vibrate) {
         navigator.vibrate(200);
     }
 }
 
-// MOSTRAR ERRO DE LIMITE DE SESSÕES
-function showSessionLimitError(sessionInfo) {
-    const message = `
-        🚫 <strong>Limite de Dispositivos Atingido</strong><br><br>
-        Você já está logado em <strong>${sessionInfo.activeCount} dispositivo(s)</strong>.<br>
-        Seu plano permite até <strong>${sessionInfo.maxSessions} dispositivo(s)</strong>.<br><br>
-        <strong>Opções:</strong><br>
-        1️⃣ Deslogue de outro dispositivo<br>
-        2️⃣ Faça upgrade: <strong>R$ 30,00</strong> por dispositivo adicional<br><br>
-        <small>Entre em contato para ativar dispositivos extras</small>
-    `;
-    
-    errorMessage.innerHTML = message;
-    errorMessage.style.display = 'block';
-    errorMessage.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)';
-    errorMessage.style.color = '#fff';
-    errorMessage.style.padding = '20px';
-    errorMessage.style.borderRadius = '12px';
-}
-
-// LOADING SPINNER
 function showLoading(show) {
     loadingSpinner.style.display = show ? 'flex' : 'none';
     loginForm.querySelector('button[type="submit"]').disabled = show;
 }
 
-// VISUALIZAR SENHA
 function togglePassword() {
     const input = document.getElementById('password');
     const icon = document.querySelector('.toggle-password');
-    
+
     if (input.type === 'password') {
         input.type = 'text';
         icon.textContent = '👁️';
@@ -140,5 +130,4 @@ function togglePassword() {
     }
 }
 
-// Expor função globalmente
 window.togglePassword = togglePassword;
