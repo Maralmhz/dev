@@ -533,12 +533,7 @@
         const btnCriarConta = document.getElementById('btnCriarConta');
         const btnEsqueciSenha = document.getElementById('btnEsqueciSenha');
 
-        // VERIFICAR SE JÁ ESTÁ LOGADO
-        firebase.auth().onAuthStateChanged((user) => {
-            if (user) {
-                window.location.href = 'index.html';
-            }
-        });
+
 
         // CARREGAR EMAIL SALVO
         const savedEmail = localStorage.getItem('rememberedEmail');
@@ -560,51 +555,7 @@
             alertError.style.display = 'block';
         }
 
-        // LOGIN
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const email = emailInput.value.trim();
-            const senha = senhaInput.value;
 
-            loading.style.display = 'block';
-            alertSuccess.style.display = 'none';
-            alertError.style.display = 'none';
-
-            try {
-                await firebase.auth().signInWithEmailAndPassword(email, senha);
-                
-                // SALVAR EMAIL SE MARCADO
-                if (rememberMe.checked) {
-                    localStorage.setItem('rememberedEmail', email);
-                } else {
-                    localStorage.removeItem('rememberedEmail');
-                }
-
-                showSuccess('✅ Login realizado! Redirecionando...');
-                
-                setTimeout(() => {
-                    window.location.href = 'index.html';
-                }, 1500);
-
-            } catch (error) {
-                loading.style.display = 'none';
-                
-                let msgErro = '❌ Erro ao fazer login';
-                
-                if (error.code === 'auth/user-not-found') {
-                    msgErro = '❌ Usuário não encontrado';
-                } else if (error.code === 'auth/wrong-password') {
-                    msgErro = '❌ Senha incorreta';
-                } else if (error.code === 'auth/invalid-email') {
-                    msgErro = '❌ E-mail inválido';
-                } else if (error.code === 'auth/too-many-requests') {
-                    msgErro = '❌ Muitas tentativas. Tente novamente mais tarde';
-                }
-                
-                showError(msgErro);
-            }
-        });
 
         // CRIAR CONTA
         btnCriarConta.addEventListener('click', (e) => {
@@ -682,5 +633,7 @@
                 });
         });
     </script>
+    <script src="session-manager.js"></script>
+<script src="login.js"></script>
 </body>
 </html>
