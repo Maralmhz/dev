@@ -470,7 +470,9 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="config.js"></script>
+    <script src="session-manager.js"></script>
 
     <script>
         // Inicializar Firebase
@@ -620,7 +622,7 @@
             }
         });
 
-        // VERIFICAR ACESSO (SaaS Multi-tenant)
+        // VERIFICAR ACESSO (SaaS Multi-tenant) + SESSION MANAGER
         async function verificarAcessoUsuario(user) {
             try {
                 const userDoc = await firebase.firestore().collection('usuarios').doc(user.uid).get();
@@ -665,10 +667,26 @@
                     return;
                 }
 
+                // 🆕 VERIFICAR LIMITE DE SESSÕES
+                console.log('🔍 Verificando limite de sessões...');
+                const sessionCheck = await window.sessionManager.checkSessionLimit(user.email);
+                
+                if (!sessionCheck.allowed) {
+                    await firebase.auth().signOut();
+                    loading.style.display = 'none';
+                    showWarning(`⚠️ ${sessionCheck.message}`);
+                    return;
+                }
+
+                // 🆕 REGISTRAR SESSÃO ATIVA
+                console.log('✅ Registrando sessão ativa...');
+                await window.sessionManager.registerSession(user.email);
+
                 // Salvar oficinaId globalmente
                 window.OFICINA_CONFIG.oficinaId = userData.oficinaId;
                 sessionStorage.setItem('oficinaId', userData.oficinaId);
                 sessionStorage.setItem('userRole', userData.role);
+                sessionStorage.setItem('userEmail', user.email);
 
                 // Redirecionar
                 loading.style.display = 'none';
