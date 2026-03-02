@@ -1,15 +1,18 @@
 // ==============================================
-// LOGIN.JS - VERSÃO FINAL COM BLOQUEIO REAL
+// LOGIN.JS - VERSÃO CORRETA COM BLOQUEIO REAL
 // ==============================================
 
 const loginForm = document.getElementById('loginForm');
 const emailInput = document.getElementById('email');
-const passwordInput = document.getElementById('password');
-const rememberCheckbox = document.getElementById('remember');
-const errorMessage = document.getElementById('errorMessage');
-const loadingSpinner = document.getElementById('loadingSpinner');
+const passwordInput = document.getElementById('senha');
+const rememberCheckbox = document.getElementById('rememberMe');
+const errorMessage = document.getElementById('alertError');
+const loadingSpinner = document.getElementById('loading');
 
+// ==============================================
 // CARREGAR EMAIL SALVO
+// ==============================================
+
 window.addEventListener('DOMContentLoaded', () => {
     const rememberedEmail = localStorage.getItem('rememberedEmail');
     if (rememberedEmail) {
@@ -37,13 +40,11 @@ loginForm.addEventListener('submit', async (e) => {
     errorMessage.style.display = 'none';
 
     try {
-
         // 🔐 LOGIN FIREBASE
         const userCredential = await firebase.auth()
             .signInWithEmailAndPassword(email, password);
 
         const user = userCredential.user;
-
         console.log('✅ Login bem-sucedido:', user.email);
 
         // 💾 Lembrar email
@@ -54,7 +55,7 @@ loginForm.addEventListener('submit', async (e) => {
         }
 
         // ==========================================
-        // 🔥 BLOQUEIO REAL DE SESSÃO (IMPORTANTE)
+        // 🔥 BLOQUEIO REAL DE SESSÃO
         // ==========================================
 
         await window.sessionManager.waitForAuthReady();
@@ -63,12 +64,12 @@ loginForm.addEventListener('submit', async (e) => {
 
         if (!result.allowed) {
             showLoading(false);
-            alert(result.message);
+            showError(result.message);
             await firebase.auth().signOut();
             return;
         }
 
-        // ✅ Se passou, entra no sistema
+        // ✅ Se passou no bloqueio, entra no sistema
         window.location.href = 'app.html';
 
     } catch (error) {
@@ -113,20 +114,21 @@ function showError(message) {
 }
 
 function showLoading(show) {
-    loadingSpinner.style.display = show ? 'flex' : 'none';
+    loadingSpinner.style.display = show ? 'block' : 'none';
     loginForm.querySelector('button[type="submit"]').disabled = show;
 }
 
+// ==============================================
+// VISUALIZAR SENHA
+// ==============================================
+
 function togglePassword() {
-    const input = document.getElementById('password');
-    const icon = document.querySelector('.toggle-password');
+    const input = document.getElementById('senha');
 
     if (input.type === 'password') {
         input.type = 'text';
-        icon.textContent = '👁️';
     } else {
         input.type = 'password';
-        icon.textContent = '👁️‍🗨️';
     }
 }
 
