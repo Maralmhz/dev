@@ -85,9 +85,17 @@
         }
         
         const dados = docOficina.data();
-        const plano = dados.plano || 'starter';
-        const usuariosAtivos = dados.usuariosAtivos || 0;
-        const limiteUsuarios = this.planos[plano].limiteUsuarios;
+const plano = dados.plano || 'starter';
+
+// 🔧 FIX: Validar se plano existe antes de acessar
+if (!this.planos[plano]) {
+  console.warn(`⚠️ Plano desconhecido: ${plano}, usando starter`);
+  return { permitido: true, plano: 'starter', usuariosAtivos: 0, limiteUsuarios: 2 };
+}
+
+const usuariosAtivos = dados.usuariosAtivos || 0;
+const limiteUsuarios = this.planos[plano].limiteUsuarios;
+
         
         return {
           permitido: usuariosAtivos < limiteUsuarios,
