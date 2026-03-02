@@ -150,7 +150,7 @@
 <div id="modulos-placeholder"></div>
 <script>
 window.__modulosCarregados = 0;
-window.__modulosTotal = 26;
+window.__modulosTotal = 28;
 window.__modulosStatus = {};
 
 // Função de espera para garantir que módulos estejam prontos
@@ -164,7 +164,7 @@ async function esperarModulos() {
       const moduloOSOk = typeof window.ModuloOS !== 'undefined';
       const whitelabelOk = typeof window.WhiteLabelManager !== 'undefined';
       
-      console.log(`🔍 Check: oficinaId=${!!oficinaIdOk}, GestaoV2=${gestaoV2Ok}, ModuloOS=${moduloOSOk}, WhiteLabel=${whitelabelOk}`);
+      console.log(`🔍 Check: oficinaId=${ !!oficinaIdOk}, GestaoV2=${gestaoV2Ok}, ModuloOS=${moduloOSOk}, WhiteLabel=${whitelabelOk}`);
       
       if (oficinaIdOk && gestaoV2Ok && moduloOSOk) {
         clearInterval(verificar);
@@ -205,9 +205,11 @@ window.iniciarSistemaCompleto = async function() {
     console.log("✅ oficinaId confirmado:", oficinaId);
   }
   
-  // Lista de todos os módulos JS (agora inclui guards)
+  // Lista de todos os módulos JS (agora inclui guards + pdf-logo-fix + placa-os-updater)
   const scripts = [
     "auth-guard.js", "oficina-guard.js", "firestore-wrapper.js",
+    "pdf-logo-fix.js",      // 🆕 NOVO - Corrige logo no PDF
+    "placa-os-updater.js",  // 🆕 NOVO - Atualiza OS ao digitar placa
     "app.js", "core_utils.js", "firebase.js", "checklist.js", 
     "gestao_oficina.js", "gestao_oficina_v2.js",
     "gestao_oficina_agendamentos.js", "gestao_oficina_financeiro.js", 
@@ -226,7 +228,7 @@ window.iniciarSistemaCompleto = async function() {
   console.log('📦 Carregando', scripts.length, 'módulos...');
   await Promise.all(scripts.map(src => new Promise((resolve) => {
     const script = document.createElement('script');
-    script.src = src + '?v=3.6';
+    script.src = src + '?v=3.7';
     script.onload = () => {
       window.__modulosCarregados++;
       window.__modulosStatus[src] = 'ok';
@@ -245,7 +247,7 @@ window.iniciarSistemaCompleto = async function() {
   console.log('📦 Carregando módulo Firebase...');
   const moduloFirebase = document.createElement('script');
   moduloFirebase.type = 'module';
-  moduloFirebase.src = 'gestao_oficina_firebase.js?v=3.6';
+  moduloFirebase.src = 'gestao_oficina_firebase.js?v=3.7';
   await new Promise(resolve => {
     moduloFirebase.onload = () => {
       console.log('✅ gestao_oficina_firebase.js carregado');
@@ -269,7 +271,7 @@ window.iniciarSistemaCompleto = async function() {
   // Finalmente, carrega tabs_init.js
   console.log('📂 Carregando tabs_init.js...');
   const tabsScript = document.createElement('script');
-  tabsScript.src = 'tabs_init.js?v=3.6';
+  tabsScript.src = 'tabs_init.js?v=3.7';
   tabsScript.onload = () => {
     console.log('✅ tabs_init.js carregado');
     console.log('🎉 Sistema inicializado completamente!');
@@ -284,7 +286,7 @@ window.iniciarSistemaCompleto = async function() {
 <div class="os-footer" id="rRodape" style="position: fixed; bottom: 0; left: 0; right: 0; width: 100%; text-align: center; font-size: 10px; background: #f8f9fa; padding: 8px 12px; border-top: 2px solid var(--color-primary); z-index: 9999; box-sizing: border-box; font-family: Arial, sans-serif;"><span id="rodape-texto">Developed by Hallz Branding 3199676-6963</span></div>
 
 <script>
-window.__GESTAO_V2_BUILD__ = 'v3.6-security-enhanced';
+window.__GESTAO_V2_BUILD__ = 'v3.7-hotfix-complete';
 console.log('✅ Build:', window.__GESTAO_V2_BUILD__);
 </script>
 </body>
