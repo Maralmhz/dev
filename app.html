@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#ffffff">
     <meta name="description" content="Checklist de Oficina - App Offline com PDF">
+    
+    <!-- 🔒 AUTH LOCK: Bloqueia conteúdo até autenticação -->
+    <style id="auth-lock">
+      body { 
+        display: none !important; 
+        opacity: 0 !important;
+      }
+    </style>
+    
     <link rel="stylesheet" href="styles.css?v=3.2">
     <link rel="stylesheet" href="gestao_oficina.css?v=3.2">
     <link rel="stylesheet" href="gestao_oficina_v2.css?v=1.0.2">
@@ -27,6 +36,18 @@
     <script src="config.js?v=3.5"></script>
 </head>
 <body>
+
+<!-- 🔒 AUTH LOADING: Tela de carregamento durante validação -->
+<div id="auth-loading" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#0f0c29; display:flex; align-items:center; justify-content:center; z-index:99999;">
+  <div style="text-align:center; color:#fff;">
+    <div style="border:4px solid rgba(255,255,255,0.3); border-top:4px solid #fff; border-radius:50%; width:50px; height:50px; animation: spin 1s linear infinite; margin:0 auto 20px;"></div>
+    <p>Verificando autenticação...</p>
+  </div>
+</div>
+<style>
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+</style>
+
 <div class="container">
 <div class="header"><div class="logo-container"><img id="logo-oficina" src="logo.png" alt="Logo da Oficina"></div><div class="header-content"><h1 id="nome-oficina">OFICINA</h1><p id="subtitulo-oficina">Checklist de entrada e inspeção veicular</p><div class="contato-info"><img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" class="whatsapp-icon"><span id="telefone-oficina">(00) 00000-0000</span></div><div class="endereco-oficina" id="endereco-oficina">ENDEREÇO DA OFICINA</div><div class="cnpj-oficina" id="cnpj-oficina">CNPJ: 00.000.000/0000-00</div><div class="status-sync"><div class="sync-dot" id="syncStatus"></div><span id="syncText">Online</span></div><div class="user-info-container"><div class="user-email-badge"><span id="userEmail">Carregando...</span></div><button class="btn-logout" onclick="fazerLogout()">Sair</button></div></div><div class="header-badge" style="cursor: pointer;" onclick="window.PlanoManager?.mostrarInfoPlano()" title="Clique para ver informações do plano">v3.5 PRO</div></div>
 
@@ -51,42 +72,74 @@
 <div id="resumo" class="tab-content"><div class="content"><div id="resumoContainer" class="os-paper"><div id="template-cabecalho" class="os-header"><div class="os-header-left"><img id="logoResumo" src="" alt="Logo" class="os-logo"><div class="os-empresa-dados"><div id="nomeOficinaResumo" class="os-oficina-nome">NOME DA OFICINA</div><div id="enderecoOficinaResumo" class="os-oficina-sub">Endereço da oficina</div><div class="os-oficina-sub"><img src="whatsapp.png" alt="WhatsApp" class="whatsapp-icon"><span id="telefoneOficinaResumo">00 00000-0000</span></div><div id="cnpjOficinaResumo" class="os-oficina-sub">CNPJ da oficina</div></div></div><div class="os-header-right"><div class="os-label-os">ORDEM DE SERVIÇO</div><div id="osNumero" class="os-numero-os">00000000</div></div></div><div class="os-grid-2"><div class="os-box"><div class="os-box-title">CLIENTE</div><div class="os-line"><strong>Nome:</strong> <span id="rNomeCliente"></span></div><div class="os-line"><strong>CPF/CNPJ:</strong> <span id="rCpfCnpj"></span></div><div class="os-line"><strong>Tel:</strong> <span id="rCelular"></span></div></div><div class="os-box"><div class="os-box-title">VEÍCULO</div><div class="os-line"><strong>Veículo:</strong> <span id="rModelo"></span> <span id="rPlaca" style="background:#eee; padding:0 4px; border-radius:3px; font-weight:bold;"></span></div><div class="os-line"><strong>Chassi:</strong> <span id="rChassi"></span></div><div class="os-line"><strong>KM:</strong> <span id="rKmEntrada"></span> | <strong>Comb:</strong> <span id="rCombustivel"></span></div><div class="os-line"><strong>Data:</strong> <span id="rEntradaDataHora"></span></div></div></div><div class="os-box mt-10"><div class="os-box-title">SERVIÇOS SOLICITADOS</div><div id="rServicos" class="os-text-area"></div></div><div class="os-box mt-10"><div class="os-box-title">INSPEÇÃO DE ENTRADA</div><div id="rChecklistBadges" class="os-badges-area"></div></div><div class="os-box mt-10"><div class="os-box-title">OBSERVAÇÕES DA INSPEÇÃO</div><div id="rObsInspecao" class="os-text-area">-</div></div><div id="template-assinaturas" class="os-assinaturas"><div class="os-assina-box">Assinatura do Cliente</div><div class="os-assina-box">Assinatura do Técnico</div></div><div class="os-footer"><span id="rodape-texto-1">Carregando...</span></div><div class="force-page-break"></div><div class="os-header" id="header-pag2"></div><div id="containerTabelasOrcamento"></div><div class="os-total-row"><span>TOTAL GERAL:</span><span id="rTotalGeral" class="os-total-value">R$ 0,00</span></div><div class="os-assinaturas" id="assinaturas-pag2"><div class="os-assina-box">Assinatura do Cliente</div><div class="os-assina-box">Assinatura do Técnico</div></div><div class="os-footer"><span id="rodape-texto-2">Carregando...</span></div></div><div class="action-buttons no-pdf"><button type="button" class="btn-success" onclick="gerarPDFResumo()">📂 Baixar PDF</button><button type="button" class="btn-primary" onclick="salvarChecklist()" style="background: #27ae60 !important;">💾 Salvar Completo</button></div></div></div>
 <div id="gestao-oficina" class="tab-content"><div class="content"><div class="page-header"><h2>🛠️ Gestão da Oficina</h2><button class="btn-primary" data-btn-nova-os>➞ Nova OS</button></div><div id="painel-controle"></div><div id="resumoTopo" class="resumo-cards"></div><div id="kanban-view" class="kanban-container"><div class="kanban-coluna"><h3>📅 Agendados Hoje</h3><div class="cards-container" id="recebido"></div></div><div class="kanban-coluna"><h3>🔧 Em Andamento</h3><div class="cards-container" id="em_andamento"></div></div><div class="kanban-coluna"><h3>✅ Finalizados Hoje</h3><div class="cards-container" id="finalizado"></div></div></div></div></div>
 
-<!-- Inicialização Firebase + Sincronização oficinaId -->
+<!-- 🔒 VALIDAÇÃO SÍNCRONA DE AUTENTICAÇÃO -->
 <script>
 (function() {
-  console.log('🔄 Iniciando bootstrap Firebase...');
+  console.log('🔒 Iniciando validação de autenticação...');
   
   if (!window.FIREBASE_CONFIG) {
-    console.error("❌ FIREBASE_CONFIG não definido!");
+    alert("❌ Erro: Configuração do Firebase não encontrada");
+    window.location.href = 'index.html';
     return;
   }
   
   // Inicializa Firebase
   if (!firebase.apps.length) {
     firebase.initializeApp(window.FIREBASE_CONFIG);
-    window.firebaseApp = firebase.app();
-    console.log("✅ Firebase inicializado - apps:", firebase.apps.length);
   }
   
-  // Sincroniza oficinaId do sessionStorage para OFICINA_CONFIG
-  const oficinaId = sessionStorage.getItem("oficinaId");
-  if (oficinaId) {
-    window.OFICINA_CONFIG = { ...window.OFICINA_CONFIG, oficinaId: oficinaId };
-    console.log("✅ OFICINA_CONFIG.oficinaId sincronizado:", window.OFICINA_CONFIG.oficinaId);
-  } else {
-    console.warn("⚠️ oficinaId não encontrado em sessionStorage");
-  }
+  // VALIDAÇÃO BLOQUEANTE
+  const MAX_WAIT = 3000; // 3 segundos máximo
+  const startTime = Date.now();
   
-  // Autenticação e controle de acesso
-  firebase.auth().onAuthStateChanged((user) => {
-    if (!user) {
-      console.warn("❌ Usuário não autenticado, redirecionando...");
-      window.location.href = 'index.html';
-    } else {
-      console.log('✅ Usuário autenticado:', user.email);
-      // Chama o sistema de inicialização (definido abaixo)
+  let authChecked = false;
+  
+  const authCheck = setInterval(() => {
+    const user = firebase.auth().currentUser;
+    const elapsed = Date.now() - startTime;
+    
+    if (user) {
+      // ✅ Usuário autenticado
+      authChecked = true;
+      clearInterval(authCheck);
+      
+      // Validar oficinaId
+      const oficinaId = sessionStorage.getItem("oficinaId");
+      if (!oficinaId) {
+        alert("❌ Erro: Sessão inválida. Faça login novamente.");
+        firebase.auth().signOut();
+        window.location.href = 'index.html';
+        return;
+      }
+      
+      window.OFICINA_CONFIG = { ...window.OFICINA_CONFIG, oficinaId: oficinaId };
+      console.log("✅ Autenticação validada para:", user.email);
+      
+      // Remover bloqueio
+      document.getElementById('auth-lock')?.remove();
+      document.getElementById('auth-loading')?.remove();
+      document.body.style.display = '';
+      document.body.style.opacity = '1';
+      
+      // Iniciar sistema
       if (typeof window.iniciarSistemaCompleto === 'function') {
         window.iniciarSistemaCompleto();
+      }
+      
+    } else if (elapsed > MAX_WAIT) {
+      // ❌ Timeout - redirecionar
+      clearInterval(authCheck);
+      console.error("❌ Timeout de autenticação");
+      window.location.href = 'index.html';
+    }
+  }, 100); // Check a cada 100ms
+  
+  // Listener oficial do Firebase (backup)
+  firebase.auth().onAuthStateChanged((user) => {
+    if (!authChecked) {
+      if (!user) {
+        console.warn("❌ Usuário não autenticado");
+        window.location.href = 'index.html';
       }
     }
   });
@@ -152,8 +205,9 @@ window.iniciarSistemaCompleto = async function() {
     console.log("✅ oficinaId confirmado:", oficinaId);
   }
   
-  // Lista de todos os módulos JS (exceto tabs_init.js)
+  // Lista de todos os módulos JS (agora inclui guards)
   const scripts = [
+    "auth-guard.js", "oficina-guard.js", "firestore-wrapper.js",
     "app.js", "core_utils.js", "firebase.js", "checklist.js", 
     "gestao_oficina.js", "gestao_oficina_v2.js",
     "gestao_oficina_agendamentos.js", "gestao_oficina_financeiro.js", 
@@ -172,7 +226,7 @@ window.iniciarSistemaCompleto = async function() {
   console.log('📦 Carregando', scripts.length, 'módulos...');
   await Promise.all(scripts.map(src => new Promise((resolve) => {
     const script = document.createElement('script');
-    script.src = src + '?v=3.5';
+    script.src = src + '?v=3.6';
     script.onload = () => {
       window.__modulosCarregados++;
       window.__modulosStatus[src] = 'ok';
@@ -191,7 +245,7 @@ window.iniciarSistemaCompleto = async function() {
   console.log('📦 Carregando módulo Firebase...');
   const moduloFirebase = document.createElement('script');
   moduloFirebase.type = 'module';
-  moduloFirebase.src = 'gestao_oficina_firebase.js?v=3.5';
+  moduloFirebase.src = 'gestao_oficina_firebase.js?v=3.6';
   await new Promise(resolve => {
     moduloFirebase.onload = () => {
       console.log('✅ gestao_oficina_firebase.js carregado');
@@ -215,7 +269,7 @@ window.iniciarSistemaCompleto = async function() {
   // Finalmente, carrega tabs_init.js
   console.log('📂 Carregando tabs_init.js...');
   const tabsScript = document.createElement('script');
-  tabsScript.src = 'tabs_init.js?v=3.5';
+  tabsScript.src = 'tabs_init.js?v=3.6';
   tabsScript.onload = () => {
     console.log('✅ tabs_init.js carregado');
     console.log('🎉 Sistema inicializado completamente!');
@@ -230,7 +284,7 @@ window.iniciarSistemaCompleto = async function() {
 <div class="os-footer" id="rRodape" style="position: fixed; bottom: 0; left: 0; right: 0; width: 100%; text-align: center; font-size: 10px; background: #f8f9fa; padding: 8px 12px; border-top: 2px solid var(--color-primary); z-index: 9999; box-sizing: border-box; font-family: Arial, sans-serif;"><span id="rodape-texto">Developed by Hallz Branding 3199676-6963</span></div>
 
 <script>
-window.__GESTAO_V2_BUILD__ = 'v3.5-ui-reorganized';
+window.__GESTAO_V2_BUILD__ = 'v3.6-security-enhanced';
 console.log('✅ Build:', window.__GESTAO_V2_BUILD__);
 </script>
 </body>

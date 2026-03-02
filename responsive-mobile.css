@@ -1,0 +1,434 @@
+/* ==========================================
+   CSS RESPONSIVO MOBILE - SISTEMA DE GESTÃO
+   ========================================== */
+
+/* SIDEBAR RESPONSIVO */
+.sidebar-menu {
+  position: fixed;
+  top: 0;
+  right: -100%;
+  width: 320px;
+  max-width: 85vw;
+  height: 100vh;
+  background: white;
+  box-shadow: -4px 0 12px rgba(0,0,0,0.15);
+  transition: right 0.3s ease;
+  z-index: 9998;
+  overflow-y: auto;
+}
+
+.sidebar-menu.active {
+  right: 0;
+}
+
+/* BOTÃO HAMBÚRGUER */
+.hamburger-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 45px;
+  height: 45px;
+  background: var(--color-primary, #667eea);
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+  z-index: 9999;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  transition: all 0.3s ease;
+}
+
+.hamburger-btn span {
+  display: block;
+  width: 22px;
+  height: 3px;
+  background: white;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+.hamburger-btn.active span:nth-child(1) {
+  transform: rotate(45deg) translateY(8px);
+}
+
+.hamburger-btn.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger-btn.active span:nth-child(3) {
+  transform: rotate(-45deg) translateY(-8px);
+}
+
+/* MOBILE: Ajustar posição */
+@media (max-width: 768px) {
+  .hamburger-btn {
+    width: 50px;
+    height: 50px;
+    top: 15px;
+    right: 15px;
+  }
+  
+  .header-badge {
+    font-size: 8px;
+    padding: 3px 6px;
+    top: 5px;
+    right: 5px;
+    max-width: 60px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hamburger-btn {
+    width: 55px;
+    height: 55px;
+    top: 10px;
+    right: 10px;
+  }
+  
+  .sidebar-menu {
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .header-badge {
+    display: none; /* Esconder em telas muito pequenas */
+  }
+}
+
+/* ITENS DO MENU */
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  color: #333;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  border-left: 3px solid transparent;
+}
+
+.sidebar-nav-item:hover {
+  background: rgba(102, 126, 234, 0.1);
+  border-left-color: var(--color-primary, #667eea);
+}
+
+.sidebar-nav-item i {
+  font-size: 20px;
+  width: 24px;
+  text-align: center;
+}
+
+/* MOBILE: Aumentar área de toque */
+@media (max-width: 768px) {
+  .sidebar-nav-item {
+    padding: 18px 20px;
+    font-size: 15px;
+    min-height: 56px; /* Recomendação de acessibilidade */
+  }
+  
+  .sidebar-nav-item i {
+    font-size: 24px;
+  }
+}
+
+/* OVERLAY */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 9997;
+}
+
+.sidebar-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ==========================================
+   FORMULÁRIOS RESPONSIVOS
+   ========================================== */
+
+.form-row {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.form-row.full {
+  display: block;
+}
+
+.form-group {
+  flex: 1;
+  min-width: 0;
+}
+
+/* MOBILE: 1 coluna */
+@media (max-width: 768px) {
+  .form-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .form-group label {
+    font-size: 13px;
+  }
+  
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    font-size: 16px; /* Previne zoom em iOS */
+    padding: 12px;
+  }
+}
+
+/* WIZARD */
+.wizard-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.wizard-buttons button {
+  flex: 1;
+  padding: 14px 20px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+/* MOBILE: Botões maiores */
+@media (max-width: 768px) {
+  .wizard-buttons {
+    flex-direction: column-reverse;
+  }
+  
+  .wizard-buttons button {
+    width: 100%;
+    padding: 16px 20px;
+    font-size: 15px;
+    min-height: 52px;
+  }
+}
+
+/* ==========================================
+   TABELAS COM SCROLL
+   ========================================== */
+
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+.table-wrapper table {
+  min-width: 600px;
+}
+
+/* Indicador visual de scroll */
+.table-wrapper::after {
+  content: '← Arraste para ver mais →';
+  display: block;
+  text-align: center;
+  font-size: 11px;
+  color: #999;
+  padding: 5px;
+  background: #f8f9fa;
+}
+
+@media (min-width: 769px) {
+  .table-wrapper::after {
+    display: none;
+  }
+}
+
+/* ==========================================
+   KANBAN MOBILE
+   ========================================== */
+
+.kanban-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  padding: 20px;
+}
+
+.kanban-coluna {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 15px;
+  min-height: 400px;
+}
+
+.cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.os-card {
+  background: white;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.os-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* TABLET: 2 colunas */
+@media (max-width: 1024px) {
+  .kanban-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .kanban-coluna:nth-child(3) {
+    grid-column: 1 / -1;
+  }
+}
+
+/* MOBILE: scroll horizontal */
+@media (max-width: 768px) {
+  .kanban-container {
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    padding: 10px;
+    gap: 10px;
+  }
+  
+  .kanban-coluna {
+    min-width: 85vw;
+    scroll-snap-align: start;
+  }
+  
+  .os-card {
+    padding: 15px;
+    min-height: 120px;
+  }
+}
+
+/* ==========================================
+   TABS MOBILE
+   ========================================== */
+
+@media (max-width: 768px) {
+  .tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    padding: 0 10px;
+  }
+  
+  .tab-button {
+    min-width: 140px;
+    font-size: 13px;
+  }
+}
+
+/* ==========================================
+   HEADER MOBILE
+   ========================================== */
+
+@media (max-width: 768px) {
+  .header {
+    padding: 10px;
+  }
+  
+  .header-content h1 {
+    font-size: 18px;
+  }
+  
+  .header-content p {
+    font-size: 12px;
+  }
+  
+  .user-info-container {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .btn-logout {
+    width: 100%;
+    padding: 10px;
+  }
+}
+
+/* ==========================================
+   CARDS E BADGES
+   ========================================== */
+
+@media (max-width: 768px) {
+  .veiculo-resumo {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .veiculo-resumo-pill {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+  
+  .section-title {
+    font-size: 16px;
+  }
+}
+
+/* ==========================================
+   ACTION BUTTONS MOBILE
+   ========================================== */
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+@media (max-width: 768px) {
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .action-buttons button {
+    width: 100%;
+    min-height: 48px;
+    font-size: 14px;
+  }
+}
+
+/* ==========================================
+   UTILITIES
+   ========================================== */
+
+@media (max-width: 768px) {
+  .hide-mobile {
+    display: none !important;
+  }
+  
+  .show-mobile {
+    display: block !important;
+  }
+}
