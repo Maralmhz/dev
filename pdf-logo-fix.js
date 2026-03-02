@@ -5,6 +5,7 @@
 
 const PDFLogoFix = {
   logoBase64Cache: null,
+  hookAplicado: false,
   
   /**
    * Converte imagem para Base64
@@ -35,7 +36,7 @@ const PDFLogoFix = {
       };
       
       img.onerror = (error) => {
-        console.error('❌ Erro ao carregar imagem:', error);
+        console.error('❌ Erro ao carregar imagem:', imageUrl, error);
         reject(error);
       };
       
@@ -55,8 +56,14 @@ const PDFLogoFix = {
         return this.logoBase64Cache;
       }
       
-      // Buscar logo da configuração
+      // Buscar logo da configuração ou elemento DOM
       let logoUrl = window.OFICINA_CONFIG?.logo || 'logo.png';
+      
+      // Tentar pegar do elemento logo-oficina se existir
+      const logoOficina = document.getElementById('logo-oficina');
+      if (logoOficina && logoOficina.src) {
+        logoUrl = logoOficina.src;
+      }
       
       // Se for URL relativa, converter para absoluta
       if (!logoUrl.startsWith('http') && !logoUrl.startsWith('data:')) {
@@ -99,12 +106,64 @@ const PDFLogoFix = {
       
       // Aplicar no elemento
       logoResumo.src = logoBase64;
+      logoResumo.style.display = 'block'; // Garantir visibilidade
       
       console.log('✅ Logo aplicada no resumo');
       
     } catch (error) {
       console.error('❌ Erro ao aplicar logo no resumo:', error);
     }
+  },
+  
+  /**
+   * Aplica hook na função gerarPDFResumo
+   */
+  aplicarHook() {
+    if (this.hookAplicado) {
+      console.log('⚠️ Hook já foi aplicado');
+      return;
+    }
+    
+    if (typeof window.gerarPDFResumo !== 'function') {
+      console.warn('⚠️ Função gerarPDFResumo ainda não existe, aguardando...');
+      return false;
+    }
+    
+    const originalGerarPDF = window.gerarPDFResumo;
+    
+    window.gerarPDFResumo = async function() {
+      console.log('📝 Preparando logo para PDF...');
+      await PDFLogoFix.aplicarLogoResumo();
+      
+      // Pequeno delay para garantir que a imagem carregou
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      return originalGerarPDF.apply(this, arguments);
+    };
+    
+    this.hookAplicado = true;
+    console.log('✅ Hook de geração de PDF aplicado com sucesso');
+    return true;
+  },
+  
+  /**
+   * Tenta aplicar hook periodicamente até ter sucesso
+   */
+  tentarAplicarHook() {
+    const maxTentativas = 50; // 5 segundos (50 x 100ms)
+    let tentativas = 0;
+    
+    const intervalo = setInterval(() => {
+      tentativas++;
+      
+      if (this.aplicarHook()) {
+        clearInterval(intervalo);
+        console.log('✅ Hook aplicado após', tentativas, 'tentativas');
+      } else if (tentativas >= maxTentativas) {
+        clearInterval(intervalo);
+        console.error('❌ Timeout: não foi possível aplicar hook de PDF');
+      }
+    }, 100);
   },
   
   /**
@@ -119,21 +178,14 @@ const PDFLogoFix = {
 // Expor globalmente
 window.PDFLogoFix = PDFLogoFix;
 
-// Hook automático: Interceptar geração de PDF
-if (typeof window.gerarPDFResumo === 'function') {
-  const originalGerarPDF = window.gerarPDFResumo;
-  
-  window.gerarPDFResumo = async function() {
-    console.log('📝 Preparando logo para PDF...');
-    await PDFLogoFix.aplicarLogoResumo();
-    
-    // Pequeno delay para garantir que a imagem carregou
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    return originalGerarPDF.apply(this, arguments);
-  };
-  
-  console.log('✅ Hook de geração de PDF aplicado');
+// Aplicar hook quando DOM estiver pronto
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    PDFLogoFix.tentarAplicarHook();
+  });
+} else {
+  // DOM já está pronto
+  PDFLogoFix.tentarAplicarHook();
 }
 
 console.log('✅ PDF Logo Fix carregado');
