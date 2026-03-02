@@ -1,7 +1,7 @@
 // ==========================================
 // SESSION FIX - HOTFIX TEMPORÁRIO
 // ==========================================
-// Executa validação de oficinaId ANTES da validação rígida do app.html
+// Intercepta validação rígida e busca oficinaId do Firestore
 
 console.log('💉 SessionFix: Aplicando hotfix...');
 
@@ -9,16 +9,16 @@ console.log('💉 SessionFix: Aplicando hotfix...');
 async function validarOficinaId() {
   console.log('🔐 SessionFix: Validando oficinaId...');
   
-  // Aguardar Firebase Auth estar pronto
+  // Aguardar Firebase Auth estar pronto (máx 10 segundos)
   let tentativas = 0;
-  while (!firebase?.auth?.().currentUser && tentativas < 30) {
+  while (!firebase?.auth?.().currentUser && tentativas < 100) {
     await new Promise(resolve => setTimeout(resolve, 100));
     tentativas++;
   }
   
   const user = firebase.auth().currentUser;
   if (!user) {
-    console.error('❌ SessionFix: Usuário não autenticado');
+    console.error('❌ SessionFix: Usuário não autenticado após 10s');
     return false;
   }
   
@@ -64,7 +64,7 @@ async function validarOficinaId() {
     
     window.OFICINA_CONFIG = { ...window.OFICINA_CONFIG, oficinaId };
     
-    console.log('✅ SessionFix: oficinaId recuperado do Firestore:', oficinaId);
+    console.log('✅ SessionFix: oficinaId recuperado e salvo:', oficinaId);
     return true;
     
   } catch (error) {
@@ -85,12 +85,15 @@ window.alert = function(message) {
       // Tentar validar oficinaId automaticamente
       validarOficinaId().then(success => {
         if (!success) {
-          console.error('❌ SessionFix: Validação falhou, redirecionando...');
+          console.error('❌ SessionFix: Validação falhou, redirecionando em 2s...');
           setTimeout(() => {
             window.location.href = 'index.html';
-          }, 1000);
+          }, 2000);
         } else {
           console.log('✅ SessionFix: Validação bem-sucedida!');
+          // Remover tela de loading se existir
+          document.getElementById('auth-loading')?.remove();
+          document.getElementById('auth-lock')?.remove();
         }
       });
       
@@ -117,6 +120,7 @@ if (window.firebase && firebase.auth) {
       
       if (!success) {
         console.error('❌ SessionFix: Validação falhou, fazendo logout...');
+        signOutBlocked = false;
         await originalSignOut();
         window.location.href = 'index.html';
         return;
@@ -127,18 +131,28 @@ if (window.firebase && firebase.auth) {
       return Promise.resolve();
     }
     
+    signOutBlocked = false;
     return originalSignOut();
   };
 }
 
-// ✅ Executar validação imediatamente quando Firebase estiver pronto
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => validarOficinaId(), 500);
+// ✅ LISTENER: Aguardar onAuthStateChanged para validar
+if (window.firebase && firebase.auth) {
+  firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+      console.log('🔔 SessionFix: Usuário logado detectado, validando oficinaId...');
+      
+      // Pequeno delay para garantir que o login terminou
+      setTimeout(() => {
+        validarOficinaId().then(success => {
+          if (success) {
+            console.log('✅ SessionFix: Sistema pronto para uso!');
+          }
+        });
+      }, 500);
+    }
   });
-} else {
-  setTimeout(() => validarOficinaId(), 500);
 }
 
 console.log('✅ SessionFix: Hotfix aplicado!');
-console.log('ℹ️ Validando oficinaId automaticamente...');
+console.log('ℹ️ Aguardando login para validar oficinaId...');
