@@ -11,11 +11,57 @@
     dataAtual: new Date(),
   };
 
+  // 🔒 CORREÇÃO: Função para obter oficinaId atual
+  function obterOficinaIdAtual() {
+    // Tentar pegar de várias fontes (prioridade: session > config > guard)
+    const oficinaId = 
+      sessionStorage.getItem('oficinaId') ||
+      window.OFICINA_CONFIG?.oficinaId ||
+      window.OficinaGuard?.getOficinaId?.() ||
+      null;
+    
+    if (!oficinaId) {
+      console.error('❌ oficinaId não encontrado! Agendamentos não serão filtrados.');
+    }
+    
+    return oficinaId;
+  }
+
+  // 🔒 CORREÇÃO: Filtrar OS apenas da oficina atual
   function obterOS() {
-    return typeof window.carregarOS === 'function' ? window.carregarOS() : [];
+    const oficinaId = obterOficinaIdAtual();
+    const todasOS = typeof window.carregarOS === 'function' ? window.carregarOS() : [];
+    
+    if (!oficinaId) {
+      console.warn('⚠️ Sem oficinaId, retornando todas OS (inseguro)');
+      return todasOS;
+    }
+    
+    // Filtrar apenas OS desta oficina
+    const osFiltradas = todasOS.filter(os => {
+      // Se OS não tem oficinaId, assumir que é da oficina atual (legacy)
+      if (!os.oficinaId) {
+        console.warn('⚠️ OS sem oficinaId:', os.id);
+        return true; // Manter para compatibilidade
+      }
+      
+      return os.oficinaId === oficinaId;
+    });
+    
+    console.log(`📋 Agendamentos carregados: ${osFiltradas.length} de ${todasOS.length} (oficinaId: ${oficinaId})`);
+    
+    return osFiltradas;
   }
 
   function salvar(os) {
+    // 🔒 CORREÇÃO: Garantir que oficinaId seja salvo
+    const oficinaId = obterOficinaIdAtual();
+    
+    if (oficinaId && !os.oficinaId) {
+      os.oficinaId = oficinaId;
+      console.log(`✅ oficinaId adicionado à OS: ${os.id} -> ${oficinaId}`);
+    }
+    
     if (typeof window.salvarOS === 'function') window.salvarOS(os);
   }
 
@@ -60,9 +106,13 @@
   }
 
   function criarHeaderAgenda() {
+    // 🔒 CORREÇÃO: Mostrar oficinaId no cabeçalho (debug)
+    const oficinaId = obterOficinaIdAtual();
+    const oficinaLabel = oficinaId ? `<small style="color:#999; font-size:11px; margin-left:8px;">(${oficinaId})</small>` : '';
+    
     return `
       <div class="agenda-header agenda-header-v2">
-        <h3>📆 Calendário</h3>
+        <h3>📆 Calendário ${oficinaLabel}</h3>
         <div class="agenda-actions">
           <button class="btn-mini" data-ag-nav="prev">◀</button>
           <button class="btn-mini" data-ag-nav="today">Hoje</button>
@@ -155,6 +205,9 @@
       nova.data_prevista_entrada = entrada.toISOString();
       nova.data_prevista_saida = saida.toISOString();
       nova.status_geral = 'agendado';
+      
+      // 🔒 CORREÇÃO: Garantir oficinaId
+      nova.oficinaId = obterOficinaIdAtual();
 
       salvar(nova);
       window.renderizarVisao?.();
@@ -350,6 +403,28 @@
 
   function montarCalendario() {
     if (state.inicializado) return;
+    
+    // 🔒 CORREÇÃO: Verificar oficinaId antes de montar calendário
+    const oficinaId = obterOficinaIdAtual();
+    if (!oficinaId) {
+      console.error('❌ Calendário NÃO inicializado: oficinaId ausente!');
+      
+      const host = document.querySelector('#gestao-oficina .content');
+      if (host) {
+        const aviso = document.createElement('div');
+        aviso.className = 'alert alert-error';
+        aviso.style.margin = '20px';
+        aviso.innerHTML = `
+          <strong>⚠️ Erro de Inicialização</strong><br>
+          Não foi possível carregar o calendário. Faça logout e login novamente.
+        `;
+        host.prepend(aviso);
+      }
+      return;
+    }
+    
+    console.log(`✅ Inicializando calendário para oficinaId: ${oficinaId}`);
+    
     const host = document.querySelector('#gestao-oficina .content');
     if (!host) return;
     let wrap = document.getElementById('agenda-calendario-v2');
