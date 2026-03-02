@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔑 Super Admin - Gestão Oficina</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 32px;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .user-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #f0f0f0;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #229954;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .stat {
+            font-size: 36px;
+            font-weight: bold;
+            color: #667eea;
+            margin: 10px 0;
+        }
+        
+        .label {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .table-container {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            background: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .badge-pro {
+            background: #667eea;
+            color: white;
+        }
+        
+        .badge-basic {
+            background: #95a5a6;
+            color: white;
+        }
+        
+        .badge-active {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .badge-inactive {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+            font-size: 18px;
+        }
+    </style>
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="config.js"></script>
+</head>
+<body>
+    <div id="loading" class="loading">
+        <div>🔒 Verificando autenticação...</div>
+    </div>
+    
+    <div id="app" style="display: none;">
+        <div class="container">
+            <div class="header">
+                <h1>🔑 SUPER ADMIN</h1>
+                <p style="color: #666; margin-top: 10px;">Painel de Controle Total</p>
+                <div class="user-info">
+                    <div>
+                        <strong>Usuário:</strong> <span id="userEmail">-</span>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="btn btn-primary" onclick="voltarApp()">← Voltar ao App</button>
+                        <button class="btn btn-danger" onclick="logout()">Sair</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid">
+                <div class="card">
+                    <h2>🏭 Oficinas</h2>
+                    <div class="stat" id="totalOficinas">0</div>
+                    <div class="label">Total Cadastradas</div>
+                </div>
+                
+                <div class="card">
+                    <h2>👥 Usuários</h2>
+                    <div class="stat" id="totalUsuarios">0</div>
+                    <div class="label">Total Ativos</div>
+                </div>
+                
+                <div class="card">
+                    <h2>💼 Plano PRO</h2>
+                    <div class="stat" id="totalPRO">0</div>
+                    <div class="label">Assinantes PRO</div>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <h2 style="margin-bottom: 20px;">🏭 Lista de Oficinas</h2>
+                <table id="tabelaOficinas">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Email</th>
+                            <th>Plano</th>
+                            <th>Status</th>
+                            <th>Criado Em</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="listaOficinas">
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 40px;">Carregando...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let db;
+        
+        // Inicializar Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(window.FIREBASE_CONFIG);
+        }
+        db = firebase.firestore();
+        
+        // Verificar autenticação
+        firebase.auth().onAuthStateChanged(async (user) => {
+            if (!user) {
+                alert('❌ Você precisa estar logado!');
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            // Verificar se é super admin
+            const isSuperAdmin = await verificarSuperAdmin(user.email);
+            if (!isSuperAdmin) {
+                alert('❌ Acesso negado! Apenas Super Admins podem acessar esta página.');
+                window.location.href = 'app.html';
+                return;
+            }
+            
+            document.getElementById('userEmail').textContent = user.email;
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            
+            carregarDados();
+        });
+        
+        async function verificarSuperAdmin(email) {
+            try {
+                const doc = await db.collection('superadmins').doc(email).get();
+                return doc.exists;
+            } catch (error) {
+                console.error('Erro ao verificar super admin:', error);
+                return false;
+            }
+        }
+        
+        async function carregarDados() {
+            try {
+                // Buscar todas as oficinas
+                const oficinasSnapshot = await db.collection('oficinas').get();
+                const oficinas = [];
+                
+                oficinasSnapshot.forEach(doc => {
+                    oficinas.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // Atualizar stats
+                document.getElementById('totalOficinas').textContent = oficinas.length;
+                document.getElementById('totalUsuarios').textContent = oficinas.length; // Simplificado
+                
+                const totalPRO = oficinas.filter(o => o.plano === 'PRO').length;
+                document.getElementById('totalPRO').textContent = totalPRO;
+                
+                // Renderizar tabela
+                renderizarTabela(oficinas);
+                
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+                alert('Erro ao carregar dados: ' + error.message);
+            }
+        }
+        
+        function renderizarTabela(oficinas) {
+            const tbody = document.getElementById('listaOficinas');
+            
+            if (oficinas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">Nenhuma oficina cadastrada</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = oficinas.map(oficina => `
+                <tr>
+                    <td><strong>${oficina.nome || 'Sem nome'}</strong></td>
+                    <td>${oficina.email || '-'}</td>
+                    <td><span class="badge badge-${oficina.plano === 'PRO' ? 'pro' : 'basic'}">${oficina.plano || 'BASIC'}</span></td>
+                    <td><span class="badge badge-active">Ativo</span></td>
+                    <td>${oficina.criadoEm ? new Date(oficina.criadoEm.seconds * 1000).toLocaleDateString('pt-BR') : '-'}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;" onclick="editarOficina('${oficina.id}')">Editar</button>
+                            <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="desativarOficina('${oficina.id}')">Desativar</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        function editarOficina(id) {
+            alert('Função de edição em desenvolvimento. ID: ' + id);
+            // TODO: Implementar modal de edição
+        }
+        
+        async function desativarOficina(id) {
+            if (!confirm('Tem certeza que deseja desativar esta oficina?')) return;
+            
+            try {
+                await db.collection('oficinas').doc(id).update({
+                    ativo: false,
+                    desativadoEm: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                alert('✅ Oficina desativada com sucesso!');
+                carregarDados();
+            } catch (error) {
+                console.error('Erro ao desativar:', error);
+                alert('❌ Erro ao desativar oficina: ' + error.message);
+            }
+        }
+        
+        function voltarApp() {
+            window.location.href = 'app.html';
+        }
+        
+        function logout() {
+            firebase.auth().signOut().then(() => {
+                window.location.href = 'index.html';
+            });
+        }
+    </script>
+</body>
+</html>
