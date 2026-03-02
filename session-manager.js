@@ -160,17 +160,23 @@ class SessionManager {
                 }
             }
 
-            // Verifica se já está logado neste dispositivo
+            // 👉 CORREÇÃO: Se já está logado neste dispositivo, permitir (não contar como novo)
             if (validSessions[this.currentDeviceId]) {
-                console.log('✅ Sessão já ativa neste dispositivo');
+                console.log('✅ Sessão já ativa neste dispositivo - permitindo');
                 return { allowed: true, message: 'Sessão já ativa neste dispositivo' };
             }
 
-            // Verifica limite
-            const activeCount = Object.keys(validSessions).length;
+            // 👉 CONTAR APENAS OUTROS DISPOSITIVOS (excluir o atual)
+            const otherDevices = Object.keys(validSessions).filter(id => id !== this.currentDeviceId);
+            const activeCount = otherDevices.length;
             
+            console.log(`📊 Sessões ativas: ${activeCount} dispositivo(s) (excluindo atual)`);
+            console.log(`📊 Limite do plano: ${maxSessions}`);
+            console.log(`📊 Dispositivos: ${otherDevices.join(', ')}`);
+            
+            // 👉 VERIFICAR SE PODE ADICIONAR MAIS UM
             if (activeCount >= maxSessions) {
-                console.warn(`⚠️ Limite de ${maxSessions} dispositivo(s) atingido (${activeCount} ativos)`);
+                console.warn(`⚠️ Limite atingido! ${activeCount} sessões ativas, limite é ${maxSessions}`);
                 
                 return {
                     allowed: false,
@@ -181,7 +187,7 @@ class SessionManager {
                 };
             }
 
-            console.log(`✅ Sessão permitida (${activeCount}/${maxSessions})`);
+            console.log(`✅ Sessão permitida! (${activeCount + 1}/${maxSessions} após login)`);
             return { allowed: true, activeCount, maxSessions };
 
         } catch (error) {
