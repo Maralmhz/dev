@@ -5,8 +5,7 @@
 
 class SessionManager {
     constructor() {
-        this.db = firebase.database();
-        this.firestore = firebase.firestore();
+        // ⚠️ NãO inicializar firebase aqui - aguardar está pronto
         this.currentDeviceId = this.getDeviceId();
         this.sessionRef = null;
         
@@ -19,6 +18,19 @@ class SessionManager {
         
         this.MAX_FREE_SESSIONS = 2; // Fallback padrão
         this.EXTRA_SESSION_PRICE = 30; // R$ 30 por sessão extra
+    }
+
+    // Inicializar Firebase refs (chamar DEPOIS do Firebase estar pronto)
+    init() {
+        if (typeof firebase === 'undefined' || !firebase.apps || firebase.apps.length === 0) {
+            console.warn('⚠️ Firebase ainda não inicializado. SessionManager em modo espera.');
+            return false;
+        }
+        
+        this.db = firebase.database();
+        this.firestore = firebase.firestore();
+        console.log('✅ SessionManager inicializado com Firebase');
+        return true;
     }
 
     // Gera ID único do dispositivo
@@ -41,9 +53,17 @@ class SessionManager {
         };
     }
 
-    // 🆕 NOVO: Busca limite de sessões baseado no plano
+    // 🆕 Busca limite de sessões baseado no plano
     async getSessionLimitByPlan(userId) {
         try {
+            // Garantir que Firebase está pronto
+            if (!this.firestore) {
+                if (!this.init()) {
+                    console.error('❌ Firebase não disponível');
+                    return this.MAX_FREE_SESSIONS;
+                }
+            }
+            
             const oficinaId = window.OFICINA_CONFIG?.oficinaId;
             
             if (!oficinaId) {
@@ -75,6 +95,14 @@ class SessionManager {
     // Registra sessão ativa
     async registerSession(userId) {
         try {
+            // Garantir que Firebase está pronto
+            if (!this.db) {
+                if (!this.init()) {
+                    console.error('❌ Firebase não disponível para registrar sessão');
+                    return;
+                }
+            }
+            
             const userEmail = userId.replace(/[.@]/g, '_');
             this.sessionRef = this.db.ref(`sessions/${userEmail}/${this.currentDeviceId}`);
 
@@ -100,6 +128,14 @@ class SessionManager {
     // Verifica limite de sessões antes de logar
     async checkSessionLimit(userId) {
         try {
+            // Garantir que Firebase está pronto
+            if (!this.db) {
+                if (!this.init()) {
+                    console.error('❌ Firebase não disponível');
+                    return { allowed: true }; // Permitir em caso de erro de inicialização
+                }
+            }
+            
             const userEmail = userId.replace(/[.@]/g, '_');
             const sessionsRef = this.db.ref(`sessions/${userEmail}`);
 
@@ -157,6 +193,8 @@ class SessionManager {
     // Lista sessões ativas do usuário
     async getActiveSessions(userId) {
         try {
+            if (!this.db) this.init();
+            
             const userEmail = userId.replace(/[.@]/g, '_');
             const sessionsRef = this.db.ref(`sessions/${userEmail}`);
             const snapshot = await sessionsRef.once('value');
@@ -170,6 +208,8 @@ class SessionManager {
     // Remove sessão específica
     async removeSession(userId, deviceId) {
         try {
+            if (!this.db) this.init();
+            
             const userEmail = userId.replace(/[.@]/g, '_');
             await this.db.ref(`sessions/${userEmail}/${deviceId}`).remove();
             console.log('✅ Sessão removida:', deviceId);
@@ -204,6 +244,26 @@ class SessionManager {
 
 // Expor globalmente
 window.SessionManager = SessionManager;
-window.sessionManager = new SessionManager();
 
-console.log('✅ Session Manager inicializado - Limites: Starter=2 | Professional=4 | Enterprise=6 (24h expiração)');
+// ⚠️ NÃO instanciar automaticamente - aguardar Firebase estar pronto
+// A instância será criada manualmente após Firebase.initializeApp()
+if (typeof window !== 'undefined') {
+    // Criar instância após Firebase estar disponível
+    const waitForFirebase = setInterval(() => {
+        if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0) {
+            clearInterval(waitForFirebase);
+            window.sessionManager = new SessionManager();
+            window.sessionManager.init();
+            console.log('✅ Session Manager pronto - Limites: Starter=2 | Professional=4 | Enterprise=6');
+        }
+    }, 100);
+    
+    // Timeout de segurança (10 segundos)
+    setTimeout(() => {
+        if (!window.sessionManager) {
+            clearInterval(waitForFirebase);
+            console.warn('⚠️ Firebase não detectado em 10s - criando SessionManager sem inicialização');
+            window.sessionManager = new SessionManager();
+        }
+    }, 10000);
+}
