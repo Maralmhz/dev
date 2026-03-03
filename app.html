@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#ffffff">
     <meta name="description" content="Checklist de Oficina - App Offline com PDF">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     
     <!-- 🔒 AUTH LOCK: Bloqueia conteúdo até autenticação -->
     <style id="auth-lock">
@@ -26,16 +29,51 @@
     <title id="titulo-pagina">Sistema de Gestão - Oficina</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
-    <!-- 🔒 FIREBASE SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <!-- 1) Boot monitor -->
+    <script src="boot-sequence-monitor.js?v=4.3"></script>
+    <script>window.bootMonitor?.start('firebase-sdk');</script>
+
+    <!-- 2) Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js" onload="window.bootMonitor?.complete('firebase-sdk')"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    
-    <!-- 🔒 CONFIG + SESSION MANAGER + AUTH GUARD -->
-    <script src="config.js?v=4.1"></script>
-    <script src="session-manager.js?v=4.1"></script>
-    <script src="app-auth-guard.js?v=4.1"></script>
+
+    <!-- 3) Config + Init + Guards -->
+    <script>window.bootMonitor?.start('config-load');</script>
+    <script src="config.js?v=4.3" onload="window.bootMonitor?.complete('config-load')"></script>
+    <script src="firebase-init.js?v=4.3"></script>
+    <script src="session-manager.js?v=4.3"></script>
+    <script src="app-auth-guard.js?v=4.3"></script>
+    <script src="dev-monitor-ui.js?v=4.3"></script>
+
+    <script>
+      function clearCacheAndReload() {
+        if ('caches' in window) {
+          caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))).finally(() => location.reload(true));
+          return;
+        }
+        location.reload(true);
+      }
+
+      setTimeout(() => {
+        if (!window.__sistemaIniciado) {
+          console.error('❌ Boot timeout after 20s');
+          const report = window.bootMonitor?.getReport?.() || {};
+          console.table(report.steps || {});
+          document.body.innerHTML = `
+            <div style="font-family:Arial,sans-serif;padding:24px;max-width:760px;margin:40px auto;background:#fff;border:1px solid #eee;border-radius:10px;">
+              <h1>❌ Erro ao Carregar Sistema</h1>
+              <p>O sistema não iniciou em 20 segundos.</p>
+              <p>Tente recarregar ou limpar cache local.</p>
+              <button onclick="location.reload(true)" style="margin-right:8px;">🔄 Tentar Novamente</button>
+              <button onclick="clearCacheAndReload()">🗑️ Limpar Cache</button>
+              <details style="margin-top:16px;"><summary>Ver Detalhes Técnicos</summary><pre>${JSON.stringify(report, null, 2)}</pre></details>
+            </div>
+          `;
+        }
+      }, 20000);
+    </script>
 </head>
 <body>
 
@@ -50,8 +88,13 @@
   @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 </style>
 
+<div id="boot-progress" style="position:fixed;top:0;left:0;width:100%;height:4px;background:rgba(255,255,255,.2);z-index:99998;">
+  <div id="boot-progress-fill" style="height:100%;width:0;background:#4caf50;transition:width .25s ease;"></div>
+  <div id="boot-progress-text" style="position:fixed;top:8px;right:12px;color:#fff;font-size:11px;z-index:99999;">Carregando módulos: 0/28</div>
+</div>
+
 <div class="container">
-<div class="header"><div class="logo-container"><img id="logo-oficina" src="logo.png" alt="Logo da Oficina"></div><div class="header-content"><h1 id="nome-oficina">OFICINA</h1><p id="subtitulo-oficina">Checklist de entrada e inspeção veicular</p><div class="contato-info"><img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" class="whatsapp-icon"><span id="telefone-oficina">(00) 00000-0000</span></div><div class="endereco-oficina" id="endereco-oficina">ENDEREÇO DA OFICINA</div><div class="cnpj-oficina" id="cnpj-oficina">CNPJ: 00.000.000/0000-00</div><div class="status-sync"><div class="sync-dot" id="syncStatus"></div><span id="syncText">Online</span></div><div class="user-info-container"><div class="user-email-badge"><span id="userEmail">Carregando...</span></div><button class="btn-logout" onclick="fazerLogout()">Sair</button></div></div><div class="header-badge" style="cursor: pointer;" onclick="window.PlanoManager?.mostrarInfoPlano()" title="Clique para ver informações do plano">v4.1 ENTERPRISE</div></div>
+<div class="header"><div class="logo-container"><img id="logo-oficina" src="logo.png" alt="Logo da Oficina"></div><div class="header-content"><h1 id="nome-oficina">OFICINA</h1><p id="subtitulo-oficina">Checklist de entrada e inspeção veicular</p><div class="contato-info"><img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" class="whatsapp-icon"><span id="telefone-oficina">(00) 00000-0000</span></div><div class="endereco-oficina" id="endereco-oficina">ENDEREÇO DA OFICINA</div><div class="cnpj-oficina" id="cnpj-oficina">CNPJ: 00.000.000/0000-00</div><div class="status-sync"><div class="sync-dot" id="syncStatus"></div><span id="syncText">Online</span></div><div class="user-info-container"><div class="user-email-badge"><span id="userEmail">Carregando...</span></div><button class="btn-logout" onclick="fazerLogout()">Sair</button></div></div><div class="header-badge" style="cursor: pointer;" onclick="window.PlanoManager?.mostrarInfoPlano()" title="Clique para ver informações do plano">v4.3 ENTERPRISE - STABLE</div></div>
 
 <div class="tabs">
   <button class="tab-button active" onclick="switchTab('novo-checklist')"><span>➞ Novo Checklist</span></button>
@@ -79,129 +122,97 @@ window.__modulosCarregados = 0;
 window.__modulosTotal = 28;
 window.__modulosStatus = {};
 
-async function esperarModulos() {
-  console.log('⏳ Aguardando carregamento de módulos...');
-  
-  return new Promise((resolve) => {
-    const verificar = setInterval(() => {
-      const oficinaIdOk = window.OFICINA_CONFIG?.oficinaId;
-      const gestaoV2Ok = typeof window.GestaoOficinaV2 !== 'undefined';
-      const moduloOSOk = typeof window.ModuloOS !== 'undefined';
-      const whitelabelOk = typeof window.WhiteLabelManager !== 'undefined';
-      
-      console.log(`🔍 Check: oficinaId=${ !!oficinaIdOk}, GestaoV2=${gestaoV2Ok}, ModuloOS=${moduloOSOk}, WhiteLabel=${whitelabelOk}`);
-      
-      if (oficinaIdOk && gestaoV2Ok && moduloOSOk) {
-        clearInterval(verificar);
-        console.log('✅ Todos os módulos essenciais carregados!');
-        resolve();
-      }
-    }, 100);
-    
-    setTimeout(() => {
-      clearInterval(verificar);
-      console.error("❌ Timeout: módulos não carregaram a tempo");
-      console.error("Estado atual:", {
-        oficinaId: !!window.OFICINA_CONFIG?.oficinaId,
-        GestaoV2: typeof window.GestaoOficinaV2 !== 'undefined',
-        ModuloOS: typeof window.ModuloOS !== 'undefined',
-        WhiteLabel: typeof window.WhiteLabelManager !== 'undefined'
-      });
+function updateBootProgress() {
+  const progressEl = document.getElementById('boot-progress-fill');
+  const statusEl = document.getElementById('boot-progress-text');
+  if (!progressEl || !statusEl) return;
+  const percent = Math.round((window.__modulosCarregados / window.__modulosTotal) * 100);
+  progressEl.style.width = `${Math.min(percent, 100)}%`;
+  statusEl.textContent = `Carregando módulos: ${window.__modulosCarregados}/${window.__modulosTotal}`;
+}
+
+function loadScript(src, isModule = false) {
+  return new Promise((resolve, reject) => {
+    const placeholder = document.getElementById('modulos-placeholder');
+    const script = document.createElement('script');
+    script.src = `${src}?v=4.3`;
+    if (isModule) script.type = 'module';
+    script.onload = () => {
+      window.__modulosCarregados++;
+      window.__modulosStatus[src] = 'ok';
+      updateBootProgress();
+      window.bootMonitor?.complete(`module:${src}`);
+      console.log(`✅ [BOOT] ${src} carregado (${window.__modulosCarregados}/${window.__modulosTotal})`);
       resolve();
-    }, 5000);
+    };
+    script.onerror = (err) => {
+      window.__modulosStatus[src] = 'erro';
+      updateBootProgress();
+      window.bootMonitor?.fail(`module:${src}`, 'Erro de carregamento');
+      reject(err || new Error(`Erro ao carregar ${src}`));
+    };
+    window.bootMonitor?.start(`module:${src}`);
+    placeholder.appendChild(script);
   });
 }
 
-window.iniciarSistemaCompleto = async function() {
+async function loadScriptWithRetry(src, maxRetries = 2, isModule = false) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      await loadScript(src, isModule);
+      return;
+    } catch (error) {
+      if (attempt === maxRetries) throw error;
+      console.warn(`⚠️ Retry ${attempt + 1}/${maxRetries} para ${src}`);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+  }
+}
+
+window.iniciarSistemaCompleto = async function () {
   if (window.__sistemaIniciado) {
     console.log('⚠️ Sistema já iniciado, ignorando chamada duplicada');
     return;
   }
   window.__sistemaIniciado = true;
-  
-  console.log('🚀 Iniciando sistema completo...');
-  
-  const oficinaId = window.OFICINA_CONFIG?.oficinaId;
-  if (!oficinaId) {
-    console.warn("⚠️ OFICINA_CONFIG.oficinaId não definido (pode ser criado automaticamente)");
-  } else {
-    console.log("✅ oficinaId confirmado:", oficinaId);
-  }
-  
-  const scripts = [
-    "auth-guard.js", "oficina-guard.js", "firestore-wrapper.js",
-    "pdf-logo-fix.js", "placa-os-updater.js",
-    "app.js", "core_utils.js", "firebase.js", "checklist.js", 
-    "gestao_oficina.js", "gestao_oficina_v2.js",
-    "gestao_oficina_agendamentos.js", "gestao_oficina_financeiro.js", 
-    "gestao_oficina_recibos.js", "gestao_oficina_os.js",
-    "gestao_oficina_checklist.js", "gestao_oficina_clientes.js",
-    "gestao_oficina_estoque.js", "gestao_oficina_dashboard.js", 
-    "kanban_manager.js", "v2-modules-expose.js",
-    "gestao_oficina_init.js", "logout.js",
-    "sidebar-menu.js", "status-monitor.js",
-    "gestao_oficina_whitelabel.js", "gestao_oficina_oficinaid.js", "gestao_oficina_plano.js"
+  window.bootMonitor?.start('app-initialization');
+
+  console.log('🚀 Iniciando sistema completo (sequência robusta v4.3)...');
+
+  const criticalScripts = ['auth-guard.js', 'oficina-guard.js', 'firestore-wrapper.js'];
+  const mainScripts = [
+    'pdf-logo-fix.js', 'placa-os-updater.js', 'app.js', 'core_utils.js', 'firebase.js', 'checklist.js',
+    'gestao_oficina.js', 'gestao_oficina_v2.js', 'gestao_oficina_agendamentos.js', 'gestao_oficina_financeiro.js',
+    'gestao_oficina_recibos.js', 'gestao_oficina_os.js', 'gestao_oficina_checklist.js', 'gestao_oficina_clientes.js',
+    'gestao_oficina_estoque.js', 'gestao_oficina_dashboard.js', 'kanban_manager.js', 'v2-modules-expose.js',
+    'gestao_oficina_init.js', 'logout.js', 'sidebar-menu.js', 'status-monitor.js',
+    'gestao_oficina_whitelabel.js', 'gestao_oficina_oficinaid.js', 'gestao_oficina_plano.js'
   ];
-  
-  const placeholder = document.getElementById('modulos-placeholder');
-  
-  console.log('📦 Carregando', scripts.length, 'módulos...');
-  await Promise.all(scripts.map(src => new Promise((resolve) => {
-    const script = document.createElement('script');
-    script.src = src + '?v=4.1';
-    script.onload = () => {
-      window.__modulosCarregados++;
-      window.__modulosStatus[src] = 'ok';
-      console.log(`✅ ${src} carregado (${window.__modulosCarregados}/${scripts.length})`);
-      resolve();
-    };
-    script.onerror = () => {
-      window.__modulosStatus[src] = 'erro';
-      console.error('❌ Erro ao carregar:', src);
-      resolve();
-    };
-    placeholder.appendChild(script);
-  })));
-  
-  console.log('📦 Carregando módulo Firebase...');
-  const moduloFirebase = document.createElement('script');
-  moduloFirebase.type = 'module';
-  moduloFirebase.src = 'gestao_oficina_firebase.js?v=4.1';
-  await new Promise(resolve => {
-    moduloFirebase.onload = () => {
-      console.log('✅ gestao_oficina_firebase.js carregado');
-      resolve();
-    };
-    moduloFirebase.onerror = () => {
-      console.error('❌ Erro ao carregar gestao_oficina_firebase.js');
-      resolve();
-    };
-    placeholder.appendChild(moduloFirebase);
-  });
-  
-  console.log('✅ Todos os módulos carregados:', window.__modulosCarregados);
-  
-  await esperarModulos();
-  await new Promise(resolve => setTimeout(resolve, 150));
-  
-  console.log('📂 Carregando tabs_init.js...');
-  const tabsScript = document.createElement('script');
-  tabsScript.src = 'tabs_init.js?v=4.1';
-  tabsScript.onload = () => {
-    console.log('✅ tabs_init.js carregado');
+  const optionalScripts = ['tabs_init.js'];
+
+  try {
+    for (const script of criticalScripts) {
+      await loadScriptWithRetry(script, 2);
+    }
+
+    await Promise.all(mainScripts.map((script) => loadScriptWithRetry(script, 1)));
+    await loadScriptWithRetry('gestao_oficina_firebase.js', 2, true);
+    await Promise.allSettled(optionalScripts.map((script) => loadScriptWithRetry(script, 1)));
+
+    window.bootMonitor?.complete('app-initialization');
     console.log('🎉 Sistema inicializado completamente!');
-  };
-  tabsScript.onerror = () => {
-    console.error('❌ Erro ao carregar tabs_init.js');
-  };
-  placeholder.appendChild(tabsScript);
+  } catch (error) {
+    window.bootMonitor?.fail('app-initialization', error.message || String(error));
+    console.error('❌ Falha ao iniciar sistema completo:', error);
+    throw error;
+  }
 };
 </script>
 
 <div class="os-footer" id="rRodape" style="position: fixed; bottom: 0; left: 0; right: 0; width: 100%; text-align: center; font-size: 10px; background: #f8f9fa; padding: 8px 12px; border-top: 2px solid var(--color-primary); z-index: 9999; box-sizing: border-box; font-family: Arial, sans-serif;"><span id="rodape-texto">Developed by Hallz Branding 3199676-6963</span></div>
 
 <script>
-window.__GESTAO_V2_BUILD__ = 'v4.1-professional-auth';
+window.__GESTAO_V2_BUILD__ = 'v4.3-enterprise-stable';
 console.log('✅ Build:', window.__GESTAO_V2_BUILD__);
 </script>
 </body>

@@ -13,6 +13,8 @@ const successMessage = document.getElementById('alertSuccess');
 const warningMessage = document.getElementById('alertWarning');
 const loadingSpinner = document.getElementById('loading');
 
+window.__loginInProgress = false;
+
 // ==============================================
 // 📦 LOAD SAVED EMAIL
 // ==============================================
@@ -147,6 +149,7 @@ loginForm.addEventListener('submit', async (e) => {
         showSuccess('✅ Login realizado! Redirecionando...');
         
         setTimeout(() => {
+            window.__loginInProgress = true;
             window.location.href = 'app.html';
         }, 1000);
 
@@ -225,24 +228,41 @@ function showLoading(show) {
 // ==============================================
 
 firebase.auth().onAuthStateChanged(async (user) => {
-    if (user) {
-        // If already logged in, check status and redirect
-        try {
-            const userDoc = await firebase.firestore()
-                .collection('usuarios')
-                .doc(user.uid)
-                .get();
+    if (!user) return;
 
-            if (userDoc.exists) {
-                const userData = userDoc.data();
-                if (userData.status === 'ativo' && userData.oficinaId) {
-                    console.log('✅ User already authenticated, redirecting...');
-                    window.location.href = 'app.html';
-                }
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromApp = urlParams.get('from') === 'app' || urlParams.has('from');
+
+    if (fromApp) {
+        console.warn('⚠️ Redirected from app.html guard. Limpando sessão para evitar loop.');
+        await firebase.auth().signOut();
+        sessionStorage.setItem('logoutMessage', '❌ Sessão inválida detectada. Faça login novamente.');
+        showWarning('❌ Sessão inválida. Faça login novamente.');
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return;
+    }
+
+    if (window.__loginInProgress) {
+        console.log('ℹ️ Login redirect já em andamento, ignorando onAuthStateChanged.');
+        return;
+    }
+
+    try {
+        const userDoc = await firebase.firestore()
+            .collection('usuarios')
+            .doc(user.uid)
+            .get();
+
+        if (userDoc.exists) {
+            const userData = userDoc.data();
+            if (userData.status === 'ativo' && userData.oficinaId) {
+                window.__loginInProgress = true;
+                console.log('✅ User already authenticated, redirecting to app.html...');
+                window.location.href = 'app.html';
             }
-        } catch (error) {
-            console.error('❌ Error checking auth state:', error);
         }
+    } catch (error) {
+        console.error('❌ Error checking auth state:', error);
     }
 });
 

@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Login - Gestão de Oficinas</title>
     <link rel="icon" type="image/png" href="logo.png">
     
@@ -454,15 +457,13 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <script src="config.js"></script>
-    <script src="session-manager.js"></script>
+    <script src="config.js?v=4.3"></script>
+    <script src="firebase-init.js?v=4.3"></script>
+    <script src="session-manager.js?v=4.3"></script>
 
-    <!-- 🔒 INITIALIZE FIREBASE -->
+    <!-- 🔒 INITIALIZE BOOT ASSETS -->
     <script>
-        if (window.FIREBASE_CONFIG && !firebase.apps.length) {
-            firebase.initializeApp(window.FIREBASE_CONFIG);
-            console.log('✅ Firebase initialized');
-        }
+        window.firebaseReady?.then(() => console.log('✅ Firebase ready on login page')).catch((err) => console.error('❌ Firebase init failed on login page', err));
 
         // Load logo
         const logoImg = document.getElementById('logoLogin');
@@ -511,6 +512,6 @@
     </script>
 
     <!-- 🔒 AUTH LOGIC - DELEGATED TO login.js -->
-    <script src="login.js?v=4.0"></script>
+    <script src="login.js?v=4.3"></script>
 </body>
 </html>
