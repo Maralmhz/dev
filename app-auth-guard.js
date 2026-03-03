@@ -27,20 +27,46 @@
         // VALIDATION TIMEOUT
         // ==============================================
         
-        const MAX_WAIT = 5000; // 5 seconds max
+        const MAX_WAIT = 8000; // 8 seconds max
         const startTime = Date.now();
         let authValidated = false;
 
         // ==============================================
-        // WAIT FOR FIREBASE
+        // WAIT FOR CONFIG AND FIREBASE
         // ==============================================
         
         const waitForFirebase = setInterval(() => {
+            const elapsed = Date.now() - startTime;
+            
+            // Check if config loaded
+            if (!window.FIREBASE_CONFIG) {
+                if (elapsed > MAX_WAIT) {
+                    clearInterval(waitForFirebase);
+                    console.error('❌ Timeout: Firebase config not loaded');
+                    redirectToLogin('❌ Erro: Configuração não encontrada');
+                }
+                return;
+            }
+            
+            // Initialize Firebase if not done
+            if (typeof firebase !== 'undefined' && (!firebase.apps || firebase.apps.length === 0)) {
+                try {
+                    firebase.initializeApp(window.FIREBASE_CONFIG);
+                    console.log('✅ Firebase initialized by guard');
+                } catch (error) {
+                    console.error('❌ Firebase init error:', error);
+                    clearInterval(waitForFirebase);
+                    redirectToLogin('❌ Erro ao inicializar Firebase');
+                    return;
+                }
+            }
+            
+            // Check if Firebase is ready
             if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0) {
                 clearInterval(waitForFirebase);
                 console.log('✅ Firebase detected, starting auth check...');
                 startAuthValidation();
-            } else if (Date.now() - startTime > MAX_WAIT) {
+            } else if (elapsed > MAX_WAIT) {
                 clearInterval(waitForFirebase);
                 console.error('❌ Timeout: Firebase not loaded');
                 redirectToLogin('❌ Erro ao carregar sistema');
