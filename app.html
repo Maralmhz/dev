@@ -33,9 +33,9 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     
     <!-- 🔒 CONFIG + SESSION MANAGER + AUTH GUARD -->
-    <script src="config.js?v=4.0"></script>
-    <script src="session-manager.js?v=4.0"></script>
-    <script src="app-auth-guard.js?v=4.0"></script>
+    <script src="config.js?v=4.1"></script>
+    <script src="session-manager.js?v=4.1"></script>
+    <script src="app-auth-guard.js?v=4.1"></script>
 </head>
 <body>
 
@@ -51,7 +51,7 @@
 </style>
 
 <div class="container">
-<div class="header"><div class="logo-container"><img id="logo-oficina" src="logo.png" alt="Logo da Oficina"></div><div class="header-content"><h1 id="nome-oficina">OFICINA</h1><p id="subtitulo-oficina">Checklist de entrada e inspeção veicular</p><div class="contato-info"><img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" class="whatsapp-icon"><span id="telefone-oficina">(00) 00000-0000</span></div><div class="endereco-oficina" id="endereco-oficina">ENDEREÇO DA OFICINA</div><div class="cnpj-oficina" id="cnpj-oficina">CNPJ: 00.000.000/0000-00</div><div class="status-sync"><div class="sync-dot" id="syncStatus"></div><span id="syncText">Online</span></div><div class="user-info-container"><div class="user-email-badge"><span id="userEmail">Carregando...</span></div><button class="btn-logout" onclick="fazerLogout()">Sair</button></div></div><div class="header-badge" style="cursor: pointer;" onclick="window.PlanoManager?.mostrarInfoPlano()" title="Clique para ver informações do plano">v4.0 ENTERPRISE</div></div>
+<div class="header"><div class="logo-container"><img id="logo-oficina" src="logo.png" alt="Logo da Oficina"></div><div class="header-content"><h1 id="nome-oficina">OFICINA</h1><p id="subtitulo-oficina">Checklist de entrada e inspeção veicular</p><div class="contato-info"><img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" class="whatsapp-icon"><span id="telefone-oficina">(00) 00000-0000</span></div><div class="endereco-oficina" id="endereco-oficina">ENDEREÇO DA OFICINA</div><div class="cnpj-oficina" id="cnpj-oficina">CNPJ: 00.000.000/0000-00</div><div class="status-sync"><div class="sync-dot" id="syncStatus"></div><span id="syncText">Online</span></div><div class="user-info-container"><div class="user-email-badge"><span id="userEmail">Carregando...</span></div><button class="btn-logout" onclick="fazerLogout()">Sair</button></div></div><div class="header-badge" style="cursor: pointer;" onclick="window.PlanoManager?.mostrarInfoPlano()" title="Clique para ver informações do plano">v4.1 ENTERPRISE</div></div>
 
 <div class="tabs">
   <button class="tab-button active" onclick="switchTab('novo-checklist')"><span>➞ Novo Checklist</span></button>
@@ -148,7 +148,7 @@ window.iniciarSistemaCompleto = async function() {
   console.log('📦 Carregando', scripts.length, 'módulos...');
   await Promise.all(scripts.map(src => new Promise((resolve) => {
     const script = document.createElement('script');
-    script.src = src + '?v=4.0';
+    script.src = src + '?v=4.1';
     script.onload = () => {
       window.__modulosCarregados++;
       window.__modulosStatus[src] = 'ok';
@@ -166,7 +166,7 @@ window.iniciarSistemaCompleto = async function() {
   console.log('📦 Carregando módulo Firebase...');
   const moduloFirebase = document.createElement('script');
   moduloFirebase.type = 'module';
-  moduloFirebase.src = 'gestao_oficina_firebase.js?v=4.0';
+  moduloFirebase.src = 'gestao_oficina_firebase.js?v=4.1';
   await new Promise(resolve => {
     moduloFirebase.onload = () => {
       console.log('✅ gestao_oficina_firebase.js carregado');
@@ -186,7 +186,7 @@ window.iniciarSistemaCompleto = async function() {
   
   console.log('📂 Carregando tabs_init.js...');
   const tabsScript = document.createElement('script');
-  tabsScript.src = 'tabs_init.js?v=4.0';
+  tabsScript.src = 'tabs_init.js?v=4.1';
   tabsScript.onload = () => {
     console.log('✅ tabs_init.js carregado');
     console.log('🎉 Sistema inicializado completamente!');
@@ -201,7 +201,7 @@ window.iniciarSistemaCompleto = async function() {
 <div class="os-footer" id="rRodape" style="position: fixed; bottom: 0; left: 0; right: 0; width: 100%; text-align: center; font-size: 10px; background: #f8f9fa; padding: 8px 12px; border-top: 2px solid var(--color-primary); z-index: 9999; box-sizing: border-box; font-family: Arial, sans-serif;"><span id="rodape-texto">Developed by Hallz Branding 3199676-6963</span></div>
 
 <script>
-window.__GESTAO_V2_BUILD__ = 'v4.0-professional-auth';
+window.__GESTAO_V2_BUILD__ = 'v4.1-professional-auth';
 console.log('✅ Build:', window.__GESTAO_V2_BUILD__);
 </script>
 </body>
