@@ -1,258 +1,206 @@
 // ==============================================
-// 🔒 APP AUTH GUARD - BLOCKING VALIDATION
+// 🔒 APP AUTH GUARD - SIMPLIFIED VERSION
 // ==============================================
-// This file MUST load BEFORE any app logic
-// Blocks rendering until authentication is validated
 
-(function() {
-    'use strict';
+console.log('🔒 [GUARD] Starting...');
 
-    console.log('🔒 Auth Guard: Starting validation...');
+// ==============================================
+// 1️⃣ INITIALIZE FIREBASE IMMEDIATELY
+// ==============================================
 
-    // ==============================================
-    // WAIT FOR DOM TO BE READY
-    // ==============================================
+function initializeFirebaseNow() {
+    console.log('🔥 [GUARD] Checking Firebase...');
     
-    function startGuard() {
-        // ==============================================
-        // BLOCK PAGE RENDERING
-        // ==============================================
+    // Wait for config
+    let attempts = 0;
+    const configCheck = setInterval(() => {
+        attempts++;
         
-        if (document.body) {
-            document.body.style.display = 'none';
-            document.body.style.opacity = '0';
-        }
-
-        // ==============================================
-        // VALIDATION TIMEOUT
-        // ==============================================
-        
-        const MAX_WAIT = 8000; // 8 seconds max
-        const startTime = Date.now();
-        let authValidated = false;
-
-        // ==============================================
-        // WAIT FOR CONFIG AND FIREBASE
-        // ==============================================
-        
-        const waitForFirebase = setInterval(() => {
-            const elapsed = Date.now() - startTime;
+        if (window.FIREBASE_CONFIG) {
+            clearInterval(configCheck);
+            console.log('✅ [GUARD] Config found');
             
-            // Check if config loaded
-            if (!window.FIREBASE_CONFIG) {
-                if (elapsed > MAX_WAIT) {
-                    clearInterval(waitForFirebase);
-                    console.error('❌ Timeout: Firebase config not loaded');
-                    redirectToLogin('❌ Erro: Configuração não encontrada');
-                }
-                return;
-            }
-            
-            // Initialize Firebase if not done
-            if (typeof firebase !== 'undefined' && (!firebase.apps || firebase.apps.length === 0)) {
+            // Initialize if needed
+            if (!firebase.apps || firebase.apps.length === 0) {
                 try {
                     firebase.initializeApp(window.FIREBASE_CONFIG);
-                    console.log('✅ Firebase initialized by guard');
+                    console.log('✅ [GUARD] Firebase initialized');
                 } catch (error) {
-                    console.error('❌ Firebase init error:', error);
-                    clearInterval(waitForFirebase);
-                    redirectToLogin('❌ Erro ao inicializar Firebase');
-                    return;
+                    console.error('❌ [GUARD] Firebase init error:', error);
                 }
+            } else {
+                console.log('✅ [GUARD] Firebase already initialized');
             }
             
-            // Check if Firebase is ready
-            if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0) {
-                clearInterval(waitForFirebase);
-                console.log('✅ Firebase detected, starting auth check...');
-                startAuthValidation();
-            } else if (elapsed > MAX_WAIT) {
-                clearInterval(waitForFirebase);
-                console.error('❌ Timeout: Firebase not loaded');
-                redirectToLogin('❌ Erro ao carregar sistema');
-            }
-        }, 100);
-
-        // ==============================================
-        // AUTH VALIDATION FLOW
-        // ==============================================
-        
-        async function startAuthValidation() {
-            try {
-                // Wait for auth state
-                const user = await waitForAuthState();
-
-                if (!user) {
-                    console.warn('❌ No user authenticated');
-                    redirectToLogin('❌ Faça login para continuar');
-                    return;
-                }
-
-                console.log('✅ User authenticated:', user.email);
-
-                // Check user status in Firestore
-                const userDoc = await firebase.firestore()
-                    .collection('usuarios')
-                    .doc(user.uid)
-                    .get();
-
-                if (!userDoc.exists) {
-                    console.error('❌ User document not found');
-                    await firebase.auth().signOut();
-                    redirectToLogin('❌ Usuário não encontrado');
-                    return;
-                }
-
-                const userData = userDoc.data();
-
-                // Check status
-                if (userData.status !== 'ativo') {
-                    console.warn('❌ User status:', userData.status);
-                    await firebase.auth().signOut();
-                    redirectToLogin('❌ Conta não ativa');
-                    return;
-                }
-
-                // Check oficinaId
-                if (!userData.oficinaId) {
-                    console.error('❌ No oficinaId found');
-                    await firebase.auth().signOut();
-                    redirectToLogin('❌ Usuário sem oficina vinculada');
-                    return;
-                }
-
-                // Set global config
-                window.OFICINA_CONFIG = window.OFICINA_CONFIG || {};
-                window.OFICINA_CONFIG.oficinaId = userData.oficinaId;
-                sessionStorage.setItem('oficinaId', userData.oficinaId);
-                sessionStorage.setItem('userRole', userData.role);
-                sessionStorage.setItem('userEmail', user.email);
-
-                console.log('✅ Oficina ID set:', userData.oficinaId);
-
-                // Wait for SessionManager
-                await waitForSessionManager();
-
-                // Validate session limit
-                console.log('🔍 Validating session limit...');
-                const result = await window.sessionManager.validateAndRegisterSession();
-
-                if (!result.allowed) {
-                    console.error('❌ Session validation failed:', result.message);
-                    await firebase.auth().signOut();
-                    redirectToLogin(result.message);
-                    return;
-                }
-
-                console.log('✅ Session validated successfully');
-                authValidated = true;
-
-                // ALLOW PAGE TO RENDER
-                allowPageRender();
-
-            } catch (error) {
-                console.error('❌ Auth validation error:', error);
-                redirectToLogin('❌ Erro ao validar autenticação');
-            }
-        }
-
-        // ==============================================
-        // HELPER: WAIT FOR AUTH STATE
-        // ==============================================
-        
-        function waitForAuthState() {
-            return new Promise((resolve, reject) => {
-                const timeout = setTimeout(() => {
-                    reject(new Error('Auth state timeout'));
-                }, MAX_WAIT);
-
-                const unsubscribe = firebase.auth().onAuthStateChanged((user) => {
-                    clearTimeout(timeout);
-                    unsubscribe();
-                    resolve(user);
-                });
-            });
-        }
-
-        // ==============================================
-        // HELPER: WAIT FOR SESSION MANAGER
-        // ==============================================
-        
-        function waitForSessionManager() {
-            return new Promise((resolve, reject) => {
-                const timeout = setTimeout(() => {
-                    reject(new Error('SessionManager timeout'));
-                }, 3000);
-
-                const check = setInterval(() => {
-                    if (window.sessionManager && typeof window.sessionManager.validateAndRegisterSession === 'function') {
-                        clearInterval(check);
-                        clearTimeout(timeout);
-                        console.log('✅ SessionManager ready');
-                        resolve();
-                    }
-                }, 100);
-            });
-        }
-
-        // ==============================================
-        // ALLOW PAGE RENDER
-        // ==============================================
-        
-        function allowPageRender() {
-            console.log('🚀 Auth validation complete - rendering app');
+            // Start validation
+            startValidation();
             
-            // Remove auth lock
-            const lockStyle = document.getElementById('auth-lock');
-            if (lockStyle) lockStyle.remove();
-
-            const loadingDiv = document.getElementById('auth-loading');
-            if (loadingDiv) loadingDiv.remove();
-
-            // Show content
-            if (document.body) {
-                document.body.style.display = '';
-                document.body.style.opacity = '1';
-            }
-
-            // Trigger app initialization
-            if (typeof window.iniciarSistemaCompleto === 'function') {
-                window.iniciarSistemaCompleto();
-            }
-        }
-
-        // ==============================================
-        // REDIRECT TO LOGIN
-        // ==============================================
-        
-        function redirectToLogin(message) {
-            if (message) {
-                sessionStorage.setItem('logoutMessage', message);
-            }
+        } else if (attempts > 50) {
+            clearInterval(configCheck);
+            console.error('❌ [GUARD] Config timeout');
+            alert('❌ Erro: Configuração não encontrada');
             window.location.href = 'index.html';
         }
+    }, 100);
+}
 
-        // ==============================================
-        // CLEANUP ON PAGE UNLOAD
-        // ==============================================
-        
-        window.addEventListener('beforeunload', async () => {
-            if (window.sessionManager && authValidated) {
-                await window.sessionManager.cleanup();
-            }
-        });
-    }
+// ==============================================
+// 2️⃣ VALIDATE AUTHENTICATION
+// ==============================================
 
-    // ==============================================
-    // WAIT FOR DOM OR START IMMEDIATELY
-    // ==============================================
+async function startValidation() {
+    console.log('🔍 [GUARD] Starting validation...');
     
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', startGuard);
-    } else {
-        startGuard();
+    try {
+        // Get current user
+        const user = await new Promise((resolve) => {
+            const unsubscribe = firebase.auth().onAuthStateChanged((user) => {
+                unsubscribe();
+                resolve(user);
+            });
+            
+            setTimeout(() => resolve(null), 5000);
+        });
+        
+        if (!user) {
+            console.warn('❌ [GUARD] No user');
+            sessionStorage.setItem('logoutMessage', '❌ Faça login para continuar');
+            window.location.href = 'index.html';
+            return;
+        }
+        
+        console.log('✅ [GUARD] User:', user.email);
+        
+        // Check Firestore
+        const userDoc = await firebase.firestore().collection('usuarios').doc(user.uid).get();
+        
+        if (!userDoc.exists) {
+            console.error('❌ [GUARD] User doc not found');
+            await firebase.auth().signOut();
+            sessionStorage.setItem('logoutMessage', '❌ Usuário não encontrado');
+            window.location.href = 'index.html';
+            return;
+        }
+        
+        const userData = userDoc.data();
+        console.log('✅ [GUARD] User data:', userData.status, userData.oficinaId);
+        
+        // Check status
+        if (userData.status !== 'ativo') {
+            console.warn('❌ [GUARD] User not active');
+            await firebase.auth().signOut();
+            sessionStorage.setItem('logoutMessage', '❌ Conta não ativa');
+            window.location.href = 'index.html';
+            return;
+        }
+        
+        // Check oficinaId
+        if (!userData.oficinaId) {
+            console.error('❌ [GUARD] No oficinaId');
+            await firebase.auth().signOut();
+            sessionStorage.setItem('logoutMessage', '❌ Usuário sem oficina vinculada');
+            window.location.href = 'index.html';
+            return;
+        }
+        
+        // Set config
+        window.OFICINA_CONFIG = window.OFICINA_CONFIG || {};
+        window.OFICINA_CONFIG.oficinaId = userData.oficinaId;
+        sessionStorage.setItem('oficinaId', userData.oficinaId);
+        sessionStorage.setItem('userRole', userData.role || 'user');
+        sessionStorage.setItem('userEmail', user.email);
+        
+        console.log('✅ [GUARD] Config set:', userData.oficinaId);
+        
+        // Wait for SessionManager
+        await waitForSessionManager();
+        
+        // Validate session
+        console.log('🔍 [GUARD] Validating session...');
+        const result = await window.sessionManager.validateAndRegisterSession();
+        
+        if (!result.allowed) {
+            console.error('❌ [GUARD] Session blocked:', result.message);
+            await firebase.auth().signOut();
+            alert(result.message);
+            window.location.href = 'index.html';
+            return;
+        }
+        
+        console.log('✅ [GUARD] Session OK');
+        
+        // UNLOCK PAGE
+        unlockPage();
+        
+    } catch (error) {
+        console.error('❌ [GUARD] Validation error:', error);
+        alert('❌ Erro ao validar autenticação: ' + error.message);
+        window.location.href = 'index.html';
     }
+}
 
-    console.log('🔒 Auth Guard loaded - waiting for DOM...');
+// ==============================================
+// 3️⃣ WAIT FOR SESSION MANAGER
+// ==============================================
 
-})();
+function waitForSessionManager() {
+    return new Promise((resolve, reject) => {
+        let attempts = 0;
+        const check = setInterval(() => {
+            attempts++;
+            
+            if (window.sessionManager && typeof window.sessionManager.validateAndRegisterSession === 'function') {
+                clearInterval(check);
+                console.log('✅ [GUARD] SessionManager ready');
+                resolve();
+            } else if (attempts > 30) {
+                clearInterval(check);
+                reject(new Error('SessionManager timeout'));
+            }
+        }, 100);
+    });
+}
+
+// ==============================================
+// 4️⃣ UNLOCK PAGE
+// ==============================================
+
+function unlockPage() {
+    console.log('🚀 [GUARD] Unlocking page...');
+    
+    // Remove lock style
+    const lockStyle = document.getElementById('auth-lock');
+    if (lockStyle) lockStyle.remove();
+    
+    // Remove loading
+    const loadingDiv = document.getElementById('auth-loading');
+    if (loadingDiv) loadingDiv.remove();
+    
+    // Show body
+    if (document.body) {
+        document.body.style.display = '';
+        document.body.style.opacity = '1';
+    }
+    
+    console.log('✅ [GUARD] Page unlocked');
+    
+    // Initialize app
+    if (typeof window.iniciarSistemaCompleto === 'function') {
+        console.log('🚀 [GUARD] Starting app...');
+        window.iniciarSistemaCompleto();
+    } else {
+        console.warn('⚠️ [GUARD] iniciarSistemaCompleto not found');
+    }
+}
+
+// ==============================================
+// 5️⃣ START WHEN DOM READY
+// ==============================================
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeFirebaseNow);
+} else {
+    initializeFirebaseNow();
+}
+
+console.log('✅ [GUARD] Loaded');
