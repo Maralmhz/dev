@@ -1,16 +1,20 @@
 // ==============================================
-// LOGIN.JS - VERSÃO CORRETA COM BLOQUEIO REAL
+// 🔒 LOGIN.JS - PROFESSIONAL SAAS AUTH FLOW
 // ==============================================
+// ⚠️ This is the ONLY file that can call signInWithEmailAndPassword
+// All auth MUST go through SessionManager validation
 
 const loginForm = document.getElementById('loginForm');
 const emailInput = document.getElementById('email');
 const passwordInput = document.getElementById('senha');
 const rememberCheckbox = document.getElementById('rememberMe');
 const errorMessage = document.getElementById('alertError');
+const successMessage = document.getElementById('alertSuccess');
+const warningMessage = document.getElementById('alertWarning');
 const loadingSpinner = document.getElementById('loading');
 
 // ==============================================
-// CARREGAR EMAIL SALVO
+// 📦 LOAD SAVED EMAIL
 // ==============================================
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -19,10 +23,17 @@ window.addEventListener('DOMContentLoaded', () => {
         emailInput.value = rememberedEmail;
         rememberCheckbox.checked = true;
     }
+
+    // Check for logout message
+    const logoutMsg = sessionStorage.getItem('logoutMessage');
+    if (logoutMsg) {
+        showWarning(logoutMsg);
+        sessionStorage.removeItem('logoutMessage');
+    }
 });
 
 // ==============================================
-// LOGIN PRINCIPAL
+// 🔒 MAIN LOGIN HANDLER
 // ==============================================
 
 loginForm.addEventListener('submit', async (e) => {
@@ -37,45 +48,111 @@ loginForm.addEventListener('submit', async (e) => {
     }
 
     showLoading(true);
-    errorMessage.style.display = 'none';
+    hideAlerts();
 
     try {
-        // 🔐 LOGIN FIREBASE
+        console.log('🔐 Attempting Firebase authentication...');
+        
+        // ✅ STEP 1: Firebase Authentication
         const userCredential = await firebase.auth()
             .signInWithEmailAndPassword(email, password);
 
         const user = userCredential.user;
-        console.log('✅ Login bem-sucedido:', user.email);
+        console.log('✅ Firebase auth successful:', user.email);
 
-        // 💾 Lembrar email
+        // Save email if remember is checked
         if (rememberCheckbox.checked) {
             localStorage.setItem('rememberedEmail', email);
         } else {
             localStorage.removeItem('rememberedEmail');
         }
 
-        // ==========================================
-        // 🔥 BLOQUEIO REAL DE SESSÃO
-        // ==========================================
+        // ✅ STEP 2: Check user status in Firestore
+        console.log('🔍 Checking user status in Firestore...');
+        const userDoc = await firebase.firestore()
+            .collection('usuarios')
+            .doc(user.uid)
+            .get();
 
-        await window.sessionManager.waitForAuthReady();
+        if (!userDoc.exists) {
+            // Create pending user
+            await firebase.firestore().collection('usuarios').doc(user.uid).set({
+                email: user.email,
+                nome: user.displayName || '',
+                status: 'pendente',
+                role: 'user',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
 
-        const result = await window.sessionManager.validateAndRegisterSession();
-
-        if (!result.allowed) {
-            showLoading(false);
-            showError(result.message);
             await firebase.auth().signOut();
+            showLoading(false);
+            showWarning('⏳ Acesso solicitado! Aguarde aprovação do administrador.');
             return;
         }
 
-        // ✅ Se passou no bloqueio, entra no sistema
-        window.location.href = 'app.html';
+        const userData = userDoc.data();
+
+        // Check status
+        if (userData.status !== 'ativo') {
+            await firebase.auth().signOut();
+            showLoading(false);
+            
+            const messages = {
+                'pendente': '⏳ Aguardando aprovação...',
+                'bloqueado': '❌ Conta bloqueada. Entre em contato com o suporte.',
+                'rejeitado': '❌ Acesso rejeitado.'
+            };
+            
+            showWarning(messages[userData.status] || '❌ Acesso negado');
+            return;
+        }
+
+        // Check oficinaId
+        if (!userData.oficinaId) {
+            await firebase.auth().signOut();
+            showLoading(false);
+            showError('❌ Usuário sem oficina vinculada. Contate o administrador.');
+            return;
+        }
+
+        // ✅ STEP 3: WAIT FOR AUTH STATE
+        console.log('⏳ Waiting for auth state to be ready...');
+        await window.sessionManager.waitForAuthReady();
+        console.log('✅ Auth state ready');
+
+        // ✅ STEP 4: VALIDATE AND REGISTER SESSION
+        console.log('🔒 Validating session limit...');
+        const result = await window.sessionManager.validateAndRegisterSession();
+
+        if (!result.allowed) {
+            console.error('❌ Session blocked:', result.message);
+            await firebase.auth().signOut();
+            showLoading(false);
+            showError(result.message);
+            return;
+        }
+
+        console.log('✅ Session validated successfully');
+
+        // ✅ STEP 5: SET GLOBAL CONFIG
+        window.OFICINA_CONFIG = window.OFICINA_CONFIG || {};
+        window.OFICINA_CONFIG.oficinaId = userData.oficinaId;
+        sessionStorage.setItem('oficinaId', userData.oficinaId);
+        sessionStorage.setItem('userRole', userData.role);
+        sessionStorage.setItem('userEmail', user.email);
+
+        // ✅ STEP 6: REDIRECT TO APP
+        console.log('🚀 Redirecting to app.html...');
+        showLoading(false);
+        showSuccess('✅ Login realizado! Redirecionando...');
+        
+        setTimeout(() => {
+            window.location.href = 'app.html';
+        }, 1000);
 
     } catch (error) {
-
         showLoading(false);
-        console.error('❌ Erro no login:', error);
+        console.error('❌ Login error:', error);
 
         let errorMsg = '❌ Erro ao fazer login';
 
@@ -92,6 +169,9 @@ loginForm.addEventListener('submit', async (e) => {
             case 'auth/too-many-requests':
                 errorMsg = '❌ Muitas tentativas. Aguarde e tente novamente';
                 break;
+            case 'auth/network-request-failed':
+                errorMsg = '❌ Erro de conexão. Verifique sua internet.';
+                break;
             default:
                 errorMsg = `❌ ${error.message}`;
         }
@@ -101,10 +181,17 @@ loginForm.addEventListener('submit', async (e) => {
 });
 
 // ==============================================
-// UI HELPERS
+// 🎨 UI HELPERS
 // ==============================================
 
+function hideAlerts() {
+    errorMessage.style.display = 'none';
+    successMessage.style.display = 'none';
+    warningMessage.style.display = 'none';
+}
+
 function showError(message) {
+    hideAlerts();
     errorMessage.textContent = message;
     errorMessage.style.display = 'block';
 
@@ -113,23 +200,50 @@ function showError(message) {
     }
 }
 
-function showLoading(show) {
-    loadingSpinner.style.display = show ? 'block' : 'none';
-    loginForm.querySelector('button[type="submit"]').disabled = show;
+function showSuccess(message) {
+    hideAlerts();
+    successMessage.textContent = message;
+    successMessage.style.display = 'block';
 }
 
-// ==============================================
-// VISUALIZAR SENHA
-// ==============================================
+function showWarning(message) {
+    hideAlerts();
+    warningMessage.textContent = message;
+    warningMessage.style.display = 'block';
+}
 
-function togglePassword() {
-    const input = document.getElementById('senha');
-
-    if (input.type === 'password') {
-        input.type = 'text';
-    } else {
-        input.type = 'password';
+function showLoading(show) {
+    loadingSpinner.style.display = show ? 'block' : 'none';
+    const submitBtn = loginForm.querySelector('button[type="submit"]');
+    if (submitBtn) {
+        submitBtn.disabled = show;
     }
 }
 
-window.togglePassword = togglePassword;
+// ==============================================
+// 🔒 PREVENT DIRECT ACCESS TO APP
+// ==============================================
+
+firebase.auth().onAuthStateChanged(async (user) => {
+    if (user) {
+        // If already logged in, check status and redirect
+        try {
+            const userDoc = await firebase.firestore()
+                .collection('usuarios')
+                .doc(user.uid)
+                .get();
+
+            if (userDoc.exists) {
+                const userData = userDoc.data();
+                if (userData.status === 'ativo' && userData.oficinaId) {
+                    console.log('✅ User already authenticated, redirecting...');
+                    window.location.href = 'app.html';
+                }
+            }
+        } catch (error) {
+            console.error('❌ Error checking auth state:', error);
+        }
+    }
+});
+
+console.log('🔒 login.js loaded - Professional SaaS auth flow ready');
