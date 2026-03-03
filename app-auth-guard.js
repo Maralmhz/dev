@@ -4,14 +4,46 @@
 // CSS auth-lock already blocks render
 // This validates auth AFTER DOM is ready
 
+// 🛡️ LOOP PROTECTION
+const REDIRECT_KEY = '__auth_redirect_count';
+const MAX_REDIRECTS = 3;
+
+function checkRedirectLoop() {
+  const count = parseInt(sessionStorage.getItem(REDIRECT_KEY) || '0');
+  
+  if (count >= MAX_REDIRECTS) {
+    console.error('❌ LOOP DETECTED! Stopping redirects.');
+    sessionStorage.removeItem(REDIRECT_KEY);
+    alert('❌ Erro: Loop de redirecionamento detectado. Limpe o cache e faça login novamente.');
+    return true;
+  }
+  
+  sessionStorage.setItem(REDIRECT_KEY, (count + 1).toString());
+  return false;
+}
+
+function clearRedirectCount() {
+  sessionStorage.removeItem(REDIRECT_KEY);
+}
+
 document.addEventListener('DOMContentLoaded', async function() {
   
   console.log('🔒 [AUTH-GUARD] Starting validation...');
 
+  // Check for redirect loop
+  if (checkRedirectLoop()) {
+    // Show content even if auth failed (emergency bailout)
+    const authLock = document.getElementById('auth-lock');
+    if (authLock) authLock.remove();
+    const authLoading = document.getElementById('auth-loading');
+    if (authLoading) authLoading.remove();
+    return;
+  }
+
   try {
 
     // 1️⃣ Check Firebase initialized
-    if (!firebase.apps || firebase.apps.length === 0) {
+    if (typeof firebase === 'undefined' || !firebase.apps || firebase.apps.length === 0) {
       console.error("❌ Firebase não inicializado.");
       sessionStorage.setItem('logoutMessage', '❌ Erro ao carregar sistema');
       window.location.href = "index.html";
@@ -20,6 +52,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     console.log('✅ Firebase initialized');
 
     // 2️⃣ Wait for auth state
+    console.log('⏳ Waiting for auth state...');
     const user = await new Promise(resolve => {
       const unsubscribe = firebase.auth().onAuthStateChanged(user => {
         unsubscribe();
@@ -27,7 +60,10 @@ document.addEventListener('DOMContentLoaded', async function() {
       });
       
       // Timeout after 5 seconds
-      setTimeout(() => resolve(null), 5000);
+      setTimeout(() => {
+        console.warn('⚠️ Auth state timeout');
+        resolve(null);
+      }, 5000);
     });
 
     if (!user) {
@@ -60,6 +96,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     console.log('✅ Session validated');
 
+    // ✅ SUCCESS - Clear redirect counter
+    clearRedirectCount();
+
     // ✅ Liberar renderização
     console.log('🚀 Unlocking page...');
     
@@ -89,7 +128,8 @@ document.addEventListener('DOMContentLoaded', async function() {
 
   } catch (err) {
     console.error("❌ Erro no Auth Guard:", err);
-    sessionStorage.setItem('logoutMessage', '❌ Erro ao validar autenticação');
+    clearRedirectCount();
+    sessionStorage.setItem('logoutMessage', '❌ Erro ao validar autenticação: ' + err.message);
     window.location.href = "index.html";
   }
 
