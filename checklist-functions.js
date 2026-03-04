@@ -186,10 +186,96 @@ function gerarIdChecklist() {
   return `chk_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
+
+/**
+ * Navegação por Enter para formulários (idempotente)
+ * - Enter em descrição de item -> foco no valor
+ * - Enter em valor -> foco/click em adicionar
+ * - Evita submit automático inesperado
+ */
+function createEnterNavigation(formSelector) {
+  const container = document.querySelector(formSelector);
+  if (!container) return null;
+
+  if (container.dataset.enterNavBound === '1') {
+    return {
+      destroy() {}
+    };
+  }
+
+  const handler = (event) => {
+    if (event.key !== 'Enter') return;
+
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+
+    const dentroDoContainer = target.closest(formSelector);
+    if (!dentroDoContainer) return;
+
+    const id = target.id || '';
+
+    // Enter no campo de peça/descrição -> vai para preço
+    if (id === 'descricaoItem') {
+      event.preventDefault();
+      const valorInput = container.querySelector('#valorItem');
+      if (valorInput instanceof HTMLElement) {
+        valorInput.focus();
+      }
+      return;
+    }
+
+    // Enter no preço -> vai para botão adicionar
+    if (id === 'valorItem') {
+      event.preventDefault();
+      const btnAdicionar = container.querySelector('#btnAdicionarItem');
+      if (btnAdicionar instanceof HTMLElement) {
+        btnAdicionar.focus();
+        if (typeof btnAdicionar.click === 'function') {
+          btnAdicionar.click();
+        }
+      }
+      return;
+    }
+
+    // Evitar submit inesperado em inputs/selects do formulário principal
+    const isCampoPreventivo = target.matches('input, select');
+    const emChecklistForm = !!target.closest('#checklistForm');
+    if (isCampoPreventivo && emChecklistForm) {
+      event.preventDefault();
+    }
+  };
+
+  container.addEventListener('keydown', handler);
+  container.dataset.enterNavBound = '1';
+
+  return {
+    destroy() {
+      container.removeEventListener('keydown', handler);
+      delete container.dataset.enterNavBound;
+    }
+  };
+}
+
+function initEnterNavigationChecklistOrcamento() {
+  if (window.__enterNavigationInitialized) return;
+  window.__enterNavigationInitialized = true;
+
+  // O orçamento está dentro do fluxo do checklist; aplicar nos 2 escopos de forma segura
+  createEnterNavigation('#checklistForm');
+  createEnterNavigation('#orcamento .content');
+}
+
 // Expor funções globalmente
 window.atualizarResumoOS = atualizarResumoOS;
 window.gerarPDFResumo = gerarPDFResumo;
 window.salvarChecklist = salvarChecklist;
 window.gerarNumeroOS = gerarNumeroOS;
+window.createEnterNavigation = createEnterNavigation;
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initEnterNavigationChecklistOrcamento, { once: true });
+} else {
+  initEnterNavigationChecklistOrcamento();
+}
 
 console.log('✅ Checklist Functions carregado');
