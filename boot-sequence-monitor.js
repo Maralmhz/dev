@@ -5,6 +5,9 @@
   }
 
   window.bootMonitor = {
+    version: '5.0.0-alpha',
+    startTime: window.performance?.now ? window.performance.now() : Date.now(),
+    status: 'running',
     steps: {},
     errors: [],
     start(step) {
@@ -27,16 +30,38 @@
       this.steps[step].status = 'failed';
       this.steps[step].error = error;
       this.errors.push({ step, error, timestamp: Date.now() });
+      this.status = 'failed';
       console.error(`❌ [BOOT] ${step} failed:`, error);
+    },
+    getMemoryUsage() {
+      if (window.performance?.memory) {
+        return {
+          usedJSHeapSize: window.performance.memory.usedJSHeapSize,
+          totalJSHeapSize: window.performance.memory.totalJSHeapSize
+        };
+      }
+      return null;
     },
     getReport() {
       return {
+        version: this.version,
         steps: this.steps,
         errors: this.errors,
+        memory: this.getMemoryUsage(),
         generatedAt: new Date().toISOString()
+      };
+    },
+    exportReport() {
+      const now = window.performance?.now ? window.performance.now() : Date.now();
+      return {
+        version: this.version,
+        uptime: now - this.startTime,
+        memory: this.getMemoryUsage?.(),
+        steps: this.steps || [],
+        status: this.status || 'unknown'
       };
     }
   };
 
-  console.log('✅ [BOOT] Monitor initialized');
+  console.log('✅ [BOOT] Monitor initialized (v5.0.0-alpha)');
 })();

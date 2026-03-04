@@ -29,17 +29,24 @@
     <title id="titulo-pagina">Sistema de Gestão - Oficina</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
-    <!-- 1) Boot monitor -->
-    <script src="boot-sequence-monitor.js?v=4.3"></script>
-    <script>window.bootMonitor?.start('firebase-sdk');</script>
+    <!-- 1) Core hardening -->
+    <script src="core/error-handler.js?v=5.0.0-alpha"></script>
+    <script src="core/app-context.js?v=5.0.0-alpha"></script>
 
-    <!-- 2) Firebase SDK -->
+    <!-- 2) Boot monitor -->
+    <script src="boot-sequence-monitor.js?v=5.0.0-alpha"></script>
+    <script>
+      console.info('🚀 Sistema iniciado - v5.0.0-alpha');
+      window.bootMonitor?.start('firebase-sdk');
+    </script>
+
+    <!-- 3) Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js" onload="window.bootMonitor?.complete('firebase-sdk')"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
-    <!-- 3) Config + Init + Guards -->
+    <!-- 4) Config + Init + Guards -->
     <script>window.bootMonitor?.start('config-load');</script>
     <script src="config.js?v=4.3" onload="window.bootMonitor?.complete('config-load')"></script>
     <script src="firebase-init.js?v=4.3"></script>
@@ -94,7 +101,7 @@
 </div>
 
 <div class="container">
-<div class="header"><div class="logo-container"><img id="logo-oficina" src="logo.png" alt="Logo da Oficina"></div><div class="header-content"><h1 id="nome-oficina">OFICINA</h1><p id="subtitulo-oficina">Checklist de entrada e inspeção veicular</p><div class="contato-info"><img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" class="whatsapp-icon"><span id="telefone-oficina">(00) 00000-0000</span></div><div class="endereco-oficina" id="endereco-oficina">ENDEREÇO DA OFICINA</div><div class="cnpj-oficina" id="cnpj-oficina">CNPJ: 00.000.000/0000-00</div><div class="status-sync"><div class="sync-dot" id="syncStatus"></div><span id="syncText">Online</span></div><div class="user-info-container"><div class="user-email-badge"><span id="userEmail">Carregando...</span></div><button class="btn-logout" onclick="fazerLogout()">Sair</button></div></div><div class="header-badge" style="cursor: pointer;" onclick="window.PlanoManager?.mostrarInfoPlano()" title="Clique para ver informações do plano">v4.3 ENTERPRISE - STABLE</div></div>
+<div class="header"><div class="logo-container"><img id="logo-oficina" src="logo.png" alt="Logo da Oficina"></div><div class="header-content"><h1 id="nome-oficina">OFICINA</h1><p id="subtitulo-oficina">Checklist de entrada e inspeção veicular</p><div class="contato-info"><img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" class="whatsapp-icon"><span id="telefone-oficina">(00) 00000-0000</span></div><div class="endereco-oficina" id="endereco-oficina">ENDEREÇO DA OFICINA</div><div class="cnpj-oficina" id="cnpj-oficina">CNPJ: 00.000.000/0000-00</div><div class="status-sync"><div class="sync-dot" id="syncStatus"></div><span id="syncText">Online</span></div><div class="user-info-container"><div class="user-email-badge"><span id="userEmail">Carregando...</span></div><button class="btn-logout" onclick="fazerLogout()">Sair</button></div></div><div class="header-badge" style="cursor: pointer;" onclick="window.PlanoManager?.mostrarInfoPlano()" title="Clique para ver informações do plano">v5.0.0-alpha</div></div>
 
 <div class="tabs">
   <button class="tab-button active" onclick="switchTab('novo-checklist')"><span>➞ Novo Checklist</span></button>
@@ -212,7 +219,7 @@ window.iniciarSistemaCompleto = async function () {
 <div class="os-footer" id="rRodape" style="position: fixed; bottom: 0; left: 0; right: 0; width: 100%; text-align: center; font-size: 10px; background: #f8f9fa; padding: 8px 12px; border-top: 2px solid var(--color-primary); z-index: 9999; box-sizing: border-box; font-family: Arial, sans-serif;"><span id="rodape-texto">Developed by Hallz Branding 3199676-6963</span></div>
 
 <script>
-window.__GESTAO_V2_BUILD__ = 'v4.3-enterprise-stable';
+window.__GESTAO_V2_BUILD__ = 'v5.0.0-alpha';
 console.log('✅ Build:', window.__GESTAO_V2_BUILD__);
 </script>
 </body>

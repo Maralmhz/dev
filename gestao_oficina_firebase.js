@@ -14,7 +14,7 @@ let ultimaSincronizacao = null;
 
 async function initFirebaseOS() {
   try {
-    if (!window.OFICINA_CONFIG?.oficina_id) {
+    if (!getOficinaId()) {
       console.warn('⚠️ OFICINA_CONFIG não definido. Sincronização Firebase desabilitada.');
       return null;
     }
@@ -39,7 +39,7 @@ async function initFirebaseOS() {
     const app = getApps().length ? getApp() : initializeApp(config);
     const db = getFirestore(app);
 
-    console.log('🔥 Firebase OS inicializado:', window.OFICINA_CONFIG.oficina_id);
+    console.log('🔥 Firebase OS inicializado:', getOficinaId());
     firebaseSyncAtivo = true;
     
     return db;
@@ -55,7 +55,7 @@ async function initFirebaseOS() {
 // ==========================================
 
 function getOficinaId() {
-  return window.OFICINA_CONFIG?.oficina_id || 'default';
+  return (window.AppContext?.isReady?.() ? window.AppContext.getOficinaId() : null) || window.OFICINA_CONFIG?.oficina_id || window.OFICINA_CONFIG?.oficinaId || 'default';
 }
 
 function gerarCaminhoData(dataISO) {

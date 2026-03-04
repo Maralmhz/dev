@@ -57,6 +57,19 @@ document.addEventListener('DOMContentLoaded', async function () {
       return;
     }
 
+    if (window.AppContext && typeof window.AppContext.init === 'function') {
+      window.AppContext.init({
+        oficinaId: window.OFICINA_CONFIG?.oficinaId,
+        oficina_id: window.OFICINA_CONFIG?.oficina_id,
+        user,
+        plano: window.OFICINA_CONFIG?.plano
+      });
+      console.log('✅ AppContext inicializado');
+      if (!window.AppContext.isReady()) {
+        throw new Error('AppContext falhou ao inicializar');
+      }
+    }
+
     // Render unlock
     const authLock = document.getElementById('auth-lock');
     if (authLock) authLock.remove();
