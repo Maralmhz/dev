@@ -20,7 +20,10 @@
     <link rel="stylesheet" href="styles.css?v=3.2">
     <link rel="stylesheet" href="gestao_oficina.css?v=3.2">
     <link rel="stylesheet" href="gestao_oficina_v2.css?v=1.0.2">
-    <link rel="stylesheet" href="gestao_oficina_mobile_preview.css?v=1.0">
+    <!-- Mobile-first: camada de layout responsivo + sticky action bar -->
+    <link rel="stylesheet" href="responsive-mobile.css?v=2.0">
+    <!-- Preview premium: tipografia, botões e acabamento visual em mobile/desktop -->
+    <link rel="stylesheet" href="gestao_oficina_mobile_preview.css?v=2.0">
     <link rel="stylesheet" href="logout-style.css">
     <link rel="stylesheet" href="sidebar-menu.css?v=1.1">
     <link rel="manifest" href="manifest.json">
@@ -218,6 +221,107 @@ window.iniciarSistemaCompleto = async function () {
 
 <div class="os-footer" id="rRodape" style="position: fixed; bottom: 0; left: 0; right: 0; width: 100%; text-align: center; font-size: 10px; background: #f8f9fa; padding: 8px 12px; border-top: 2px solid var(--color-primary); z-index: 9999; box-sizing: border-box; font-family: Arial, sans-serif;"><span id="rodape-texto">Developed by Hallz Branding 3199676-6963</span></div>
 
+<script>
+/*
+  Progressive enhancement mobile-first (sem remover listeners legados):
+  - Injeta barra de ação sticky para mobile no #orcamento.
+  - Reutiliza ações existentes (#btnAdicionarItem) e botão secundário de cancelamento.
+  - Ajusta posição quando teclado virtual abre e mantém foco visível com scroll suave.
+  - Compatível com createEnterNavigation, pois não substitui inputs nem IDs existentes.
+*/
+(function mobileActionBarEnhancer() {
+  const isMobileViewport = () => window.matchMedia('(max-width: 768px)').matches;
+
+  const ensureActionBar = () => {
+    let bar = document.getElementById('mobileActionBar');
+    if (bar) return bar;
+
+    bar = document.createElement('div');
+    bar.id = 'mobileActionBar';
+    bar.className = 'mobile-action-bar';
+    bar.innerHTML = [
+      '<button type="button" class="mobile-action-secondary" data-mobile-cancel>✖️ Cancelar</button>',
+      '<button type="button" class="mobile-action-primary" data-mobile-primary>➕ Adicionar Item</button>'
+    ].join('');
+
+    document.body.appendChild(bar);
+
+    bar.querySelector('[data-mobile-primary]').addEventListener('click', () => {
+      const addBtn = document.getElementById('btnAdicionarItem');
+      if (addBtn) {
+        addBtn.click();
+        return;
+      }
+      if (typeof window.salvarChecklist === 'function') {
+        window.salvarChecklist();
+      }
+    });
+
+    bar.querySelector('[data-mobile-cancel]').addEventListener('click', () => {
+      if (typeof window.limparFormulario === 'function') {
+        window.limparFormulario();
+      } else {
+        const active = document.activeElement;
+        if (active && typeof active.blur === 'function') active.blur();
+      }
+    });
+
+    return bar;
+  };
+
+  const updateContext = () => {
+    const bar = ensureActionBar();
+    const activeTab = document.querySelector('.tab-content.active');
+    const inOrcamento = activeTab && activeTab.id === 'orcamento';
+    const primary = bar.querySelector('[data-mobile-primary]');
+    const secondary = bar.querySelector('[data-mobile-cancel]');
+
+    if (inOrcamento) {
+      document.body.classList.add('mobile-action-context');
+      primary.textContent = '➕ Adicionar Item';
+      secondary.textContent = '✖️ Cancelar';
+
+      const orcamentoContent = document.querySelector('#orcamento .content');
+      if (!isMobileViewport() && orcamentoContent && bar.parentElement !== orcamentoContent) {
+        orcamentoContent.appendChild(bar);
+      }
+      if (isMobileViewport() && bar.parentElement !== document.body) {
+        document.body.appendChild(bar);
+      }
+    } else {
+      document.body.classList.remove('mobile-action-context');
+    }
+  };
+
+  const keepFocusedFieldVisible = () => {
+    const active = document.activeElement;
+    if (!active || !/^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)) return;
+    setTimeout(() => {
+      active.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+    }, 120);
+  };
+
+  document.addEventListener('focusin', keepFocusedFieldVisible, { passive: true });
+
+  if (window.visualViewport) {
+    const baseHeight = window.visualViewport.height;
+    const onViewportChange = () => {
+      const keyboardOpen = window.visualViewport.height < baseHeight - 120;
+      document.body.classList.toggle('mobile-keyboard-open', keyboardOpen);
+      keepFocusedFieldVisible();
+    };
+    window.visualViewport.addEventListener('resize', onViewportChange);
+    window.visualViewport.addEventListener('scroll', onViewportChange);
+  }
+
+  const observer = new MutationObserver(updateContext);
+  observer.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
+
+  window.addEventListener('resize', updateContext);
+  document.addEventListener('DOMContentLoaded', updateContext);
+  setTimeout(updateContext, 600);
+})();
+</script>
 <script>
 window.__GESTAO_V2_BUILD__ = 'v5.0.0-alpha';
 console.log('✅ Build:', window.__GESTAO_V2_BUILD__);

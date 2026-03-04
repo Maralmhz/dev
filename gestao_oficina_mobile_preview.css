@@ -1,206 +1,157 @@
-/* gestao_oficina_mobile_preview.css - Ajustes para visualização mobile */
-/* ====================================================================== */
+/* ==================================================================================================
+   gestao_oficina_mobile_preview.css
+   --------------------------------------------------------------------------------------------------
+   Camada visual premium (cores, tipografia, profundidade) para mobile + desktop.
+   Mantém compatibilidade com estrutura legada e realça os pontos de conversão do fluxo:
+   preenchimento de formulário, adicionar item e salvar OS.
+   ================================================================================================== */
 
-/* Mobile breakpoint */
+/* --------------------------------------------------------------------------------------------------
+   TOKENS VISUAIS
+-------------------------------------------------------------------------------------------------- */
+:root {
+  --preview-bg: #f3f6fb;
+  --preview-surface: #ffffff;
+  --preview-border: #dce3ee;
+  --preview-text: #1f2a37;
+  --preview-muted: #5f6c7a;
+  --preview-primary: #1f6feb;
+  --preview-primary-dark: #0f4db3;
+  --preview-success: #1f9d55;
+  --preview-danger: #d93025;
+}
+
+body {
+  background: linear-gradient(180deg, #f7f9fd 0%, #eef3fa 100%);
+  color: var(--preview-text);
+}
+
+.container,
+.content,
+.wizard-form {
+  border-radius: 14px;
+}
+
+/* --------------------------------------------------------------------------------------------------
+   AGRUPAMENTO VISUAL DOS CAMPOS
+   --------------------------------------------------------------------------------------------------
+   Este bloco reforça o entendimento dos grupos de inputs sem alterar IDs/ordem de scripts.
+-------------------------------------------------------------------------------------------------- */
+#orcamento .form-row.two,
+#orcamento .form-row:has(#tipoPeca),
+#orcamento .form-row:has(#tipoServico) {
+  background: var(--preview-surface);
+  border: 1px solid var(--preview-border);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+#orcamento .form-row:has(#tipoPeca) {
+  box-shadow: inset 0 0 0 1px rgba(31, 111, 235, 0.06);
+}
+
+#descricaoItem::placeholder {
+  color: #8a96a5;
+}
+
+#valorItem {
+  font-weight: 700;
+}
+
+/* --------------------------------------------------------------------------------------------------
+   BARRA DE AÇÃO STICKY: ESTILO PREMIUM
+   -------------------------------------------------------------------------------------------------- */
+.mobile-action-bar .mobile-action-primary {
+  color: #fff;
+  background: linear-gradient(135deg, var(--preview-primary) 0%, var(--preview-primary-dark) 100%);
+  box-shadow: 0 8px 18px rgba(31, 111, 235, 0.28);
+}
+
+.mobile-action-bar .mobile-action-primary:hover {
+  filter: brightness(1.04);
+}
+
+.mobile-action-bar .mobile-action-secondary {
+  background: #eef2f7;
+  color: #344054;
+  border: 1px solid #d1d9e6;
+}
+
+.mobile-action-bar .mobile-action-secondary:hover {
+  background: #e5ebf3;
+}
+
+/* --------------------------------------------------------------------------------------------------
+   BOTÕES PADRÃO DO SISTEMA (COMPATÍVEL DESKTOP)
+-------------------------------------------------------------------------------------------------- */
+.btn-primary,
+.btn-success,
+.btn-secondary,
+.btn-danger {
+  border-radius: 12px;
+  border: 1px solid transparent;
+  font-weight: 700;
+  letter-spacing: 0.1px;
+}
+
+.btn-primary {
+  background: var(--preview-primary);
+}
+
+.btn-success {
+  background: var(--preview-success);
+}
+
+.btn-danger {
+  background: var(--preview-danger);
+}
+
+/* --------------------------------------------------------------------------------------------------
+   AJUSTES DE LEGIBILIDADE E COMPACTAÇÃO MOBILE
+-------------------------------------------------------------------------------------------------- */
 @media (max-width: 768px) {
-  
-  /* Sidebar responsiva */
-  .sidebar-menu {
-    width: 100%;
-    height: auto;
-    position: relative;
-    transform: none !important;
-  }
-  
-  .sidebar-menu.collapsed {
-    height: 60px;
-    overflow: hidden;
-  }
-  
-  .sidebar-toggle {
-    display: block !important;
-  }
-  
-  /* Header mobile */
-  .header {
-    flex-direction: column;
-    padding: 10px;
-  }
-  
-  .header-content {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .logo-container img {
-    max-width: 80px;
-    max-height: 50px;
-  }
-  
-  .header-badge {
-    position: static;
-    margin-top: 10px;
-  }
-  
-  /* Tabs mobile */
-  .tabs {
-    overflow-x: auto;
-    white-space: nowrap;
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  .tab-button {
-    min-width: 120px;
-    font-size: 12px;
-    padding: 8px 12px;
-  }
-  
-  /* Kanban mobile */
-  .kanban-container {
-    flex-direction: column;
-    overflow-x: visible;
-  }
-  
-  .kanban-coluna {
-    width: 100%;
-    min-width: auto;
-    margin-bottom: 20px;
-  }
-  
-  .kanban-card {
+  .section-title {
+    font-size: 1rem;
     margin-bottom: 10px;
   }
-  
-  /* Dashboard mobile */
-  .resumo-cards {
-    grid-template-columns: 1fr;
-    gap: 10px;
+
+  .veiculo-resumo {
+    border-radius: 12px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid #e7edf6;
   }
-  
-  .stat-card {
-    padding: 15px;
-  }
-  
-  /* Formulários mobile */
-  .form-row {
-    flex-direction: column;
-  }
-  
-  .form-group {
-    width: 100%;
-    margin-bottom: 15px;
-  }
-  
-  /* Botões mobile */
-  .action-buttons {
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  .btn-primary,
-  .btn-secondary,
-  .btn-success,
-  .btn-danger {
-    width: 100%;
-    padding: 12px;
-  }
-  
-  /* Wizard mobile */
-  .wizard-progress {
-    flex-direction: column;
-    gap: 5px;
-  }
-  
-  .step-indicator {
-    width: 100%;
-  }
-  
-  /* Modal mobile */
-  .modal-content {
-    width: 95% !important;
-    max-width: none !important;
-    margin: 10px;
-  }
-  
-  /* Tabelas mobile */
-  table {
-    font-size: 11px;
-  }
-  
-  table th,
-  table td {
-    padding: 4px !important;
-  }
-  
-  /* OS info bar mobile */
-  .os-info-bar {
-    flex-direction: column;
-    text-align: center;
-    gap: 5px;
-  }
-  
-  /* Search box mobile */
-  .search-box {
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  .search-box input {
-    width: 100%;
-  }
-  
-  /* Footer mobile */
-  .os-footer {
-    font-size: 9px;
-    padding: 5px;
+
+  .tabs {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: rgba(243, 246, 251, 0.95);
+    backdrop-filter: blur(8px);
   }
 }
 
-/* Tablet breakpoint */
-@media (min-width: 769px) and (max-width: 1024px) {
-  .kanban-container {
-    gap: 10px;
+/* --------------------------------------------------------------------------------------------------
+   DESKTOP PREMIUM: DISTRIBUIÇÃO HORIZONTAL E ACTION BAR EM LINHA
+-------------------------------------------------------------------------------------------------- */
+@media (min-width: 1024px) {
+  #orcamento .content {
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid #e4eaf3;
+    border-radius: 16px;
+    padding: 18px;
   }
-  
-  .kanban-coluna {
-    min-width: 280px;
-  }
-  
-  .resumo-cards {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
 
-/* Desktop otimizado */
-@media (min-width: 1025px) {
-  .kanban-container {
-    gap: 20px;
+  .mobile-action-bar {
+    justify-content: flex-end;
+    gap: 12px;
   }
-  
-  .kanban-coluna {
-    min-width: 320px;
-  }
-  
-  .resumo-cards {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
 
-/* Print styles */
-@media print {
-  .no-pdf,
-  .sidebar-menu,
-  .tabs,
-  .action-buttons,
-  .btn-primary,
-  .btn-secondary,
-  .header-badge,
-  .sync-dot {
-    display: none !important;
+  .mobile-action-bar .mobile-action-secondary {
+    max-width: 180px;
   }
-  
-  .os-paper {
-    margin: 0;
-    padding: 20px;
+
+  .mobile-action-bar .mobile-action-primary {
+    max-width: 280px;
   }
 }
