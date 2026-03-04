@@ -19,7 +19,7 @@ let firestoreDB = null;
 async function initFirebase() {
     if (firebaseApp) return { app: firebaseApp, db: firestoreDB };
 
-    const { initializeApp } = await import(
+    const { initializeApp, getApps, getApp } = await import(
         "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"
     );
     const { getFirestore } = await import(
@@ -28,20 +28,20 @@ async function initFirebase() {
 
     const config = getFirebaseConfig();
 
-    if (!window.OFICINA_CONFIG?.oficina_id) {
-        throw new Error("OFICINA_CONFIG.oficina_id não definido");
+    if (!getOficinaId()) {
+        throw new Error("oficinaId não definido");
     }
 
-    firebaseApp = initializeApp(config);
+    firebaseApp = getApps().length ? getApp() : initializeApp(config);
     firestoreDB = getFirestore(firebaseApp);
 
-    console.log("🔥 Firebase inicializado:", window.OFICINA_CONFIG.oficina_id);
+    console.log("🔥 Firebase inicializado:", getOficinaId());
 
     return { app: firebaseApp, db: firestoreDB };
 }
 
 function getOficinaId() {
-    return window.OFICINA_CONFIG.oficina_id;
+    return (window.AppContext?.isReady?.() ? window.AppContext.getOficinaId() : null) || window.OFICINA_CONFIG?.oficina_id || window.OFICINA_CONFIG?.oficinaId || "sem_identificacao";
 }
 
 function gerarCaminhoData(dataISO) {
@@ -61,6 +61,7 @@ function caminhoChecklist(checklistId, dataCriacao) {
     };
 }
 
+// ✅ FIX: Adicionando export
 export async function salvarChecklist(checklist) {
     try {
         console.log("📦 Checklist recebido:", checklist);
@@ -137,6 +138,7 @@ async function atualizarIndiceVeiculo(checklist) {
     }
 }
 
+// ✅ FIX: Adicionando export
 export async function buscarChecklistsMes(ano, mes, limite = 20) {
     const { db } = await initFirebase();
     const { collection, getDocs, query, orderBy, limit } = await import(
@@ -159,6 +161,16 @@ export async function buscarChecklistsMes(ano, mes, limite = 20) {
     return checklists;
 }
 
+// ✅ FUNÇÃO FALTANTE - buscar mês atual
+export async function buscarChecklistsMesAtual(limite = 100) {
+    const agora = new Date();
+    return buscarChecklistsMes(
+        agora.getFullYear(),
+        agora.getMonth() + 1,
+        limite
+    );
+}
+
 // ================================
 // 🔧 COMPATIBILIDADE CHECKLIST.JS
 // ================================
@@ -168,10 +180,6 @@ export async function salvarNoFirebase(checklist) {
 }
 
 export async function buscarChecklistsNuvem() {
-    const agora = new Date();
-    return buscarChecklistsMes(
-        agora.getFullYear(),
-        agora.getMonth() + 1,
-        100
-    );
+    console.log("🔥 buscarChecklistsNuvem → buscarChecklistsMesAtual");
+    return buscarChecklistsMesAtual(100);
 }

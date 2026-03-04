@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>👤 Meu Perfil - Gestão Oficina</title>
+    <link rel="stylesheet" href="perfil-usuario.css">
+    <link rel="icon" type="image/png" href="logo.png">
+</head>
+<body>
+    <div class="perfil-container">
+        <!-- HEADER -->
+        <div class="perfil-header">
+            <button class="btn-voltar" onclick="window.location.href='app.html'">← Voltar</button>
+            <h1>👤 Meu Perfil</h1>
+            <div></div>
+        </div>
+
+        <div class="perfil-content">
+            <!-- CARD INFORMAÇÕES -->
+            <div class="perfil-card">
+                <div class="card-header">
+                    <h2>📝 Informações Pessoais</h2>
+                </div>
+                <div class="card-body">
+                    <div class="info-group">
+                        <label>Nome:</label>
+                        <div class="info-value" id="userName">Carregando...</div>
+                    </div>
+                    <div class="info-group">
+                        <label>Email:</label>
+                        <div class="info-value" id="userEmail">Carregando...</div>
+                    </div>
+                    <div class="info-group">
+                        <label>Plano Atual:</label>
+                        <div class="info-value" id="userPlano">
+                            <span class="badge-plano">Carregando...</span>
+                        </div>
+                    </div>
+                    <div class="info-group">
+                        <label>Oficina ID:</label>
+                        <div class="info-value" id="userOficinaId">Carregando...</div>
+                    </div>
+                    <div class="info-group">
+                        <label>Role:</label>
+                        <div class="info-value" id="userRole">
+                            <span class="badge-role">Carregando...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CARD ALTERAR SENHA -->
+            <div class="perfil-card">
+                <div class="card-header">
+                    <h2>🔐 Alterar Senha</h2>
+                    <span class="security-badge">🔒 Seguro</span>
+                </div>
+                <div class="card-body">
+                    <div id="alertPerfil" class="alert" style="display:none;"></div>
+
+                    <form id="formAlterarSenha">
+                        <div class="form-group">
+                            <label for="senhaAtual">Senha Atual *</label>
+                            <div class="password-wrapper">
+                                <input type="password" id="senhaAtual" required placeholder="Digite sua senha atual">
+                                <button type="button" class="toggle-password" onclick="togglePasswordVisibility('senhaAtual')">👁️</button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="novaSenha">Nova Senha *</label>
+                            <div class="password-wrapper">
+                                <input type="password" id="novaSenha" required placeholder="Mínimo 8 caracteres" minlength="8">
+                                <button type="button" class="toggle-password" onclick="togglePasswordVisibility('novaSenha')">👁️</button>
+                            </div>
+                            <div class="password-strength" id="passwordStrength"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="confirmarSenha">Confirmar Nova Senha *</label>
+                            <div class="password-wrapper">
+                                <input type="password" id="confirmarSenha" required placeholder="Digite novamente" minlength="8">
+                                <button type="button" class="toggle-password" onclick="togglePasswordVisibility('confirmarSenha')">👁️</button>
+                            </div>
+                        </div>
+
+                        <div class="security-tips">
+                            <strong>🛡️ Dicas de Segurança:</strong>
+                            <ul>
+                                <li>Use no mínimo 8 caracteres</li>
+                                <li>Combine letras maiúsculas e minúsculas</li>
+                                <li>Inclua números e símbolos</li>
+                                <li>Não use dados pessoais</li>
+                            </ul>
+                        </div>
+
+                        <button type="submit" class="btn-primary" id="btnSalvarSenha">
+                            ✅ Salvar Nova Senha
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- CARD HISTÓRICO -->
+            <div class="perfil-card">
+                <div class="card-header">
+                    <h2>📅 Histórico de Atividades</h2>
+                </div>
+                <div class="card-body">
+                    <div class="info-group">
+                        <label>Conta criada em:</label>
+                        <div class="info-value" id="dataCriacao">Carregando...</div>
+                    </div>
+                    <div class="info-group">
+                        <label>Última alteração de senha:</label>
+                        <div class="info-value" id="ultimaMudancaSenha">Nunca alterada</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="config.js"></script>
+    <script src="perfil-usuario.js"></script>
+</body>
+</html>

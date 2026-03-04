@@ -1,0 +1,244 @@
+/* ==================================================================================================
+   responsive-mobile.css
+   --------------------------------------------------------------------------------------------------
+   Camada mobile-first focada em usabilidade no celular sem quebrar o fluxo legado.
+   Objetivos deste arquivo:
+   1) Melhorar legibilidade e toque (inputs e botões maiores, sem zoom horizontal).
+   2) Criar espaço para barra de ação sticky no rodapé em dispositivos móveis.
+   3) Agrupar visualmente os campos críticos do orçamento/checklist sem alterar IDs existentes.
+   4) Garantir progressive enhancement: desktop funciona mesmo sem esta camada.
+   ================================================================================================== */
+
+/* --------------------------------------------------------------------------------------------------
+   BASE MOBILE-FIRST
+   --------------------------------------------------------------------------------------------------
+   A base abaixo prioriza telas pequenas e cria um ritmo vertical consistente para formulários.
+   Não altera IDs legados (#checklistForm, #orcamento, #descricaoItem, #valorItem, #btnAdicionarItem).
+-------------------------------------------------------------------------------------------------- */
+:root {
+  --mobile-safe-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  --mobile-gap: 12px;
+  --mobile-field-radius: 12px;
+}
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+#checklistForm,
+#orcamento .content {
+  padding-bottom: var(--mobile-safe-bottom);
+}
+
+#checklistForm .form-row,
+#orcamento .form-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mobile-gap);
+  margin-bottom: var(--mobile-gap);
+}
+
+#checklistForm .form-group,
+#orcamento .form-group {
+  min-width: 0;
+}
+
+#checklistForm label,
+#orcamento label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+#checklistForm input,
+#checklistForm select,
+#checklistForm textarea,
+#orcamento input,
+#orcamento select,
+#orcamento textarea {
+  width: 100%;
+  min-height: 48px;
+  border-radius: var(--mobile-field-radius);
+  padding: 12px 14px;
+  font-size: 16px;
+  line-height: 1.35;
+  box-sizing: border-box;
+}
+
+#checklistForm textarea,
+#orcamento textarea {
+  min-height: 52px;
+  resize: vertical;
+}
+
+/* --------------------------------------------------------------------------------------------------
+   AGRUPAMENTO DE CAMPOS NO ORÇAMENTO
+   --------------------------------------------------------------------------------------------------
+   Este bloco trata os pares solicitados para navegação mais clara:
+   - Descrição + Preço (mantendo #descricaoItem e #valorItem)
+   - Peça/Serviço + Quantidade (quando quantidade existir no fluxo ativo)
+   Funciona por seletores existentes, sem depender de alteração de markup legado.
+-------------------------------------------------------------------------------------------------- */
+#orcamento .form-row.two {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--mobile-gap);
+  background: #ffffff;
+  border: 1px solid #e7eaf0;
+  border-radius: 14px;
+  padding: 12px;
+}
+
+#descricaoItem,
+#valorItem {
+  background: #fff;
+}
+
+/* Par Peça/Serviço + Quantidade: aplica melhoria caso input de quantidade exista no DOM. */
+#orcamento input[id*="quant"],
+#orcamento input[name*="quant"],
+#orcamento input[id*="qtd"],
+#orcamento input[name*="qtd"] {
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------------------------------
+   STICKY ACTION BAR (MOBILE)
+   --------------------------------------------------------------------------------------------------
+   A barra sticky é ativada no mobile por classe no body (.mobile-action-context).
+   O JavaScript adiciona essa classe conforme aba ativa e viewport.
+   Mantemos os botões legados visíveis para compatibilidade, mas a barra vira CTA principal.
+-------------------------------------------------------------------------------------------------- */
+.mobile-action-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+  background: rgba(255, 255, 255, 0.97);
+  border-top: 1px solid #dfe5ef;
+  box-shadow: 0 -8px 24px rgba(16, 24, 40, 0.14);
+  backdrop-filter: blur(8px);
+  z-index: 8500;
+}
+
+.mobile-action-bar .mobile-action-secondary,
+.mobile-action-bar .mobile-action-primary {
+  min-height: 50px;
+  border-radius: 12px;
+  border: 0;
+  font-weight: 700;
+  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 16px;
+  cursor: pointer;
+}
+
+.mobile-action-bar .mobile-action-secondary {
+  flex: 0 0 38%;
+}
+
+.mobile-action-bar .mobile-action-primary {
+  flex: 1;
+}
+
+.mobile-action-bar .mobile-action-whatsapp {
+  flex: 1;
+}
+
+body.mobile-action-context .mobile-action-bar {
+  display: flex;
+}
+
+/* Classe aplicada durante abertura do teclado virtual para manter a barra acessível e sem sobreposição. */
+body.mobile-keyboard-open .mobile-action-bar {
+  transform: translateY(-2px);
+}
+
+.mobile-action-bar .mobile-action-whatsapp {
+  flex: 1;
+  min-height: 50px;
+  border-radius: 12px;
+  border: 1px solid #b8e6c4;
+  background: #e9fff0;
+  color: #106b35;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+#orcamento .table-scroll,
+#resumo .table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* --------------------------------------------------------------------------------------------------
+   RESPONSIVIDADE DE TABELAS E BLOCOS LONGOS
+   -------------------------------------------------------------------------------------------------- */
+#orcamento table,
+#resumo table {
+  width: 100%;
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+#orcamento table th,
+#orcamento table td {
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------------------------------
+   DESKTOP / TABLET
+   --------------------------------------------------------------------------------------------------
+   Em telas maiores, restabelece layout horizontal e posiciona a action bar como bloco estático
+   abaixo do conteúdo (sem comportamento flutuante).
+-------------------------------------------------------------------------------------------------- */
+@media (min-width: 769px) {
+  :root {
+    --mobile-safe-bottom: 20px;
+  }
+
+  #checklistForm,
+  #orcamento .content {
+    padding-bottom: 16px;
+  }
+
+  #checklistForm .form-row,
+  #orcamento .form-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  #orcamento .form-row.two {
+    grid-template-columns: minmax(320px, 2fr) minmax(180px, 1fr);
+    align-items: end;
+  }
+
+  .mobile-action-bar {
+    position: static;
+    display: flex;
+    margin-top: 14px;
+    border: 1px solid #e5e7eb;
+    box-shadow: none;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 10px;
+  }
+
+  body.mobile-action-context .mobile-action-bar {
+    display: flex;
+  }
+}

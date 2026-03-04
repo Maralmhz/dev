@@ -1,0 +1,174 @@
+/* ==================================================================================================
+   gestao_oficina_mobile_preview.css
+   --------------------------------------------------------------------------------------------------
+   Camada visual premium (cores, tipografia, profundidade) para mobile + desktop.
+   Mantém compatibilidade com estrutura legada e realça os pontos de conversão do fluxo:
+   preenchimento de formulário, adicionar item e salvar OS.
+   ================================================================================================== */
+
+/* --------------------------------------------------------------------------------------------------
+   TOKENS VISUAIS
+-------------------------------------------------------------------------------------------------- */
+:root {
+  --preview-bg: #f3f6fb;
+  --preview-surface: #ffffff;
+  --preview-border: #dce3ee;
+  --preview-text: #1f2a37;
+  --preview-muted: #5f6c7a;
+  --preview-primary: #1f6feb;
+  --preview-primary-dark: #0f4db3;
+  --preview-success: #1f9d55;
+  --preview-danger: #d93025;
+}
+
+body {
+  background: linear-gradient(180deg, #f7f9fd 0%, #eef3fa 100%);
+  color: var(--preview-text);
+}
+
+.container,
+.content,
+.wizard-form {
+  border-radius: 14px;
+}
+
+/* --------------------------------------------------------------------------------------------------
+   AGRUPAMENTO VISUAL DOS CAMPOS
+   --------------------------------------------------------------------------------------------------
+   Este bloco reforça o entendimento dos grupos de inputs sem alterar IDs/ordem de scripts.
+-------------------------------------------------------------------------------------------------- */
+#orcamento .form-row.two,
+#orcamento .form-row:has(#tipoPeca),
+#orcamento .form-row:has(#tipoServico) {
+  background: var(--preview-surface);
+  border: 1px solid var(--preview-border);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+#orcamento .form-row:has(#tipoPeca) {
+  box-shadow: inset 0 0 0 1px rgba(31, 111, 235, 0.06);
+}
+
+#descricaoItem::placeholder {
+  color: #8a96a5;
+}
+
+#valorItem {
+  font-weight: 700;
+}
+
+/* --------------------------------------------------------------------------------------------------
+   BARRA DE AÇÃO STICKY: ESTILO PREMIUM
+   -------------------------------------------------------------------------------------------------- */
+.mobile-action-bar .mobile-action-primary {
+  color: #fff;
+  background: linear-gradient(135deg, var(--preview-primary) 0%, var(--preview-primary-dark) 100%);
+  box-shadow: 0 8px 18px rgba(31, 111, 235, 0.28);
+}
+
+.mobile-action-bar .mobile-action-primary:hover {
+  filter: brightness(1.04);
+}
+
+.mobile-action-bar .mobile-action-secondary {
+  background: #eef2f7;
+  color: #344054;
+  border: 1px solid #d1d9e6;
+}
+
+.mobile-action-bar .mobile-action-secondary:hover {
+  background: #e5ebf3;
+}
+
+/* --------------------------------------------------------------------------------------------------
+   BOTÕES PADRÃO DO SISTEMA (COMPATÍVEL DESKTOP)
+-------------------------------------------------------------------------------------------------- */
+.btn-primary,
+.btn-success,
+.btn-secondary,
+.btn-danger {
+  border-radius: 12px;
+  border: 1px solid transparent;
+  font-weight: 700;
+  letter-spacing: 0.1px;
+}
+
+.btn-primary {
+  background: var(--preview-primary);
+}
+
+.btn-success {
+  background: var(--preview-success);
+}
+
+.btn-danger {
+  background: var(--preview-danger);
+}
+
+/* --------------------------------------------------------------------------------------------------
+   AJUSTES DE LEGIBILIDADE E COMPACTAÇÃO MOBILE
+-------------------------------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  .section-title {
+    font-size: 1rem;
+    margin-bottom: 10px;
+  }
+
+  .veiculo-resumo {
+    border-radius: 12px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid #e7edf6;
+  }
+
+  .tabs {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: rgba(243, 246, 251, 0.95);
+    backdrop-filter: blur(8px);
+  }
+}
+
+/* --------------------------------------------------------------------------------------------------
+   DESKTOP PREMIUM: DISTRIBUIÇÃO HORIZONTAL E ACTION BAR EM LINHA
+-------------------------------------------------------------------------------------------------- */
+@media (min-width: 1024px) {
+  #orcamento .content {
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid #e4eaf3;
+    border-radius: 16px;
+    padding: 18px;
+  }
+
+  .mobile-action-bar {
+    justify-content: flex-end;
+    gap: 12px;
+  }
+
+  .mobile-action-bar .mobile-action-secondary {
+    max-width: 180px;
+  }
+
+  .mobile-action-bar .mobile-action-primary {
+    max-width: 280px;
+  }
+}
+
+
+.mobile-action-bar .mobile-action-whatsapp {
+  background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+  color: #fff;
+  border: 1px solid rgba(18, 140, 126, 0.5);
+  box-shadow: 0 8px 18px rgba(18, 140, 126, 0.25);
+}
+
+.mobile-action-bar .mobile-action-whatsapp:hover {
+  filter: brightness(1.05);
+}
+
+#orcamento .table-scroll table,
+#resumo .table-scroll table {
+  min-width: 620px;
+}
