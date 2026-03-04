@@ -1,434 +1,221 @@
-/* ==========================================
-   CSS RESPONSIVO MOBILE - SISTEMA DE GESTÃO
-   ========================================== */
+/* ==================================================================================================
+   responsive-mobile.css
+   --------------------------------------------------------------------------------------------------
+   Camada mobile-first focada em usabilidade no celular sem quebrar o fluxo legado.
+   Objetivos deste arquivo:
+   1) Melhorar legibilidade e toque (inputs e botões maiores, sem zoom horizontal).
+   2) Criar espaço para barra de ação sticky no rodapé em dispositivos móveis.
+   3) Agrupar visualmente os campos críticos do orçamento/checklist sem alterar IDs existentes.
+   4) Garantir progressive enhancement: desktop funciona mesmo sem esta camada.
+   ================================================================================================== */
 
-/* SIDEBAR RESPONSIVO */
-.sidebar-menu {
-  position: fixed;
-  top: 0;
-  right: -100%;
-  width: 320px;
-  max-width: 85vw;
-  height: 100vh;
-  background: white;
-  box-shadow: -4px 0 12px rgba(0,0,0,0.15);
-  transition: right 0.3s ease;
-  z-index: 9998;
-  overflow-y: auto;
+/* --------------------------------------------------------------------------------------------------
+   BASE MOBILE-FIRST
+   --------------------------------------------------------------------------------------------------
+   A base abaixo prioriza telas pequenas e cria um ritmo vertical consistente para formulários.
+   Não altera IDs legados (#checklistForm, #orcamento, #descricaoItem, #valorItem, #btnAdicionarItem).
+-------------------------------------------------------------------------------------------------- */
+:root {
+  --mobile-safe-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  --mobile-gap: 12px;
+  --mobile-field-radius: 12px;
 }
 
-.sidebar-menu.active {
-  right: 0;
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
-/* BOTÃO HAMBÚRGUER */
-.hamburger-btn {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  width: 45px;
-  height: 45px;
-  background: var(--color-primary, #667eea);
-  border: none;
-  border-radius: 50%;
+#checklistForm,
+#orcamento .content {
+  padding-bottom: var(--mobile-safe-bottom);
+}
+
+#checklistForm .form-row,
+#orcamento .form-row {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  cursor: pointer;
-  z-index: 9999;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-  transition: all 0.3s ease;
+  gap: var(--mobile-gap);
+  margin-bottom: var(--mobile-gap);
 }
 
-.hamburger-btn span {
-  display: block;
-  width: 22px;
-  height: 3px;
-  background: white;
-  border-radius: 2px;
-  transition: all 0.3s ease;
-}
-
-.hamburger-btn.active span:nth-child(1) {
-  transform: rotate(45deg) translateY(8px);
-}
-
-.hamburger-btn.active span:nth-child(2) {
-  opacity: 0;
-}
-
-.hamburger-btn.active span:nth-child(3) {
-  transform: rotate(-45deg) translateY(-8px);
-}
-
-/* MOBILE: Ajustar posição */
-@media (max-width: 768px) {
-  .hamburger-btn {
-    width: 50px;
-    height: 50px;
-    top: 15px;
-    right: 15px;
-  }
-  
-  .header-badge {
-    font-size: 8px;
-    padding: 3px 6px;
-    top: 5px;
-    right: 5px;
-    max-width: 60px;
-  }
-}
-
-@media (max-width: 480px) {
-  .hamburger-btn {
-    width: 55px;
-    height: 55px;
-    top: 10px;
-    right: 10px;
-  }
-  
-  .sidebar-menu {
-    width: 100%;
-    max-width: 100%;
-  }
-  
-  .header-badge {
-    display: none; /* Esconder em telas muito pequenas */
-  }
-}
-
-/* ITENS DO MENU */
-.sidebar-nav-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 20px;
-  color: #333;
-  text-decoration: none;
-  transition: all 0.2s ease;
-  font-size: 14px;
-  border-left: 3px solid transparent;
-}
-
-.sidebar-nav-item:hover {
-  background: rgba(102, 126, 234, 0.1);
-  border-left-color: var(--color-primary, #667eea);
-}
-
-.sidebar-nav-item i {
-  font-size: 20px;
-  width: 24px;
-  text-align: center;
-}
-
-/* MOBILE: Aumentar área de toque */
-@media (max-width: 768px) {
-  .sidebar-nav-item {
-    padding: 18px 20px;
-    font-size: 15px;
-    min-height: 56px; /* Recomendação de acessibilidade */
-  }
-  
-  .sidebar-nav-item i {
-    font-size: 24px;
-  }
-}
-
-/* OVERLAY */
-.sidebar-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.5);
-  backdrop-filter: blur(4px);
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.3s ease;
-  z-index: 9997;
-}
-
-.sidebar-overlay.active {
-  opacity: 1;
-  visibility: visible;
-}
-
-/* ==========================================
-   FORMULÁRIOS RESPONSIVOS
-   ========================================== */
-
-.form-row {
-  display: flex;
-  gap: 15px;
-  margin-bottom: 15px;
-}
-
-.form-row.full {
-  display: block;
-}
-
-.form-group {
-  flex: 1;
+#checklistForm .form-group,
+#orcamento .form-group {
   min-width: 0;
 }
 
-/* MOBILE: 1 coluna */
-@media (max-width: 768px) {
-  .form-row {
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  .form-group label {
-    font-size: 13px;
-  }
-  
-  .form-group input,
-  .form-group select,
-  .form-group textarea {
-    font-size: 16px; /* Previne zoom em iOS */
-    padding: 12px;
-  }
-}
-
-/* WIZARD */
-.wizard-buttons {
-  display: flex;
-  gap: 10px;
-  justify-content: space-between;
-  margin-top: 20px;
-}
-
-.wizard-buttons button {
-  flex: 1;
-  padding: 14px 20px;
-  font-size: 14px;
-  border-radius: 8px;
-  border: none;
+#checklistForm label,
+#orcamento label {
+  display: block;
+  margin-bottom: 6px;
   font-weight: 600;
+  line-height: 1.3;
+}
+
+#checklistForm input,
+#checklistForm select,
+#checklistForm textarea,
+#orcamento input,
+#orcamento select,
+#orcamento textarea {
+  width: 100%;
+  min-height: 48px;
+  border-radius: var(--mobile-field-radius);
+  padding: 12px 14px;
+  font-size: 16px;
+  line-height: 1.35;
+  box-sizing: border-box;
+}
+
+#checklistForm textarea,
+#orcamento textarea {
+  min-height: 52px;
+  resize: vertical;
+}
+
+/* --------------------------------------------------------------------------------------------------
+   AGRUPAMENTO DE CAMPOS NO ORÇAMENTO
+   --------------------------------------------------------------------------------------------------
+   Este bloco trata os pares solicitados para navegação mais clara:
+   - Descrição + Preço (mantendo #descricaoItem e #valorItem)
+   - Peça/Serviço + Quantidade (quando quantidade existir no fluxo ativo)
+   Funciona por seletores existentes, sem depender de alteração de markup legado.
+-------------------------------------------------------------------------------------------------- */
+#orcamento .form-row.two {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--mobile-gap);
+  background: #ffffff;
+  border: 1px solid #e7eaf0;
+  border-radius: 14px;
+  padding: 12px;
+}
+
+#descricaoItem,
+#valorItem {
+  background: #fff;
+}
+
+/* Par Peça/Serviço + Quantidade: aplica melhoria caso input de quantidade exista no DOM. */
+#orcamento input[id*="quant"],
+#orcamento input[name*="quant"],
+#orcamento input[id*="qtd"],
+#orcamento input[name*="qtd"] {
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------------------------------
+   STICKY ACTION BAR (MOBILE)
+   --------------------------------------------------------------------------------------------------
+   A barra sticky é ativada no mobile por classe no body (.mobile-action-context).
+   O JavaScript adiciona essa classe conforme aba ativa e viewport.
+   Mantemos os botões legados visíveis para compatibilidade, mas a barra vira CTA principal.
+-------------------------------------------------------------------------------------------------- */
+.mobile-action-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+  background: rgba(255, 255, 255, 0.97);
+  border-top: 1px solid #dfe5ef;
+  box-shadow: 0 -8px 24px rgba(16, 24, 40, 0.14);
+  backdrop-filter: blur(8px);
+  z-index: 8500;
+}
+
+.mobile-action-bar .mobile-action-secondary,
+.mobile-action-bar .mobile-action-primary {
+  min-height: 50px;
+  border-radius: 12px;
+  border: 0;
+  font-weight: 700;
+  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 16px;
   cursor: pointer;
-  transition: all 0.3s ease;
 }
 
-/* MOBILE: Botões maiores */
-@media (max-width: 768px) {
-  .wizard-buttons {
-    flex-direction: column-reverse;
-  }
-  
-  .wizard-buttons button {
-    width: 100%;
-    padding: 16px 20px;
-    font-size: 15px;
-    min-height: 52px;
-  }
+.mobile-action-bar .mobile-action-secondary {
+  flex: 0 0 38%;
 }
 
-/* ==========================================
-   TABELAS COM SCROLL
-   ========================================== */
+.mobile-action-bar .mobile-action-primary {
+  flex: 1;
+}
 
-.table-wrapper {
+body.mobile-action-context .mobile-action-bar {
+  display: flex;
+}
+
+/* Classe aplicada durante abertura do teclado virtual para manter a barra acessível e sem sobreposição. */
+body.mobile-keyboard-open .mobile-action-bar {
+  transform: translateY(-2px);
+}
+
+/* --------------------------------------------------------------------------------------------------
+   RESPONSIVIDADE DE TABELAS E BLOCOS LONGOS
+   -------------------------------------------------------------------------------------------------- */
+#orcamento table,
+#resumo table {
+  width: 100%;
+  display: block;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  margin-bottom: 15px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
 }
 
-.table-wrapper table {
-  min-width: 600px;
+#orcamento table th,
+#orcamento table td {
+  white-space: nowrap;
 }
 
-/* Indicador visual de scroll */
-.table-wrapper::after {
-  content: '← Arraste para ver mais →';
-  display: block;
-  text-align: center;
-  font-size: 11px;
-  color: #999;
-  padding: 5px;
-  background: #f8f9fa;
-}
-
+/* --------------------------------------------------------------------------------------------------
+   DESKTOP / TABLET
+   --------------------------------------------------------------------------------------------------
+   Em telas maiores, restabelece layout horizontal e posiciona a action bar como bloco estático
+   abaixo do conteúdo (sem comportamento flutuante).
+-------------------------------------------------------------------------------------------------- */
 @media (min-width: 769px) {
-  .table-wrapper::after {
-    display: none;
+  :root {
+    --mobile-safe-bottom: 20px;
   }
-}
 
-/* ==========================================
-   KANBAN MOBILE
-   ========================================== */
-
-.kanban-container {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 15px;
-  padding: 20px;
-}
-
-.kanban-coluna {
-  background: #f8f9fa;
-  border-radius: 12px;
-  padding: 15px;
-  min-height: 400px;
-}
-
-.cards-container {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.os-card {
-  background: white;
-  border-radius: 8px;
-  padding: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.os-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-
-/* TABLET: 2 colunas */
-@media (max-width: 1024px) {
-  .kanban-container {
-    grid-template-columns: repeat(2, 1fr);
+  #checklistForm,
+  #orcamento .content {
+    padding-bottom: 16px;
   }
-  
-  .kanban-coluna:nth-child(3) {
-    grid-column: 1 / -1;
-  }
-}
 
-/* MOBILE: scroll horizontal */
-@media (max-width: 768px) {
-  .kanban-container {
-    display: flex;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scroll-snap-type: x mandatory;
-    padding: 10px;
-    gap: 10px;
-  }
-  
-  .kanban-coluna {
-    min-width: 85vw;
-    scroll-snap-align: start;
-  }
-  
-  .os-card {
-    padding: 15px;
-    min-height: 120px;
-  }
-}
-
-/* ==========================================
-   TABS MOBILE
-   ========================================== */
-
-@media (max-width: 768px) {
-  .tabs {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    white-space: nowrap;
-    padding: 0 10px;
-  }
-  
-  .tab-button {
-    min-width: 140px;
-    font-size: 13px;
-  }
-}
-
-/* ==========================================
-   HEADER MOBILE
-   ========================================== */
-
-@media (max-width: 768px) {
-  .header {
-    padding: 10px;
-  }
-  
-  .header-content h1 {
-    font-size: 18px;
-  }
-  
-  .header-content p {
-    font-size: 12px;
-  }
-  
-  .user-info-container {
-    flex-direction: column;
-    gap: 8px;
-  }
-  
-  .btn-logout {
-    width: 100%;
-    padding: 10px;
-  }
-}
-
-/* ==========================================
-   CARDS E BADGES
-   ========================================== */
-
-@media (max-width: 768px) {
-  .veiculo-resumo {
+  #checklistForm .form-row,
+  #orcamento .form-row {
+    flex-direction: row;
     flex-wrap: wrap;
-    gap: 8px;
+    align-items: flex-start;
   }
-  
-  .veiculo-resumo-pill {
-    font-size: 12px;
-    padding: 6px 10px;
-  }
-  
-  .section-title {
-    font-size: 16px;
-  }
-}
 
-/* ==========================================
-   ACTION BUTTONS MOBILE
-   ========================================== */
-
-.action-buttons {
-  display: flex;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-@media (max-width: 768px) {
-  .action-buttons {
-    flex-direction: column;
+  #orcamento .form-row.two {
+    grid-template-columns: minmax(320px, 2fr) minmax(180px, 1fr);
+    align-items: end;
   }
-  
-  .action-buttons button {
-    width: 100%;
-    min-height: 48px;
-    font-size: 14px;
-  }
-}
 
-/* ==========================================
-   UTILITIES
-   ========================================== */
-
-@media (max-width: 768px) {
-  .hide-mobile {
-    display: none !important;
+  .mobile-action-bar {
+    position: static;
+    display: flex;
+    margin-top: 14px;
+    border: 1px solid #e5e7eb;
+    box-shadow: none;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 10px;
   }
-  
-  .show-mobile {
-    display: block !important;
+
+  body.mobile-action-context .mobile-action-bar {
+    display: flex;
   }
 }
