@@ -20,6 +20,22 @@ window.__loginInProgress = false;
 // ==============================================
 
 window.addEventListener('DOMContentLoaded', () => {
+    // HOTFIX UI: força fundo preto no login mesmo com CSS antigo em cache
+    const applyBlackBackground = () => {
+        document.documentElement.style.setProperty('background', '#000000', 'important');
+        document.body.style.setProperty('background', '#000000', 'important');
+
+        const backgroundEl = document.querySelector('.background');
+        if (backgroundEl) {
+            backgroundEl.style.setProperty('background', '#000000', 'important');
+            backgroundEl.style.setProperty('animation', 'none', 'important');
+            backgroundEl.style.setProperty('background-image', 'none', 'important');
+        }
+    };
+
+    applyBlackBackground();
+    requestAnimationFrame(applyBlackBackground);
+
     const rememberedEmail = localStorage.getItem('rememberedEmail');
     if (rememberedEmail) {
         emailInput.value = rememberedEmail;
