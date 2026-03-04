@@ -3,6 +3,80 @@
 // ==========================================
 // Define funções básicas do checklist que estão faltando
 
+let pdfServiceModulePromise = null;
+let ultimoPDFGerado = null;
+
+function getPDFService() {
+  if (!pdfServiceModulePromise) {
+    pdfServiceModulePromise = import('./pdfService.js');
+  }
+  return pdfServiceModulePromise;
+}
+
+async function gerarPDFComPipeline(contexto = 'manual') {
+  try {
+    const { generatePDF, applyOCR } = await getPDFService();
+    const resultadoPDF = await generatePDF({ numeroOS: gerarNumeroOS() }, {
+      sourceSelector: '#resumoContainer'
+    });
+
+    ultimoPDFGerado = await applyOCR(resultadoPDF);
+    console.log(`✅ Pipeline PDF concluído (${contexto})`, ultimoPDFGerado.ocrReason || 'sem OCR');
+    return ultimoPDFGerado;
+  } catch (error) {
+    console.warn(`⚠️ Falha no pipeline PDF (${contexto}):`, error.message || error);
+    return null;
+  }
+}
+
+async function enviarPDFWhatsApp() {
+  try {
+    const { sendPDFToWhatsApp } = await getPDFService();
+    const pdfResult = ultimoPDFGerado || await gerarPDFComPipeline('whatsapp');
+    if (!pdfResult) {
+      alert('Não foi possível preparar o PDF para envio.');
+      return;
+    }
+
+    const envio = await sendPDFToWhatsApp(pdfResult);
+    if (!envio.sent && envio.fallback === 'download') {
+      alert('WhatsApp indisponível. PDF baixado como fallback.');
+    }
+  } catch (error) {
+    console.error('❌ Erro ao enviar PDF para WhatsApp:', error);
+    alert(`Erro ao enviar PDF: ${error.message}`);
+  }
+}
+
+
+function ensureTableHorizontalScroll() {
+  const tables = document.querySelectorAll('#orcamento table, #resumo table');
+  tables.forEach((table) => {
+    if (table.parentElement?.classList.contains('table-scroll')) return;
+    const wrapper = document.createElement('div');
+    wrapper.className = 'table-scroll';
+    table.parentElement?.insertBefore(wrapper, table);
+    wrapper.appendChild(table);
+  });
+}
+
+function ensureWhatsAppPDFButton() {
+  if (document.getElementById('btnEnviarPdfWhatsApp')) return;
+
+  const target = document.querySelector('#orcamento .content .action-buttons')
+    || document.querySelector('#orcamento .content');
+  if (!target) return;
+
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.id = 'btnEnviarPdfWhatsApp';
+  button.className = 'btn-primary btn-pdf-whatsapp';
+  button.textContent = '📲 Enviar PDF para WhatsApp';
+  button.addEventListener('click', enviarPDFWhatsApp);
+
+  target.appendChild(button);
+}
+
 /**
  * Atualiza o resumo da OS na aba Resumo
  */
@@ -71,46 +145,20 @@ async function gerarPDFResumo() {
       await new Promise(resolve => setTimeout(resolve, 500));
     }
     
-    // Verificar se html2pdf está disponível
-    if (typeof html2pdf === 'undefined') {
-      console.warn('⚠️ html2pdf não disponível, usando impressão do navegador');
+    const pdfProcessado = await gerarPDFComPipeline('resumo');
+
+    if (!pdfProcessado?.blob) {
+      console.warn('⚠️ Pipeline indisponível, usando impressão do navegador');
       window.print();
       return;
     }
-    
-    // Pegar elemento do resumo
-    const elemento = document.getElementById('conteudo-resumo');
-    if (!elemento) {
-      console.error('❌ Elemento conteudo-resumo não encontrado');
-      alert('Erro: Conteúdo do resumo não encontrado');
-      return;
-    }
-    
-    // Gerar nome do arquivo
-    const numeroOS = gerarNumeroOS();
-    const nomeArquivo = `OS-${numeroOS}.pdf`;
-    
-    // Opções do PDF
-    const opcoes = {
-      margin: [10, 10, 10, 10],
-      filename: nomeArquivo,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { 
-        scale: 2,
-        useCORS: true,
-        logging: false
-      },
-      jsPDF: { 
-        unit: 'mm', 
-        format: 'a4', 
-        orientation: 'portrait'
-      }
-    };
-    
-    // Gerar PDF
-    await html2pdf().set(opcoes).from(elemento).save();
-    
-    console.log('✅ PDF gerado:', nomeArquivo);
+
+    const downloadLink = document.createElement('a');
+    downloadLink.href = pdfProcessado.url;
+    downloadLink.download = pdfProcessado.filename;
+    downloadLink.click();
+
+    console.log('✅ PDF gerado:', pdfProcessado.filename);
     
   } catch (error) {
     console.error('❌ Erro ao gerar PDF:', error);
@@ -167,6 +215,10 @@ async function salvarChecklist() {
     }
     
     alert('✅ Checklist salvo com sucesso!');
+
+    // Pipeline de PDF/OCR após salvar checklist sem interromper fluxo legado
+    gerarPDFComPipeline('salvarChecklist');
+
     return true;
     
   } catch (error) {
@@ -263,6 +315,16 @@ function initEnterNavigationChecklistOrcamento() {
   // O orçamento está dentro do fluxo do checklist; aplicar nos 2 escopos de forma segura
   createEnterNavigation('#checklistForm');
   createEnterNavigation('#orcamento .content');
+  ensureWhatsAppPDFButton();
+  ensureTableHorizontalScroll();
+
+  const btnAdicionar = document.getElementById('btnAdicionarItem');
+  if (btnAdicionar && btnAdicionar.dataset.pdfHookBound !== '1') {
+    btnAdicionar.addEventListener('click', () => {
+      setTimeout(() => gerarPDFComPipeline('orcamento'), 250);
+    });
+    btnAdicionar.dataset.pdfHookBound = '1';
+  }
 }
 
 // Expor funções globalmente
@@ -271,6 +333,7 @@ window.gerarPDFResumo = gerarPDFResumo;
 window.salvarChecklist = salvarChecklist;
 window.gerarNumeroOS = gerarNumeroOS;
 window.createEnterNavigation = createEnterNavigation;
+window.enviarPDFWhatsApp = enviarPDFWhatsApp;
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initEnterNavigationChecklistOrcamento, { once: true });
