@@ -1,0 +1,5 @@
+/* Remove botões extras + corrige campos */
+.mobile-action-bar { display: none !important; }
+.form-group, .form-row { width: 100% !important; }
+.form-row { display: flex; gap: 15px; }
+input, select, textarea { width: 100% !important; }
