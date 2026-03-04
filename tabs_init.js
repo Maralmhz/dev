@@ -3,45 +3,15 @@
   if (window.__tabsInitV2Loaded) return;
   window.__tabsInitV2Loaded = true;
 
-  const tabsState = (window.__tabsDebugState = window.__tabsDebugState || {
-    listeners: [],
-    delegationBound: false,
+  const state = (window.__tabsDebugState = window.__tabsDebugState || {
     switchCount: 0,
     lastSwitchAt: null,
     activeTabId: null,
+    delegationBound: false,
     pendingActivationTimer: null,
+    gestaoActive: false,
+    activationRunning: false,
   });
-
-  function registerTrackedListener(target, event, handler, options) {
-    target.addEventListener(event, handler, options);
-    tabsState.listeners.push({ target, event, handler, options });
-  }
-
-  function cleanupTrackedListeners() {
-    while (tabsState.listeners.length) {
-      const item = tabsState.listeners.pop();
-      item.target.removeEventListener(item.event, item.handler, item.options);
-    }
-    tabsState.delegationBound = false;
-  }
-
-  function cleanupTabListeners(nextTabId) {
-    console.time('🧹 cleanupTabListeners');
-    const abaAtual = document.querySelector('.tab-content.active');
-    const atualId = abaAtual?.id || null;
-
-    if (atualId === 'gestao-oficina' && nextTabId !== 'gestao-oficina') {
-      if (typeof window.pararDashboardFirestore === 'function') {
-        window.pararDashboardFirestore();
-      }
-      if (typeof window.pararKanban === 'function') {
-        window.pararKanban();
-      }
-      window.dispatchEvent(new CustomEvent('tabs:cleanup', { detail: { from: atualId, to: nextTabId } }));
-    }
-
-    console.timeEnd('🧹 cleanupTabListeners');
-  }
 
   function parseTabIdFromOnclick(button) {
     const onclickAttr = button?.getAttribute('onclick') || '';
@@ -49,27 +19,47 @@
     return match ? match[1] : null;
   }
 
+  function cleanupTabListeners(nextTabId) {
+    console.time('🧹 cleanupTabListeners');
+    const currentId = document.querySelector('.tab-content.active')?.id || null;
+
+    if (currentId === 'gestao-oficina' && nextTabId !== 'gestao-oficina') {
+      if (typeof window.pararDashboardFirestore === 'function') window.pararDashboardFirestore();
+      if (typeof window.pararKanban === 'function') window.pararKanban();
+      state.gestaoActive = false;
+      window.dispatchEvent(new CustomEvent('tabs:cleanup', { detail: { from: currentId, to: nextTabId } }));
+    }
+
+    console.timeEnd('🧹 cleanupTabListeners');
+  }
+
   function ativarGestaoV2() {
+    if (state.activationRunning) return;
+    state.activationRunning = true;
+
     console.time('⚙️ ativarGestaoV2');
     try {
       window.GestaoOficinaV2?.init?.();
       window.GestaoOficinaAgendamentos?.montarCalendario?.();
       window.GestaoOficinaFinanceiro?.init?.();
       window.dispatchEvent(new CustomEvent('gestao-oficina:activated'));
+      state.gestaoActive = true;
     } catch (error) {
       console.error('❌ Falha ao ativar módulos V2:', error);
     } finally {
       console.timeEnd('⚙️ ativarGestaoV2');
+      setTimeout(() => {
+        state.activationRunning = false;
+      }, 0);
     }
   }
 
-  function ativarGestaoV2ComDebounce() {
-    if (tabsState.pendingActivationTimer) {
-      clearTimeout(tabsState.pendingActivationTimer);
-    }
-
-    tabsState.pendingActivationTimer = setTimeout(() => {
-      ativarGestaoV2();
+  function scheduleGestaoActivation() {
+    if (state.pendingActivationTimer) clearTimeout(state.pendingActivationTimer);
+    state.pendingActivationTimer = setTimeout(() => {
+      if (!state.gestaoActive) {
+        ativarGestaoV2();
+      }
       if (typeof window.iniciarDashboardFirestoreDebounced === 'function') {
         window.iniciarDashboardFirestoreDebounced();
       } else if (typeof window.iniciarDashboardFirestore === 'function') {
@@ -84,41 +74,26 @@
     }, 300);
   }
 
-  function bindTabDelegation() {
-    if (tabsState.delegationBound) return;
+  function handleDocumentClick(event) {
+    const tabButton = event.target.closest('.tab-button');
+    if (tabButton) {
+      const targetTabId = tabButton.dataset.tabGestao ? 'gestao-oficina' : parseTabIdFromOnclick(tabButton);
+      if (targetTabId) {
+        state.switchCount += 1;
+        state.lastSwitchAt = Date.now();
+        state.activeTabId = targetTabId;
+        cleanupTabListeners(targetTabId);
 
-    const onTabClickCapture = function (event) {
-      const botao = event.target.closest('.tab-button');
-      if (!botao) return;
-
-      const targetTabId = botao.dataset.tabGestao ? 'gestao-oficina' : parseTabIdFromOnclick(botao);
-      if (!targetTabId) return;
-
-      tabsState.switchCount += 1;
-      tabsState.lastSwitchAt = Date.now();
-      tabsState.activeTabId = targetTabId;
-
-      cleanupTabListeners(targetTabId);
-
-      if (targetTabId === 'gestao-oficina') {
-        // A troca visual da aba continua com switchTab legado.
-        // Aqui apenas protegemos inicialização pesada com debounce.
-        ativarGestaoV2ComDebounce();
+        if (targetTabId === 'gestao-oficina') {
+          scheduleGestaoActivation();
+        }
       }
-    };
+      return;
+    }
 
-    registerTrackedListener(document, 'click', onTabClickCapture, true);
-    tabsState.delegationBound = true;
-  }
-
-  function observarBotaoNovaOS() {
-    const botaoNovaOS = document.querySelector('[data-btn-nova-os]');
-    if (!botaoNovaOS || botaoNovaOS.dataset.boundNovaOs) return;
-
-    botaoNovaOS.dataset.boundNovaOs = '1';
-    botaoNovaOS.removeAttribute('onclick');
-    botaoNovaOS.addEventListener('click', function (e) {
-      e.preventDefault();
+    const btnNovaOS = event.target.closest('[data-btn-nova-os]');
+    if (btnNovaOS) {
+      event.preventDefault();
       if (typeof window.abrirModalNovoOS === 'function') {
         window.abrirModalNovoOS();
       } else if (window.GestaoOficinaV2?.abrirModalNovoOS) {
@@ -126,29 +101,23 @@
       } else {
         console.warn('⚠️ abrirModalNovoOS não disponível');
       }
-    });
+    }
   }
 
   function inicializarAbas() {
+    if (state.delegationBound) return;
     console.time('🧩 tabs_init::inicializarAbas');
-    cleanupTrackedListeners();
-    bindTabDelegation();
 
-    const abaGestaoOficina = document.querySelector('[data-tab-gestao]');
-    if (abaGestaoOficina) {
-      abaGestaoOficina.removeAttribute('onclick');
-      if (!abaGestaoOficina.dataset.boundGestaoTab) {
-        abaGestaoOficina.dataset.boundGestaoTab = '1';
-      }
-    }
+    const abaGestao = document.querySelector('[data-tab-gestao]');
+    if (abaGestao) abaGestao.removeAttribute('onclick');
 
-    const observer = new MutationObserver(observarBotaoNovaOS);
-    observer.observe(document.body, { childList: true, subtree: true });
-    observarBotaoNovaOS();
+    document.addEventListener('click', handleDocumentClick, true);
+    state.delegationBound = true;
 
-    const abaInicialAtiva = document.querySelector('.tab-content.active#gestao-oficina');
-    if (abaInicialAtiva) {
-      ativarGestaoV2ComDebounce();
+    const initial = document.querySelector('.tab-content.active')?.id;
+    state.activeTabId = initial || null;
+    if (initial === 'gestao-oficina') {
+      scheduleGestaoActivation();
     }
 
     console.timeEnd('🧩 tabs_init::inicializarAbas');
@@ -159,7 +128,7 @@
   window.ativarGestaoV2 = ativarGestaoV2;
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', inicializarAbas);
+    document.addEventListener('DOMContentLoaded', inicializarAbas, { once: true });
   } else {
     inicializarAbas();
   }

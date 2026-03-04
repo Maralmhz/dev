@@ -188,21 +188,25 @@
   if (!window.__gestaoPerfGuardsLoaded) {
     window.__gestaoPerfGuardsLoaded = true;
 
-    if (typeof window.iniciarDashboardFirestore === 'function') {
-      window.iniciarDashboardFirestoreDebounced = criarDebounce(
-        window.iniciarDashboardFirestore,
-        300,
-        'iniciarDashboardFirestoreDebounced'
-      );
-    }
+    window.iniciarDashboardFirestoreDebounced = criarDebounce(
+      function iniciarDashboardFirestoreProxy() {
+        if (typeof window.iniciarDashboardFirestore === 'function') {
+          window.iniciarDashboardFirestore();
+        }
+      },
+      300,
+      'iniciarDashboardFirestoreDebounced'
+    );
 
-    if (typeof window.iniciarKanban === 'function') {
-      window.iniciarKanbanDebounced = criarDebounce(
-        window.iniciarKanban,
-        300,
-        'iniciarKanbanDebounced'
-      );
-    }
+    window.iniciarKanbanDebounced = criarDebounce(
+      function iniciarKanbanProxy() {
+        if (typeof window.iniciarKanban === 'function') {
+          window.iniciarKanban();
+        }
+      },
+      300,
+      'iniciarKanbanDebounced'
+    );
 
     window.debugTabs = function debugTabs() {
       const state = window.__tabsDebugState || {};
