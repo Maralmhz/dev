@@ -6,6 +6,8 @@
 
   window.bootMonitor = {
     version: '5.0.0-alpha',
+    startTime: window.performance?.now ? window.performance.now() : Date.now(),
+    status: 'running',
     steps: {},
     errors: [],
     start(step) {
@@ -28,7 +30,17 @@
       this.steps[step].status = 'failed';
       this.steps[step].error = error;
       this.errors.push({ step, error, timestamp: Date.now() });
+      this.status = 'failed';
       console.error(`❌ [BOOT] ${step} failed:`, error);
+    },
+    getMemoryUsage() {
+      if (window.performance?.memory) {
+        return {
+          usedJSHeapSize: window.performance.memory.usedJSHeapSize,
+          totalJSHeapSize: window.performance.memory.totalJSHeapSize
+        };
+      }
+      return null;
     },
     getReport() {
       return {
@@ -39,18 +51,15 @@
         generatedAt: new Date().toISOString()
       };
     },
-    getMemoryUsage() {
-      if (!window.performance || !window.performance.memory) return null;
-      const mem = window.performance.memory;
-      return {
-        usedJSHeapSize: mem.usedJSHeapSize,
-        totalJSHeapSize: mem.totalJSHeapSize,
-        jsHeapSizeLimit: mem.jsHeapSizeLimit
-      };
-    },
     exportReport() {
-      const report = this.getReport();
-      return JSON.stringify(report, null, 2);
+      const now = window.performance?.now ? window.performance.now() : Date.now();
+      return {
+        version: this.version,
+        uptime: now - this.startTime,
+        memory: this.getMemoryUsage?.(),
+        steps: this.steps || [],
+        status: this.status || 'unknown'
+      };
     }
   };
 

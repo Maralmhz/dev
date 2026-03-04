@@ -65,6 +65,9 @@ document.addEventListener('DOMContentLoaded', async function () {
         plano: window.OFICINA_CONFIG?.plano
       });
       console.log('✅ AppContext inicializado');
+      if (!window.AppContext.isReady()) {
+        throw new Error('AppContext falhou ao inicializar');
+      }
     }
 
     // Render unlock

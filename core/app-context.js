@@ -1,8 +1,15 @@
 class AppContext {
   static init(config) {
-    if (!config) throw new Error('AppContext init: config obrigatório');
+    if (this._initialized) {
+      console.warn('⚠️ AppContext já inicializado. Ignorando nova chamada.');
+      return;
+    }
 
-    this._config = config;
+    if (!config) {
+      throw new Error('AppContext init: config obrigatório');
+    }
+
+    this._config = Object.freeze({ ...config });
     this._initialized = true;
   }
 
@@ -30,6 +37,13 @@ class AppContext {
 
   static isReady() {
     return !!this._initialized;
+  }
+
+  static debug() {
+    return {
+      initialized: this._initialized,
+      config: this._config
+    };
   }
 }
 

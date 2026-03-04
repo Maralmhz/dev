@@ -29,22 +29,27 @@
     <title id="titulo-pagina">Sistema de Gestão - Oficina</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
-    <!-- 1) Boot monitor -->
-    <script src="boot-sequence-monitor.js?v=5.0.0-alpha"></script>
-    <script>window.bootMonitor?.start('firebase-sdk');</script>
+    <!-- 1) Core hardening -->
+    <script src="core/error-handler.js?v=5.0.0-alpha"></script>
+    <script src="core/app-context.js?v=5.0.0-alpha"></script>
 
-    <!-- 2) Firebase SDK -->
+    <!-- 2) Boot monitor -->
+    <script src="boot-sequence-monitor.js?v=5.0.0-alpha"></script>
+    <script>
+      console.info('🚀 Sistema iniciado - v5.0.0-alpha');
+      window.bootMonitor?.start('firebase-sdk');
+    </script>
+
+    <!-- 3) Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js" onload="window.bootMonitor?.complete('firebase-sdk')"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
-    <!-- 3) Config + Init + Guards -->
+    <!-- 4) Config + Init + Guards -->
     <script>window.bootMonitor?.start('config-load');</script>
     <script src="config.js?v=4.3" onload="window.bootMonitor?.complete('config-load')"></script>
     <script src="firebase-init.js?v=4.3"></script>
-    <script src="core/error-handler.js?v=5.0.0-alpha"></script>
-    <script src="core/app-context.js?v=5.0.0-alpha"></script>
     <script src="session-manager.js?v=4.3"></script>
     <script src="app-auth-guard.js?v=4.3"></script>
     <script src="dev-monitor-ui.js?v=4.3"></script>
