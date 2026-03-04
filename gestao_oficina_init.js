@@ -165,6 +165,89 @@
     };
   };
 
+
+  // ==========================================
+  // PERFORMANCE GUARDS: debounce + debug tabs
+  // ==========================================
+
+  function criarDebounce(fn, wait, label) {
+    let timer = null;
+    return function debouncedFn(...args) {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        console.time(`⏱️ ${label}`);
+        try {
+          fn.apply(this, args);
+        } finally {
+          console.timeEnd(`⏱️ ${label}`);
+        }
+      }, wait);
+    };
+  }
+
+  if (!window.__gestaoPerfGuardsLoaded) {
+    window.__gestaoPerfGuardsLoaded = true;
+
+    if (typeof window.iniciarDashboardFirestore === 'function') {
+      window.iniciarDashboardFirestoreDebounced = criarDebounce(
+        window.iniciarDashboardFirestore,
+        300,
+        'iniciarDashboardFirestoreDebounced'
+      );
+    }
+
+    if (typeof window.iniciarKanban === 'function') {
+      window.iniciarKanbanDebounced = criarDebounce(
+        window.iniciarKanban,
+        300,
+        'iniciarKanbanDebounced'
+      );
+    }
+
+    window.debugTabs = function debugTabs() {
+      const state = window.__tabsDebugState || {};
+      const tabButtons = document.querySelectorAll('.tab-button').length;
+      const tabContents = document.querySelectorAll('.tab-content').length;
+      const activeTab = document.querySelector('.tab-content.active')?.id || null;
+
+      const report = {
+        activeTab,
+        tabButtons,
+        tabContents,
+        switchCount: state.switchCount || 0,
+        lastSwitchAt: state.lastSwitchAt || null,
+        delegationBound: !!state.delegationBound,
+        trackedListeners: (state.listeners || []).length,
+        hasCleanupTabListeners: typeof window.cleanupTabListeners === 'function',
+        hasSwitchTab: typeof window.switchTab === 'function',
+        firestore: {
+          iniciarDashboardFirestore: typeof window.iniciarDashboardFirestore,
+          iniciarDashboardFirestoreDebounced: typeof window.iniciarDashboardFirestoreDebounced,
+          pararDashboardFirestore: typeof window.pararDashboardFirestore,
+          iniciarKanban: typeof window.iniciarKanban,
+          iniciarKanbanDebounced: typeof window.iniciarKanbanDebounced,
+          pararKanban: typeof window.pararKanban,
+        },
+      };
+
+      console.group('🧪 debugTabs()');
+      console.table(report);
+      console.log('Detalhes:', report);
+      console.groupEnd();
+
+      console.time('🧪 debugTabs::switchTab-smoke');
+      try {
+        if (typeof window.switchTab === 'function' && activeTab) {
+          window.switchTab(activeTab);
+        }
+      } finally {
+        console.timeEnd('🧪 debugTabs::switchTab-smoke');
+      }
+
+      return report;
+    };
+  }
+
   console.log('💡 Execute debugGestaoFuncoes() no console para verificar');
 
 })();
