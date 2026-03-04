@@ -28,20 +28,20 @@ async function initFirebase() {
 
     const config = getFirebaseConfig();
 
-    if (!window.OFICINA_CONFIG?.oficina_id) {
-        throw new Error("OFICINA_CONFIG.oficina_id não definido");
+    if (!getOficinaId()) {
+        throw new Error("oficinaId não definido");
     }
 
     firebaseApp = getApps().length ? getApp() : initializeApp(config);
     firestoreDB = getFirestore(firebaseApp);
 
-    console.log("🔥 Firebase inicializado:", window.OFICINA_CONFIG.oficina_id);
+    console.log("🔥 Firebase inicializado:", getOficinaId());
 
     return { app: firebaseApp, db: firestoreDB };
 }
 
 function getOficinaId() {
-    return window.OFICINA_CONFIG?.oficina_id || "sem_identificacao";
+    return (window.AppContext?.isReady?.() ? window.AppContext.getOficinaId() : null) || window.OFICINA_CONFIG?.oficina_id || window.OFICINA_CONFIG?.oficinaId || "sem_identificacao";
 }
 
 function gerarCaminhoData(dataISO) {

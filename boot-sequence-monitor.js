@@ -5,6 +5,7 @@
   }
 
   window.bootMonitor = {
+    version: '5.0.0-alpha',
     steps: {},
     errors: [],
     start(step) {
@@ -31,12 +32,27 @@
     },
     getReport() {
       return {
+        version: this.version,
         steps: this.steps,
         errors: this.errors,
+        memory: this.getMemoryUsage(),
         generatedAt: new Date().toISOString()
       };
+    },
+    getMemoryUsage() {
+      if (!window.performance || !window.performance.memory) return null;
+      const mem = window.performance.memory;
+      return {
+        usedJSHeapSize: mem.usedJSHeapSize,
+        totalJSHeapSize: mem.totalJSHeapSize,
+        jsHeapSizeLimit: mem.jsHeapSizeLimit
+      };
+    },
+    exportReport() {
+      const report = this.getReport();
+      return JSON.stringify(report, null, 2);
     }
   };
 
-  console.log('✅ [BOOT] Monitor initialized');
+  console.log('✅ [BOOT] Monitor initialized (v5.0.0-alpha)');
 })();

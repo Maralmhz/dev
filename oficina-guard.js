@@ -52,7 +52,7 @@ const OficinaGuard = {
   },
   
   getOficinaId() {
-    const oficinaId = window.OFICINA_CONFIG?.oficinaId || sessionStorage.getItem('oficinaId');
+    const oficinaId = (window.AppContext?.isReady?.() ? window.AppContext.getOficinaId() : null) || window.OFICINA_CONFIG?.oficinaId || sessionStorage.getItem('oficinaId');
     if (!oficinaId || oficinaId === 'undefined' || oficinaId === 'null') {
       console.error('❌ oficinaId não disponível');
       throw new Error('oficinaId não disponível');

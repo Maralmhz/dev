@@ -7,7 +7,7 @@
   }
 
   function getOficinaId() {
-    return window.OFICINA_CONFIG?.oficina_id || 'modelo';
+    return (window.AppContext?.isReady?.() ? window.AppContext.getOficinaId() : null) || window.OFICINA_CONFIG?.oficina_id || window.OFICINA_CONFIG?.oficinaId || 'modelo';
   }
 
   function isAdmin() {
