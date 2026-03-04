@@ -88,14 +88,31 @@
 <body>
 
 <!-- 🔒 AUTH LOADING: Tela de carregamento durante validação -->
-<div id="auth-loading" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#0f0c29; display:flex; align-items:center; justify-content:center; z-index:99999;">
-  <div style="text-align:center; color:#fff;">
+<div id="auth-loading" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#000; display:flex; align-items:center; justify-content:center; z-index:99999; overflow:hidden;">
+  <div class="auth-particles" aria-hidden="true"></div>
+  <div style="text-align:center; color:#fff; position:relative; z-index:2;">
     <div style="border:4px solid rgba(255,255,255,0.3); border-top:4px solid #fff; border-radius:50%; width:50px; height:50px; animation: spin 1s linear infinite; margin:0 auto 20px;"></div>
     <p>Verificando autenticação...</p>
   </div>
 </div>
 <style>
   @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  @keyframes authParticleFloat {
+    0% { transform: translateY(100vh) scale(0.4); opacity: 0; }
+    15% { opacity: .9; }
+    100% { transform: translateY(-20vh) scale(1); opacity: 0; }
+  }
+  .auth-particles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(circle at 10% 20%, rgba(255,255,255,.8) 0 1px, transparent 2px),
+      radial-gradient(circle at 80% 30%, rgba(255,255,255,.7) 0 1px, transparent 2px),
+      radial-gradient(circle at 30% 70%, rgba(255,255,255,.75) 0 1px, transparent 2px),
+      radial-gradient(circle at 65% 80%, rgba(255,255,255,.6) 0 1px, transparent 2px);
+    animation: authParticleFloat 9s linear infinite;
+  }
 </style>
 
 <div id="boot-progress" style="position:fixed;top:0;left:0;width:100%;height:4px;background:rgba(255,255,255,.2);z-index:99998;">
@@ -241,7 +258,8 @@ window.iniciarSistemaCompleto = async function () {
     bar.className = 'mobile-action-bar';
     bar.innerHTML = [
       '<button type="button" class="mobile-action-secondary" data-mobile-cancel>✖️ Cancelar</button>',
-      '<button type="button" class="mobile-action-primary" data-mobile-primary>➕ Adicionar Item</button>'
+      '<button type="button" class="mobile-action-primary" data-mobile-primary>➕ Adicionar Item</button>',
+      '<button type="button" class="mobile-action-whatsapp" data-mobile-whatsapp>📲 Enviar PDF</button>'
     ].join('');
 
     document.body.appendChild(bar);
@@ -266,6 +284,12 @@ window.iniciarSistemaCompleto = async function () {
       }
     });
 
+    bar.querySelector('[data-mobile-whatsapp]').addEventListener('click', () => {
+      if (typeof window.enviarPDFWhatsApp === 'function') {
+        window.enviarPDFWhatsApp();
+      }
+    });
+
     return bar;
   };
 
@@ -275,11 +299,13 @@ window.iniciarSistemaCompleto = async function () {
     const inOrcamento = activeTab && activeTab.id === 'orcamento';
     const primary = bar.querySelector('[data-mobile-primary]');
     const secondary = bar.querySelector('[data-mobile-cancel]');
+    const whatsapp = bar.querySelector('[data-mobile-whatsapp]');
 
     if (inOrcamento) {
       document.body.classList.add('mobile-action-context');
       primary.textContent = '➕ Adicionar Item';
       secondary.textContent = '✖️ Cancelar';
+      whatsapp.textContent = '📲 Enviar PDF';
 
       const orcamentoContent = document.querySelector('#orcamento .content');
       if (!isMobileViewport() && orcamentoContent && bar.parentElement !== orcamentoContent) {

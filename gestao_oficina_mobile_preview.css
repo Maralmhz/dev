@@ -155,3 +155,20 @@ body {
     max-width: 280px;
   }
 }
+
+
+.mobile-action-bar .mobile-action-whatsapp {
+  background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+  color: #fff;
+  border: 1px solid rgba(18, 140, 126, 0.5);
+  box-shadow: 0 8px 18px rgba(18, 140, 126, 0.25);
+}
+
+.mobile-action-bar .mobile-action-whatsapp:hover {
+  filter: brightness(1.05);
+}
+
+#orcamento .table-scroll table,
+#resumo .table-scroll table {
+  min-width: 620px;
+}

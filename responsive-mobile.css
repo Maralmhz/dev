@@ -151,6 +151,10 @@ body {
   flex: 1;
 }
 
+.mobile-action-bar .mobile-action-whatsapp {
+  flex: 1;
+}
+
 body.mobile-action-context .mobile-action-bar {
   display: flex;
 }
@@ -158,6 +162,25 @@ body.mobile-action-context .mobile-action-bar {
 /* Classe aplicada durante abertura do teclado virtual para manter a barra acessível e sem sobreposição. */
 body.mobile-keyboard-open .mobile-action-bar {
   transform: translateY(-2px);
+}
+
+.mobile-action-bar .mobile-action-whatsapp {
+  flex: 1;
+  min-height: 50px;
+  border-radius: 12px;
+  border: 1px solid #b8e6c4;
+  background: #e9fff0;
+  color: #106b35;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+#orcamento .table-scroll,
+#resumo .table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* --------------------------------------------------------------------------------------------------
